@@ -4,30 +4,31 @@ import React, { useCallback, useEffect } from 'react';
 
 import { Pressable, Text } from '@/components/ui';
 import {
-  Feed as FeedIcon,
+  Home as HomeIcon,
   Settings as SettingsIcon,
-  Style as StyleIcon,
 } from '@/components/ui/icons';
-import { useAuth, useIsFirstTime } from '@/lib';
+import { useIsFirstTime } from '@/lib';
+import useAuthStore from '@/stores/auth';
 
 export default function TabLayout() {
-  const status = useAuth.use.status();
   const [isFirstTime] = useIsFirstTime();
+  const authState = useAuthStore();
+
   const hideSplash = useCallback(async () => {
     await SplashScreen.hideAsync();
   }, []);
   useEffect(() => {
-    if (status !== 'idle') {
-      setTimeout(() => {
+    setTimeout(() => {
+      if (hideSplash) {
         hideSplash();
-      }, 1000);
-    }
-  }, [hideSplash, status]);
+      }
+    }, 1000);
+  }, []);
 
   if (isFirstTime) {
     return <Redirect href="/onboarding" />;
   }
-  if (status === 'signOut') {
+  if (!authState.token.accessToken) {
     return <Redirect href="/login" />;
   }
   return (
@@ -35,20 +36,10 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Feed',
-          tabBarIcon: ({ color }) => <FeedIcon color={color} />,
+          title: 'Home',
+          tabBarIcon: ({ color }) => <HomeIcon color={color} />,
           headerRight: () => <CreateNewPostLink />,
-          tabBarButtonTestID: 'feed-tab',
-        }}
-      />
-
-      <Tabs.Screen
-        name="style"
-        options={{
-          title: 'Style',
-          headerShown: false,
-          tabBarIcon: ({ color }) => <StyleIcon color={color} />,
-          tabBarButtonTestID: 'style-tab',
+          tabBarButtonTestID: 'home-tab',
         }}
       />
       <Tabs.Screen

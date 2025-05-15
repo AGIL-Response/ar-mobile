@@ -8,7 +8,6 @@ import type { PaginateQuery } from '../types';
 type KeyParams = {
   [key: string]: any;
 };
-export const DEFAULT_LIMIT = 10;
 
 export function getQueryKey<T extends KeyParams>(key: string, params?: T) {
   return [key, ...(params ? [params] : [])];
@@ -21,7 +20,7 @@ export function normalizePages<T>(pages?: PaginateQuery<T>[]): T[] {
     : [];
 }
 
-// a function that accept a url and return params as an object
+// Helper function to get URL parameters
 export function getUrlParameters(
   url: string | null
 ): { [k: string]: string } | null {
@@ -39,6 +38,9 @@ export function getUrlParameters(
   }
   return params;
 }
+
+// Default pagination limit
+export const DEFAULT_LIMIT = 10;
 
 export const getPreviousPageParam: GetNextPageParamFunction<
   unknown,

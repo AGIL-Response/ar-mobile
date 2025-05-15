@@ -18,25 +18,26 @@ const schema = z.object({
       required_error: 'Password is required',
     })
     .min(6, 'Password must be at least 6 characters'),
+  email: z
+    .string({
+      required_error: 'Email is required',
+    })
+    .email('Invalid email address'),
 });
 
 export type FormType = z.infer<typeof schema>;
 
-export type LoginFormProps = {
+export type RegisterFormProps = {
   onSubmit?: (data: FormType) => void;
   isLoading?: boolean;
 };
 
-export const LoginForm = ({
+export const RegisterForm = ({
   onSubmit = () => {},
   isLoading = false,
-}: LoginFormProps) => {
+}: RegisterFormProps) => {
   const { handleSubmit, control } = useForm<FormType>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      username: 'admin',
-      password: 'efeGNEIBZuyTtm19Zyhs',
-    },
   });
 
   const onFormSubmit: SubmitHandler<FormType> = (data) => {
@@ -55,11 +56,11 @@ export const LoginForm = ({
             testID="form-title"
             className="pb-6 text-center text-4xl font-bold"
           >
-            Sign In
+            Create Account
           </Text>
 
           <Text className="mb-6 max-w-xs text-center text-gray-500">
-            Welcome! 👋 Please enter your credentials to sign in.
+            Welcome! 👋 Please fill in your details to create an account.
           </Text>
         </View>
 
@@ -70,6 +71,14 @@ export const LoginForm = ({
           label="Username"
         />
         <ControlledInput
+          testID="email-input"
+          control={control}
+          name="email"
+          label="Email"
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+        <ControlledInput
           testID="password-input"
           control={control}
           name="password"
@@ -78,8 +87,8 @@ export const LoginForm = ({
           secureTextEntry={true}
         />
         <Button
-          testID="login-button"
-          label="Login"
+          testID="register-button"
+          label="Register"
           onPress={handleSubmit(onFormSubmit)}
           loading={isLoading}
           disabled={isLoading}

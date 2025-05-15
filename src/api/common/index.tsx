@@ -1,3 +1,2 @@
-export * from './api-provider';
-export * from './client';
+export * from './api-client';
 export * from './utils';
