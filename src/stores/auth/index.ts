@@ -1,7 +1,7 @@
-// eslint-disable-next-line import/no-cycle
-import login, { LoginVariables } from '@/stores/auth/actions/login';
+import { LoginRequest } from '@/api/auth/types';
 import IBaseState, { InitStateType } from '@/stores/interfaces/IBaseState';
 import { createStore, resetStore } from '@/stores/utils';
+import login from "@/stores/auth/actions/login";
 
 interface ITokens {
   accessToken: string;
@@ -18,7 +18,7 @@ export interface AuthState extends IBaseState {
   user: any;
 
   actions: {
-    login: (params: LoginVariables) => Promise<any>;
+    login: (params: LoginRequest) => Promise<any>;
     logout: () => void;
     register: () => void;
     setTokens: (tokens: ITokens) => void;
