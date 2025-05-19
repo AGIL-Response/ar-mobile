@@ -1,5 +1,8 @@
 import axios from 'axios';
 
+// eslint-disable-next-line import/no-cycle
+import useAuthStore from "@/stores/auth";
+
 // Create axios instance with default config
 export const apiClient = axios.create({
   baseURL: 'https://web-base-dev.agilres.net/api',
@@ -16,10 +19,14 @@ export const apiClient = axios.create({
 
 // Add request interceptor for auth token
 apiClient.interceptors.request.use((config) => {
-  // const token = localStorage.getItem('token');
-  // if (token) {
-  //   config.headers.Authorization = `Bearer ${token}`;
-  // }
+  const accessToken = useAuthStore.getState().token?.accessToken;
+  console.log(
+    `\x1b[34m🐣️ api-client accessToken`,
+    `${JSON.stringify(accessToken, undefined, 2)}\x1b[0m`,
+  );
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
+  }
   return config;
 });
 

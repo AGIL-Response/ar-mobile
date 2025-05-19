@@ -1,13 +1,12 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 
+import { type LoginVariables } from '@/api';
 import type { LoginFormProps } from '@/components/login-form';
 import { LoginForm } from '@/components/login-form';
 import { Button, FocusAwareStatusBar, Text, View } from '@/components/ui';
 import { showError } from '@/components/ui/utils';
-import { useAuth } from '@/lib';
 import useAuthStore from '@/stores/auth';
-import { LoginVariables } from '@/stores/auth/actions/login';
 
 export default function Login() {
   const router = useRouter();
@@ -25,11 +24,16 @@ export default function Login() {
         password: formData.password,
       };
       const response = await authState.actions.login(params);
+      console.log(
+        `\x1b[34m🐣️ login onSubmit`,
+        `${JSON.stringify(response, undefined, 2)}\x1b[0m`,
+      );
       const tokens = response.token;
       const accessToken = tokens?.access_token;
       const expiresIn = tokens?.expires_in;
       const refreshToken = tokens?.refresh_token;
       authState.actions.setTokens({ accessToken, expiresIn, refreshToken });
+      authState.actions.setUser({ username: formData.username });
       router.push('/');
     } catch (error: any) {
       const errorMessage =

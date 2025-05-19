@@ -1,6 +1,7 @@
+// eslint-disable-next-line import/no-cycle
+import login, { LoginVariables } from '@/stores/auth/actions/login';
 import IBaseState, { InitStateType } from '@/stores/interfaces/IBaseState';
 import { createStore, resetStore } from '@/stores/utils';
-import login, { LoginVariables } from '@/stores/auth/actions/login';
 
 interface ITokens {
   accessToken: string;
@@ -14,12 +15,14 @@ export interface AuthState extends IBaseState {
     expiresIn: number | undefined;
     refreshToken: string | undefined;
   };
+  user: any;
 
   actions: {
     login: (params: LoginVariables) => Promise<any>;
     logout: () => void;
     register: () => void;
     setTokens: (tokens: ITokens) => void;
+    setUser: (user: any) => void;
   };
 }
 
@@ -29,6 +32,7 @@ const initialState: InitStateType<AuthState> = {
     expiresIn: undefined,
     refreshToken: undefined,
   },
+  user: undefined,
 };
 
 const authStore = (set: any, get: any) => ({
@@ -43,6 +47,11 @@ const authStore = (set: any, get: any) => ({
     setTokens: (tokens: ITokens) => {
       set((state: AuthState) => {
         state.token = tokens;
+      });
+    },
+    setUser: (user: any) => {
+      set((state: AuthState) => {
+        state.user = user;
       });
     },
   },

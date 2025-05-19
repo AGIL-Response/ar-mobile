@@ -1,19 +1,8 @@
-import { apiClient, handleApiError } from '@/api';
-
-export type LoginVariables = {
-  action: string;
-  username: string;
-  password: string;
-};
-
-type LoginResponse = {
-  access: string;
-  refresh: string;
-};
+import AppApi, { handleApiError, LoginVariables } from '@/api';
 
 const login = (_set: any, _get: any) => async (params: LoginVariables) => {
   try {
-    const response = await apiClient.post<LoginResponse>('auth', params);
+    const response = await AppApi.login(params);
     return response.data;
   } catch (error) {
     throw handleApiError(error);

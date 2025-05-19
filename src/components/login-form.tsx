@@ -34,8 +34,8 @@ export const LoginForm = ({
   const { handleSubmit, control } = useForm<FormType>({
     resolver: zodResolver(schema),
     defaultValues: {
-      username: 'admin',
-      password: 'efeGNEIBZuyTtm19Zyhs',
+      username: 'akita',
+      password: '12301230',
     },
   });
 
