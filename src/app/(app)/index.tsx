@@ -4,6 +4,7 @@ import { translate } from '@/lib';
 import useCurrentLocation from '@/lib/hooks/use-current-location';
 import { bftApi } from "@/api";
 import useAuthStore from "@/stores/auth";
+import { useEffect } from "react";
 
 const Home = () => {
   const { location, errorMsg } = useCurrentLocation();
@@ -14,6 +15,10 @@ const Home = () => {
   } else if (location) {
     locationText = '';
   }
+
+  useEffect(() => {
+    console.log(`\x1b[36m🐣️ index location update \x1b[0m`);
+  }, [location]);
 
   return (
     <>
