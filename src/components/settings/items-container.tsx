@@ -5,7 +5,7 @@ import type { TxKeyPath } from '@/lib';
 
 type Props = {
   children: React.ReactNode;
-  title?: TxKeyPath;
+  title?: TxKeyPath | any;
 };
 
 export const ItemsContainer = ({ children, title }: Props) => {

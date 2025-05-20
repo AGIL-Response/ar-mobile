@@ -30,5 +30,18 @@
     "version": "Version",
     "website": "Website"
   },
+  "location": {
+    "title": "Location Data",
+    "current": "Current Location",
+    "additional": "Additional Info",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "accuracy": "Accuracy",
+    "altitude": "Altitude",
+    "speed": "Speed",
+    "heading": "Heading",
+    "last_updated": "Last Updated",
+    "altitude_accuracy": "Altitude Accuracy"
+  },
   "welcome": "Welcome to obytes app site"
 }

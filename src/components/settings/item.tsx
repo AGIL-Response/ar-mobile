@@ -5,7 +5,7 @@ import { ArrowRight } from '@/components/ui/icons';
 import type { TxKeyPath } from '@/lib';
 
 type ItemProps = {
-  text: TxKeyPath;
+  text: TxKeyPath | any;
   value?: string;
   onPress?: () => void;
   icon?: React.ReactNode;

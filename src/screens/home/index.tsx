@@ -1,7 +1,8 @@
-import React from 'react';
-import { Text,View } from 'react-native';
+import { useEffect, useState } from 'react';
 
-import { FocusAwareStatusBar } from '@/components/ui';
+import { LocationDisplay } from '@/components/location/location-display';
+import { FocusAwareStatusBar, ScrollView, Text, View } from '@/components/ui';
+import { translate } from '@/lib';
 import useCurrentLocation from '@/lib/hooks/use-current-location';
 
 const Home = () => {
@@ -11,14 +12,24 @@ const Home = () => {
   if (errorMsg) {
     text = errorMsg;
   } else if (location) {
-    text = JSON.stringify(location);
+    text = '';
   }
 
   return (
-    <View className="flex-1 ">
+    <>
       <FocusAwareStatusBar />
-      <Text>{text}</Text>
-    </View>
+      <ScrollView>
+        <View className="flex-1 px-4 pt-4">
+          <View className={'flex-row justify-between'}>
+            <Text className="text-xl font-bold">
+              {translate('location.title')}
+            </Text>
+            <Text>{text}</Text>
+          </View>
+          {location && <LocationDisplay locationData={location} />}
+        </View>
+      </ScrollView>
+    </>
   );
 };
 
