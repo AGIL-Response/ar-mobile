@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // eslint-disable-next-line import/no-cycle
-import useAuthStore from "@/stores/auth";
+import useAuthStore from '@/stores/auth';
 
 // Create axios instance with default config
 export const apiClient = axios.create({
@@ -17,23 +17,54 @@ export const apiClient = axios.create({
   withCredentials: false,
 });
 
-// Add request interceptor for auth token
+// Add request interceptor for auth token and logging
 apiClient.interceptors.request.use((config) => {
   const accessToken = useAuthStore.getState().token?.accessToken;
+
+  // Log request details
   console.log(
-    `\x1b[34m🐣️ api-client accessToken`,
-    `${JSON.stringify(accessToken, undefined, 2)}\x1b[0m`,
+    `\x1b[34m🚀 Request: ${config.method?.toUpperCase()} ${config.url}\x1b[0m`
   );
+  if (config.params) {
+    console.log(
+      `\x1b[34m📝 Request Params: ${JSON.stringify(config.params, undefined, 2)}\x1b[0m`
+    );
+  }
+  if (config.data) {
+    console.log(
+      `\x1b[34m📦 Request Body: ${JSON.stringify(config.data, undefined, 2)}\x1b[0m`
+    );
+  }
+
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
   return config;
 });
 
-// Add response interceptor for error handling
+// Add response interceptor for error handling and logging
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Log successful response
+    console.log(
+      `\x1b[32m✅ Response [${response.status}]: ${response.config.method?.toUpperCase()} ${response.config.url}\x1b[0m`
+    );
+    console.log(
+      `\x1b[32m📦 Response Data: ${JSON.stringify(response.data, undefined, 2)}\x1b[0m`
+    );
+    return response;
+  },
   (error) => {
+    // Log error response
+    console.log(
+      `\x1b[31m❌ Error [${error.response?.status || 'No Status'}]: ${error.config?.method?.toUpperCase()} ${error.config?.url}\x1b[0m`
+    );
+    if (error.response?.data) {
+      console.log(
+        `\x1b[31m📦 Error Data: ${JSON.stringify(error.response.data, undefined, 2)}\x1b[0m`
+      );
+    }
+
     if (error.response?.status === 401) {
       // Handle unauthorized access
       // localStorage.removeItem('token');

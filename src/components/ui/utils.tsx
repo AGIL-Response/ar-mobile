@@ -9,9 +9,12 @@ export const WIDTH = width;
 export const HEIGHT = height;
 
 // for onError react queries and mutations
-export const showError = (error: AxiosError) => {
+export const showError = (error: any) => {
   console.log(JSON.stringify(error?.response?.data));
-  const description = extractError(error?.response?.data).trimEnd();
+  let description = extractError(error?.response?.data).trimEnd();
+  if (typeof error?.message == 'string') {
+    description = error.message;
+  }
 
   showMessage({
     message: 'Error',

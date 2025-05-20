@@ -38,7 +38,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color }) => <HomeIcon color={color} />,
-          headerRight: () => <CreateNewPostLink />,
+          headerRight: () => <CreateIncidentLink />,
           tabBarButtonTestID: 'home-tab',
         }}
       />
@@ -55,9 +55,9 @@ export default function TabLayout() {
   );
 }
 
-const CreateNewPostLink = () => {
+const CreateIncidentLink = () => {
   return (
-    <Link href="/feed/add-post" asChild>
+    <Link href="/incident/create-incident" asChild>
       <Pressable>
         <Text className="px-3 text-primary-300">Create</Text>
       </Pressable>

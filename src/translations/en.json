@@ -41,7 +41,28 @@
     "speed": "Speed",
     "heading": "Heading",
     "last_updated": "Last Updated",
-    "altitude_accuracy": "Altitude Accuracy"
+    "altitude_accuracy": "Altitude Accuracy",
+    "waiting": "Waiting for location..."
   },
-  "welcome": "Welcome to obytes app site"
+  "welcome": "Welcome to obytes app site",
+  "home": {
+    "title": "Home"
+  },
+  "incident": {
+    "name": "Name",
+    "description": "Description",
+    "type": "Type",
+    "severity": "Severity",
+    "create": "Create Incident",
+    "types": {
+      "incident": "Incident",
+      "alert": "Alert",
+      "warning": "Warning"
+    },
+    "severities": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    }
+  }
 }
