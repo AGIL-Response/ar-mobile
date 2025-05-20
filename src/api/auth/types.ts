@@ -6,12 +6,18 @@ export type RegisterRequest = {
 };
 
 export type LoginRequest = {
+  action: 'login',
   username: string;
   password: string;
 };
 
-export type AuthResponse = {
+export type LoginResponse = {
   success: boolean;
   message: string;
-  token?: string;
+  token?: any;
+};
+
+export type RegisterResponse = {
+  success: boolean;
+  message: string;
 };

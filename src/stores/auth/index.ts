@@ -1,7 +1,9 @@
-import { LoginRequest } from '@/api/auth/types';
-import IBaseState, { InitStateType } from '@/stores/interfaces/IBaseState';
+import { type LoginRequest, type RegisterRequest } from '@/api/auth/types';
+import login from '@/stores/auth/actions/login';
+import register from '@/stores/auth/actions/register';
+import type IBaseState from '@/stores/interfaces/IBaseState';
+import { type InitStateType } from '@/stores/interfaces/IBaseState';
 import { createStore, resetStore } from '@/stores/utils';
-import login from "@/stores/auth/actions/login";
 
 interface ITokens {
   accessToken: string;
@@ -18,9 +20,9 @@ export interface AuthState extends IBaseState {
   user: any;
 
   actions: {
-    login: (params: LoginRequest) => Promise<any>;
+    login: (username: string, password: string) => Promise<any>;
+    register: (params: RegisterRequest) => Promise<any>;
     logout: () => void;
-    register: () => void;
     setTokens: (tokens: ITokens) => void;
     setUser: (user: any) => void;
   };
@@ -39,6 +41,7 @@ const authStore = (set: any, get: any) => ({
   ...initialState,
   actions: {
     login: login(set, get),
+    register: register(set, get),
     logout: () => {
       set((state: AuthState) => {
         state.token = initialState.token;

@@ -1,13 +1,19 @@
+// eslint-disable-next-line import/no-cycle
 import { apiClient, handleApiError } from '../api-client';
-import type { AuthResponse, LoginRequest, RegisterRequest } from './types';
+import type {
+  LoginRequest,
+  LoginResponse,
+  RegisterRequest,
+  RegisterResponse,
+} from './types';
 
 export const authApi = {
   /**
    * Register a new user
    */
-  register: async (data: RegisterRequest): Promise<AuthResponse> => {
+  register: async (data: RegisterRequest): Promise<RegisterResponse> => {
     try {
-      const response = await apiClient.post<AuthResponse>('auth', data);
+      const response = await apiClient.post('auth', data);
       return response.data;
     } catch (error) {
       throw handleApiError(error);
@@ -17,9 +23,9 @@ export const authApi = {
   /**
    * Login user
    */
-  login: async (data: LoginRequest): Promise<AuthResponse> => {
+  login: async (data: LoginRequest): Promise<LoginResponse> => {
     try {
-      const response = await apiClient.post<AuthResponse>('auth', data);
+      const response = await apiClient.post<LoginResponse>('auth', data);
       return response.data;
     } catch (error) {
       throw handleApiError(error);
