@@ -1,12 +1,13 @@
 /* eslint-disable react/react-in-jsx-scope */
-import { Env } from "@env";
+import { Env } from '@env';
+import React from 'react';
+import { useEffect } from 'react';
 
-import { Item } from "@/components/settings/item";
-import { ItemsContainer } from "@/components/settings/items-container";
-import { FocusAwareStatusBar, ScrollView, Text, View } from "@/components/ui";
-import { translate } from "@/lib";
-import useAuthStore from "@/stores/auth";
-import { useEffect } from "react";
+import { Item } from '@/components/settings/item';
+import { ItemsContainer } from '@/components/settings/items-container';
+import { FocusAwareStatusBar, ScrollView, Text, View } from '@/components/ui';
+import { translate } from '@/lib';
+import useAuthStore from '@/stores/auth';
 
 export default function Settings() {
   const authState = useAuthStore();
@@ -22,11 +23,13 @@ export default function Settings() {
       <ScrollView>
         <View className="flex-1 px-4 pt-16 ">
           <Text className="text-xl font-bold">
-            {translate("settings.title")}
+            {translate('settings.title')}
           </Text>
 
           <ItemsContainer title="settings.about">
             <Item text="settings.username" value={authState.user?.username} />
+            <Item text="Email" value={authState.user?.email} />
+            <Item text="User ID" value={authState.user?.userId} />
           </ItemsContainer>
 
           {/*<ItemsContainer title="settings.generale">*/}
@@ -34,7 +37,7 @@ export default function Settings() {
           {/*  <ThemeItem />*/}
           {/*</ItemsContainer>*/}
 
-          <View className={"mt-8"}>
+          <View className={'mt-8'}>
             <ItemsContainer>
               <Item text="settings.app_name" value={Env.NAME} />
               <Item text="settings.version" value={Env.VERSION} />

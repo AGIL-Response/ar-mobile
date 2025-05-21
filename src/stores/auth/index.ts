@@ -18,6 +18,7 @@ export interface AuthState extends IBaseState {
     refreshToken: string | undefined;
   };
   user: any;
+  isLoading: boolean;
 
   actions: {
     login: (username: string, password: string) => Promise<any>;
@@ -35,6 +36,7 @@ const initialState: InitStateType<AuthState> = {
     refreshToken: undefined,
   },
   user: undefined,
+  isLoading: false,
 };
 
 const authStore = (set: any, get: any) => ({

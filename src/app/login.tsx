@@ -9,21 +9,12 @@ import useAuthStore from '@/stores/auth';
 
 export default function Login() {
   const router = useRouter();
-  // const signIn = useAuth.use.signIn();
-  const [isLoading, setIsLoading] = useState(false);
 
   const authState = useAuthStore();
 
   const onSubmit: LoginFormProps['onSubmit'] = async (formData) => {
     try {
-      setIsLoading(true);
-      const response = await authState.actions.login(formData.username, formData.password);
-      const tokens = response.token;
-      const accessToken = tokens?.access_token;
-      const expiresIn = tokens?.expires_in;
-      const refreshToken = tokens?.refresh_token;
-      authState.actions.setTokens({ accessToken, expiresIn, refreshToken });
-      authState.actions.setUser({ username: formData.username });
+      await authState.actions.login(formData.username, formData.password);
       router.push('/');
     } catch (error: any) {
       const errorMessage =
@@ -32,7 +23,6 @@ export default function Login() {
       showError(errorMessage);
       console.error('Login error:', error);
     } finally {
-      setIsLoading(false);
     }
   };
 
@@ -43,7 +33,7 @@ export default function Login() {
   return (
     <>
       <FocusAwareStatusBar />
-      <LoginForm onSubmit={onSubmit} isLoading={isLoading} />
+      <LoginForm onSubmit={onSubmit} isLoading={authState.isLoading} />
       <View className="px-4 pb-8">
         <Text className="mb-2 text-center text-gray-500">
           Don't have an account?
