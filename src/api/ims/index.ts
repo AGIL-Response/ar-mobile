@@ -20,7 +20,7 @@ export const imsApi = {
       });
 
       const response = await apiClient.post<IncidentResponse>(
-        '/aoh/ims/new',
+        '/ims',
         formData,
         {
           headers: {
