@@ -14,10 +14,11 @@ export type IncidentSeverity =
 
 export type IncidentStatus = 'NEW' | 'IN_PROGRESS' | 'RESOLVED';
 
-export type CreateIncidentRequest = {
+export type Incident = {
+  id: string;
   name: string;
   description: string;
-  location?: [number, number]; // [latitude, longitude]
+  location?: string;
   reported_by: string;
   date?: string;
   type: IncidentCategory;
@@ -25,18 +26,12 @@ export type CreateIncidentRequest = {
   status: IncidentStatus;
   attributes?: Record<string, unknown> | null;
   backdated?: boolean;
-};
-
-export type IncidentResponse = {
-  success: boolean;
-  incident?: {
-    data: {
-      id: string;
-      // ... other incident fields
-    };
-  };
-  form?: {
-    valid: boolean;
-    errors?: Record<string, string>;
-  };
+  created_at: string;
+  created_by: string;
+  next_update?: number;
+  occ_lock?: number;
+  resolved_date?: string | null;
+  tenant_id: string;
+  updated_at: string;
+  updated_by: string;
 };

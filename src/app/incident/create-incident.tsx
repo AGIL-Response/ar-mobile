@@ -1,9 +1,9 @@
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import * as React from 'react';
 import { View } from 'react-native';
 
 import { CreateIncidentForm } from '@/components/incident/create-incident-form';
-import { Text } from '@/components/ui';
+import { showSuccess, Text } from '@/components/ui';
 import useCurrentLocation from '@/lib/hooks/use-current-location';
 import { translate } from '@/lib/i18n';
 
@@ -30,9 +30,13 @@ export default function CreateIncidentScreen() {
       ) : (
         <CreateIncidentForm
           initialLocation={[
-            location.coords.longitude,
             location.coords.latitude,
+            location.coords.longitude,
           ]}
+          onSuccess={() => {
+            showSuccess('Create incident success');
+            router.back();
+          }}
         />
       )}
     </View>
