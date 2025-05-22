@@ -112,6 +112,10 @@ export type ApiError = {
   errors?: Record<string, string[]>;
 };
 
+export const API_CODE = {
+  OK: 200,
+}
+
 // Helper function to handle API errors
 export function handleApiError(error: unknown): ApiError {
   if (axios.isAxiosError(error)) {
