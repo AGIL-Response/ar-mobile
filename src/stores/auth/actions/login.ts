@@ -17,12 +17,15 @@ const login =
       const accessToken = tokens?.access_token;
       const expiresIn = tokens?.expires_in;
       const refreshToken = tokens?.refresh_token;
-      get().actions.setTokens({ accessToken, expiresIn, refreshToken });
-      get().actions.setUser({
+
+      const state: AuthState = get();
+      state.actions.setTokens({ accessToken, expiresIn, refreshToken });
+      state.actions.setUser({
         username: tokens?.preferred_username,
         userId: tokens?.sub,
         email: tokens?.email,
       });
+      await state.actions.createGeoEntityIfNeeded();
       set((state: any) => {
         state.isLoading = false;
       });

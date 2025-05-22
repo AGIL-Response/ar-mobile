@@ -1,6 +1,10 @@
-import { type LoginRequest, type RegisterRequest } from '@/api/auth/types';
+import { type RegisterRequest } from '@/api/auth/types';
+// eslint-disable-next-line import/no-cycle
+import createGeoEntityIfNeeded from '@/stores/auth/actions/create-geo-entity-if-needed';
+// eslint-disable-next-line import/no-cycle
 import login from '@/stores/auth/actions/login';
 import register from '@/stores/auth/actions/register';
+import updateGeoEntityLocation from '@/stores/auth/actions/update-geo-entity-location';
 import type IBaseState from '@/stores/interfaces/IBaseState';
 import { type InitStateType } from '@/stores/interfaces/IBaseState';
 import { createStore, resetStore } from '@/stores/utils';
@@ -19,6 +23,7 @@ export interface AuthState extends IBaseState {
   };
   user: any;
   isLoading: boolean;
+  geoEntity?: any;
 
   actions: {
     login: (username: string, password: string) => Promise<any>;
@@ -26,6 +31,9 @@ export interface AuthState extends IBaseState {
     logout: () => void;
     setTokens: (tokens: ITokens) => void;
     setUser: (user: any) => void;
+    setGeoEntity: (geoEntity: any) => void;
+    createGeoEntityIfNeeded: () => Promise<void>;
+    updateGeoEntityLocation: (lat: number, lon: number) => Promise<void>;
   };
 }
 
@@ -37,12 +45,17 @@ const initialState: InitStateType<AuthState> = {
   },
   user: undefined,
   isLoading: false,
+  geoEntity: undefined,
 };
 
 const authStore = (set: any, get: any) => ({
   ...initialState,
   actions: {
-    login: login(set, get),
+    login: async (username: string, password: string) => {
+      const response = await login(set, get)(username, password);
+      await get().actions.createGeoEntityIfNeeded();
+      return response;
+    },
     register: register(set, get),
     logout: () => {
       set((state: AuthState) => {
@@ -59,6 +72,13 @@ const authStore = (set: any, get: any) => ({
         state.user = user;
       });
     },
+    setGeoEntity: (geoEntity: any) => {
+      set((state: AuthState) => {
+        state.geoEntity = geoEntity;
+      });
+    },
+    createGeoEntityIfNeeded: createGeoEntityIfNeeded(set, get),
+    updateGeoEntityLocation: updateGeoEntityLocation(set, get),
   },
   reset: () => resetStore(initialState, set),
 });

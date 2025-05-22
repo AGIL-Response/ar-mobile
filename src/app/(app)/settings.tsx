@@ -12,10 +12,6 @@ import useAuthStore from '@/stores/auth';
 export default function Settings() {
   const authState = useAuthStore();
 
-  useEffect(() => {
-    console.log(`\x1b[36m🐣️ settings \x1b[0m`);
-  }, []);
-
   return (
     <>
       <FocusAwareStatusBar />
@@ -31,6 +27,18 @@ export default function Settings() {
             <Item text="Email" value={authState.user?.email} />
             <Item text="User ID" value={authState.user?.userId} />
           </ItemsContainer>
+
+          {authState.geoEntity && (
+            <ItemsContainer title="Geo Entity">
+              <Item text="ID" value={authState.geoEntity.id} />
+              <Item text="Entity ID" value={authState.geoEntity.entity_id} />
+              <Item text="Kind" value={authState.geoEntity.kind} />
+              <Item text="Active" value={String(authState.geoEntity.active)} />
+              <Item text="GIS ID" value={authState.geoEntity.gis_id} />
+              <Item text="Created At" value={authState.geoEntity.create_at} />
+              <Item text="Updated At" value={authState.geoEntity.update_at} />
+            </ItemsContainer>
+          )}
 
           {/*<ItemsContainer title="settings.generale">*/}
           {/*  <LanguageItem />*/}

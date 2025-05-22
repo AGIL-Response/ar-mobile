@@ -13,7 +13,13 @@ export const imsApi = {
       const formData = new FormData();
       Object.entries(data).forEach(([key, value]) => {
         if (key === 'location') {
-          formData.append(key, JSON.stringify(value));
+          const lat = (value as any)?.[0] || 0;
+          const lon = (value as any)?.[1] || 0;
+          // formData.append(key, JSON.stringify(value));
+          // todo: vô cùng bực mình với cả location này
+          //  đã ngược [lon, lat] lại còn phải kẹp trong ""
+          // "location": "[\"103.826738\",\"1.282355\"]",
+          formData.append(key, `[\"${lon}\",\"${lat}\"]`);
         } else if (value !== null && value !== undefined) {
           formData.append(key, String(value));
         }
