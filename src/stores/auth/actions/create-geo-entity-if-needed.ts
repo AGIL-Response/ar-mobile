@@ -3,6 +3,10 @@ import * as Location from 'expo-location';
 
 // eslint-disable-next-line import/no-cycle
 import { bftApi, handleApiError } from '@/api';
+import {
+  type GeoEntityResponse,
+  transformGeoEntityResponse,
+} from '@/types/geo-entity';
 
 type LocationCoords = {
   latitude: number;
@@ -84,13 +88,21 @@ const createGeoEntityIfNeeded = (set: any, get: any) => async () => {
         throw new Error('Failed to create geo entity');
       }
 
-      get().actions.setGeoEntity(createRes.geoResult);
+      // Transform the response to camelCase before setting in store
+      const transformedEntity = transformGeoEntityResponse(
+        createRes.geoResult as unknown as GeoEntityResponse
+      );
+      get().actions.setGeoEntity(transformedEntity);
     } else {
       const existingEntity = entities[0];
       if (!existingEntity) {
         throw new Error('Invalid geo entity data');
       }
-      get().actions.setGeoEntity(existingEntity);
+      // Transform the response to camelCase before setting in store
+      const transformedEntity = transformGeoEntityResponse(
+        existingEntity as unknown as GeoEntityResponse
+      );
+      get().actions.setGeoEntity(transformedEntity);
     }
   } catch (error) {
     const handledError = handleApiError(error);

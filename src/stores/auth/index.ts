@@ -8,11 +8,18 @@ import updateGeoEntityLocation from '@/stores/auth/actions/update-geo-entity-loc
 import type IBaseState from '@/stores/interfaces/IBaseState';
 import { type InitStateType } from '@/stores/interfaces/IBaseState';
 import { createStore, resetStore } from '@/stores/utils';
+import { type GeoEntity } from '@/types/geo-entity';
 
 interface ITokens {
   accessToken: string;
   expiresIn: number;
   refreshToken: string;
+}
+
+interface IUser {
+  username: string;
+  userId: string;
+  email: string;
 }
 
 export interface AuthState extends IBaseState {
@@ -21,17 +28,17 @@ export interface AuthState extends IBaseState {
     expiresIn: number | undefined;
     refreshToken: string | undefined;
   };
-  user: any;
+  user: IUser | undefined;
   isLoading: boolean;
-  geoEntity?: any;
+  geoEntity: GeoEntity | undefined;
 
   actions: {
     login: (username: string, password: string) => Promise<any>;
     register: (params: RegisterRequest) => Promise<any>;
     logout: () => void;
     setTokens: (tokens: ITokens) => void;
-    setUser: (user: any) => void;
-    setGeoEntity: (geoEntity: any) => void;
+    setUser: (user: IUser) => void;
+    setGeoEntity: (geoEntity: GeoEntity) => void;
     createGeoEntityIfNeeded: () => Promise<void>;
     updateGeoEntityLocation: (lat: number, lon: number) => Promise<void>;
   };
@@ -60,6 +67,8 @@ const authStore = (set: any, get: any) => ({
     logout: () => {
       set((state: AuthState) => {
         state.token = initialState.token;
+        state.user = undefined;
+        state.geoEntity = undefined;
       });
     },
     setTokens: (tokens: ITokens) => {
@@ -67,12 +76,12 @@ const authStore = (set: any, get: any) => ({
         state.token = tokens;
       });
     },
-    setUser: (user: any) => {
+    setUser: (user: IUser) => {
       set((state: AuthState) => {
         state.user = user;
       });
     },
-    setGeoEntity: (geoEntity: any) => {
+    setGeoEntity: (geoEntity: GeoEntity) => {
       set((state: AuthState) => {
         state.geoEntity = geoEntity;
       });

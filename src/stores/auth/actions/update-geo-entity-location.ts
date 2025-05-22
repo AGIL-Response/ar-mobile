@@ -1,14 +1,16 @@
 import { bftApi, handleApiError } from '@/api';
 import { API_CODE } from '@/api/api-client';
-import { showError, showSuccess } from "@/components/ui";
+import { showError, showSuccess } from '@/components/ui';
+import { type GeoEntity } from '@/types/geo-entity';
 
 const updateGeoEntityLocation =
   (set: any, get: any) => async (lat: number, lon: number) => {
     try {
-      const geoEntity = get().geoEntity;
-      if (!geoEntity || !geoEntity.gis_id)
-        throw new Error('No geoEntity or gis_id in state');
-      const response = await bftApi.updatePosition(geoEntity.gis_id, {
+      const geoEntity = get().geoEntity as GeoEntity | undefined;
+      if (!geoEntity?.gisId) {
+        throw new Error('No geoEntity or gisId in state');
+      }
+      const response = await bftApi.updatePosition(geoEntity.gisId, {
         latitude: lat,
         longitude: lon,
       });
