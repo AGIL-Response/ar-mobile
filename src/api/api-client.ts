@@ -30,21 +30,26 @@ export const bftClient = axios.create({
   withCredentials: false,
 });
 
+const getTimestamp = () => {
+  const now = new Date();
+  return `[${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}]`;
+};
+
 const requestSuccessInterceptor = (config: any) => {
   const accessToken = useAuthStore.getState().token?.accessToken;
 
   // Log request details
   console.log(
-    `\x1b[34m🚀 Request: ${config.method?.toUpperCase()} ${config.url}\x1b[0m`
+    `\x1b[34m${getTimestamp()} 🚀 Request: ${config.method?.toUpperCase()} ${config.url}\x1b[0m`
   );
   if (config.params) {
     console.log(
-      `\x1b[34m📝 Request Params: ${JSON.stringify(config.params, undefined, 2)}\x1b[0m`
+      `\x1b[34m${getTimestamp()} 📝 Request Params: ${JSON.stringify(config.params, undefined, 2)}\x1b[0m`
     );
   }
   if (config.data) {
     console.log(
-      `\x1b[34m📦 Request Body: ${JSON.stringify(config.data, undefined, 2)}\x1b[0m`
+      `\x1b[34m${getTimestamp()} 📦 Request Body: ${JSON.stringify(config.data, undefined, 2)}\x1b[0m`
     );
   }
 
@@ -57,10 +62,10 @@ const requestSuccessInterceptor = (config: any) => {
 const responseSuccessInterceptor = (response: any) => {
   // Log successful response
   console.log(
-    `\x1b[32m✅ Response [${response.status}]: ${response.config.method?.toUpperCase()} ${response.config.url}\x1b[0m`
+    `\x1b[32m${getTimestamp()} ✅ Response [${response.status}]: ${response.config.method?.toUpperCase()} ${response.config.url}\x1b[0m`
   );
   console.log(
-    `\x1b[32m📦 Response Data: ${JSON.stringify(response.data, undefined, 2)}\x1b[0m`
+    `\x1b[32m${getTimestamp()} 📦 Response Data: ${JSON.stringify(response.data, undefined, 2)}\x1b[0m`
   );
   return response;
 };
@@ -68,11 +73,11 @@ const responseSuccessInterceptor = (response: any) => {
 const responseFailedInterceptor = (error: any) => {
   // Log error response
   console.log(
-    `\x1b[31m❌ Error [${error.response?.status || 'No Status'}]: ${error.config?.method?.toUpperCase()} ${error.config?.url}\x1b[0m`
+    `\x1b[31m${getTimestamp()} ❌ Error [${error.response?.status || 'No Status'}]: ${error.config?.method?.toUpperCase()} ${error.config?.url}\x1b[0m`
   );
   if (error.response?.data) {
     console.log(
-      `\x1b[31m📦 Error Data: ${JSON.stringify(error.response.data, undefined, 2)}\x1b[0m`
+      `\x1b[31m${getTimestamp()} 📦 Error Data: ${JSON.stringify(error.response.data, undefined, 2)}\x1b[0m`
     );
   }
 
@@ -114,7 +119,7 @@ export type ApiError = {
 
 export const API_CODE = {
   OK: 200,
-}
+};
 
 // Helper function to handle API errors
 export function handleApiError(error: unknown): ApiError {

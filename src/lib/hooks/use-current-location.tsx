@@ -58,8 +58,14 @@ function updateLocation(
 
       if (hasSignificantChange(locationRef.current, newLocation)) {
         setLocation(newLocation);
+        const timestamp = new Date().toLocaleTimeString('en-US', {
+          hour12: false,
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        });
         console.log(
-          `\x1b[34m📍 Location Updated (${calculateDistance(
+          `\x1b[34m[${timestamp}] 📍 Location Updated (${calculateDistance(
             {
               latitude: locationRef.current?.coords.latitude ?? 0,
               longitude: locationRef.current?.coords.longitude ?? 0,
@@ -92,8 +98,14 @@ function setupLocationWatch(
     (newLocation) => {
       if (hasSignificantChange(locationRef.current, newLocation)) {
         setLocation(newLocation);
+        const timestamp = new Date().toLocaleTimeString('en-US', {
+          hour12: false,
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        });
         console.log(
-          `\x1b[34m📍 Location Updated (${calculateDistance(
+          `\x1b[34m[${timestamp}] 📍 Location Updated (${calculateDistance(
             {
               latitude: locationRef.current?.coords.latitude ?? 0,
               longitude: locationRef.current?.coords.longitude ?? 0,

@@ -1,9 +1,10 @@
+import { useEffect } from 'react';
+
 import { LocationDisplay } from '@/components/location/location-display';
 import { FocusAwareStatusBar, ScrollView, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
 import useCurrentLocation from '@/lib/hooks/use-current-location';
 import useAuthStore from '@/stores/auth';
-import { useEffect } from 'react';
 
 const Home = () => {
   const { location, errorMsg } = useCurrentLocation();
@@ -16,7 +17,13 @@ const Home = () => {
   }
 
   useEffect(() => {
-    console.log(`\x1b[36m🐣️ index location update \x1b[0m`);
+    const timestamp = new Date().toLocaleTimeString('en-US', {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+    console.log(`\x1b[36m[${timestamp}] 🐣️ index location update \x1b[0m`);
     if (location?.coords?.latitude && location?.coords.longitude) {
       useAuthStore
         .getState()

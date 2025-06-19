@@ -31,12 +31,12 @@ export default function Settings() {
           {authState.geoEntity && (
             <ItemsContainer title="Geo Entity">
               <Item text="ID" value={authState.geoEntity.id} />
-              <Item text="Entity ID" value={authState.geoEntity.entity_id} />
+              <Item text="Entity ID" value={authState.geoEntity.id} />
               <Item text="Kind" value={authState.geoEntity.kind} />
               <Item text="Active" value={String(authState.geoEntity.active)} />
-              <Item text="GIS ID" value={authState.geoEntity.gis_id} />
-              <Item text="Created At" value={authState.geoEntity.create_at} />
-              <Item text="Updated At" value={authState.geoEntity.update_at} />
+              <Item text="GIS ID" value={authState.geoEntity.gisId} />
+              <Item text="Created At" value={authState.geoEntity.createdAt} />
+              <Item text="Updated At" value={authState.geoEntity.updatedAt || ''} />
             </ItemsContainer>
           )}
 
