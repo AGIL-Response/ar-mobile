@@ -13,15 +13,6 @@ export const apiClient = axios.create({
   withCredentials: false,
 });
 
-export const bftClient = axios.create({
-  baseURL: 'https://bft-dev.agilres.net/api',
-  headers: {
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
-  },
-  withCredentials: false,
-});
-
 const getTimestamp = () => {
   const now = new Date();
   return `[${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}]`;
@@ -86,14 +77,9 @@ const responseFailedInterceptor = (error: any) => {
 
 // Add request interceptor for auth token and logging
 apiClient.interceptors.request.use(requestSuccessInterceptor);
-bftClient.interceptors.request.use(requestSuccessInterceptor);
 
 // Add response interceptor for error handling and logging
 apiClient.interceptors.response.use(
-  responseSuccessInterceptor,
-  responseFailedInterceptor
-);
-bftClient.interceptors.response.use(
   responseSuccessInterceptor,
   responseFailedInterceptor
 );
