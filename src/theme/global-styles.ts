@@ -300,6 +300,13 @@ export const Margin = {
   xxl: 32,
 } as const;
 
+export const SafeArea = {
+  top: 16,
+  bottom: 16,
+  left: 16,
+  right: 16,
+} as const;
+
 /* ================================
    BORDER RADIUS
    ================================ */
@@ -605,6 +612,7 @@ export const createTheme = (isDark: boolean) => ({
     gap: Gap,
     padding: Padding,
     margin: Margin,
+    safeArea: SafeArea,
   },
   borderRadius: BorderRadius,
   dimensions: Dimensions,

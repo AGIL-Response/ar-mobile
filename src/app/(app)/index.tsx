@@ -1,53 +1,103 @@
-import { useEffect } from 'react';
+/**
+ * Home Screen
+ * Simple greeting screen demonstrating the new component system
+ */
 
-import { FocusAwareStatusBar, ScrollView, Text, View } from '@/components/ui';
-import { translate } from '@/lib';
-import useCurrentLocation from '@/lib/hooks/use-current-location';
+import React from 'react';
+
+import {
+  BodyText,
+  Button,
+  Card,
+  Center,
+  Column,
+  GhostButton,
+  Heading1,
+  Heading2,
+  OutlineButton,
+  PrimaryButton,
+  Row,
+  Screen,
+  ThemeToggle,
+  View,
+} from '@/components/ui';
 import useAuthStore from '@/stores/auth';
 
-const Home = () => {
-  const { location, errorMsg } = useCurrentLocation();
+export default function HomeScreen() {
+  const authState = useAuthStore();
 
-  let locationText = 'Waiting...';
-  if (errorMsg) {
-    locationText = errorMsg;
-  } else if (location) {
-    locationText = '';
-  }
-
-  useEffect(() => {
-    const timestamp = new Date().toLocaleTimeString('en-US', {
-      hour12: false,
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-    console.log(`\x1b[36m[${timestamp}] 🐣️ index location update \x1b[0m`);
-    if (location?.coords?.latitude && location?.coords.longitude) {
-      useAuthStore
-        .getState()
-        .actions.updateGeoEntityLocation(
-          location?.coords.latitude,
-          location?.coords.longitude
-        );
-    }
-  }, [location]);
+  const handleLogout = () => {
+    authState.actions.logout();
+  };
 
   return (
-    <>
-      <FocusAwareStatusBar />
-      <ScrollView>
-        <View className="flex-1 px-4 pt-4">
-          <View className={'flex-row justify-between'}>
-            <Text className="text-xl font-bold">
-              {translate('location.title')}
-            </Text>
-            <Text>{locationText}</Text>
-          </View>
-        </View>
-      </ScrollView>
-    </>
-  );
-};
+    <Screen>
+      <Column gap="xl" padding="xxl">
+        {/* Header */}
+        <Row justify="space-between" align="center">
+          <Heading1>Welcome Home!</Heading1>
+          <ThemeToggle />
+        </Row>
 
-export default Home;
+        {/* Greeting Card */}
+        <Card>
+          <Column gap="lg" align="center">
+            <Heading2 centered>Hello, User!</Heading2>
+            <BodyText centered>
+              This is your new home screen built with our custom design system
+              components.
+            </BodyText>
+          </Column>
+        </Card>
+
+        {/* Demo Components */}
+        <Card>
+          <Column gap="lg">
+            <Heading2>Component Demo</Heading2>
+
+            <Column gap="sm">
+              <BodyText>Button Variants:</BodyText>
+              <PrimaryButton
+                title="Primary Button"
+                onPress={() => console.log('Primary pressed')}
+              />
+              <OutlineButton
+                title="Outline Button"
+                onPress={() => console.log('Outline pressed')}
+              />
+              <GhostButton
+                title="Ghost Button"
+                onPress={() => console.log('Ghost pressed')}
+              />
+            </Column>
+
+            <Column gap="sm">
+              <BodyText>Button Sizes:</BodyText>
+              <Row gap="sm" justify="space-between">
+                <View flex={1}>
+                  <Button title="Small" size="small" fullWidth />
+                </View>
+                <View flex={1}>
+                  <Button title="Medium" size="medium" fullWidth />
+                </View>
+                <View flex={1}>
+                  <Button title="Large" size="large" fullWidth />
+                </View>
+              </Row>
+            </Column>
+          </Column>
+        </Card>
+
+        {/* Logout Section */}
+        <Center>
+          <Button
+            title="Logout"
+            colorVariant="error"
+            variant="outline"
+            onPress={handleLogout}
+          />
+        </Center>
+      </Column>
+    </Screen>
+  );
+}

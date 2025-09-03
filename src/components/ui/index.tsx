@@ -1,28 +1,33 @@
-import { cssInterop } from 'nativewind';
-import Svg from 'react-native-svg';
+/**
+ * UI Components Index
+ * Central export point for all design system components
+ */
 
+// Base component utilities
+export * from './base-component';
+export * from './types';
+
+// Core components
 export * from './button';
-export { default as colors } from './colors';
-export * from './modal';
 export * from './text';
-export * from './theme-toggle';
-export * from './utils';
+export * from './view';
+
+// Legacy components (to be migrated)
+export { default as colors } from './colors';
 export * from './focus-aware-status-bar';
 export * from './input';
+export * from './modal';
+export * from './theme-toggle';
+export * from './utils';
 
-// export base components from react-native
+// Re-export React Native components for convenience
 export {
   ActivityIndicator,
   Pressable,
   ScrollView,
   TouchableOpacity,
-  View,
 } from 'react-native';
 export { SafeAreaView } from 'react-native-safe-area-context';
 
-//Apply cssInterop to Svg to resolve className string into style
-cssInterop(Svg, {
-  className: {
-    target: 'style',
-  },
-});
+// Note: We export our custom View instead of React Native's View
+// to provide theme-aware styling capabilities

@@ -1,146 +1,375 @@
+/**
+ * Button Component
+ * A theme-aware button component with variants, sizes, and interaction states
+ */
+
 import React from 'react';
-import type { PressableProps, View } from 'react-native';
-import { ActivityIndicator, Pressable, Text } from 'react-native';
-import type { VariantProps } from 'tailwind-variants';
-import { tv } from 'tailwind-variants';
+import type { PressableProps } from 'react-native';
+import { ActivityIndicator, Pressable } from 'react-native';
 
-const button = tv({
-  slots: {
-    container: 'my-2 flex flex-row items-center justify-center rounded-md px-4',
-    label: 'font-inter text-base font-semibold',
-    indicator: 'h-6 text-white',
-  },
+import type { Theme } from '@/theme';
 
-  variants: {
-    variant: {
-      default: {
-        container: 'bg-black dark:bg-white',
-        label: 'text-white dark:text-black',
-        indicator: 'text-white dark:text-black',
-      },
-      secondary: {
-        container: 'bg-primary-600',
-        label: 'text-secondary-600',
-        indicator: 'text-white',
-      },
-      outline: {
-        container: 'border border-neutral-400',
-        label: 'text-black dark:text-neutral-100',
-        indicator: 'text-black dark:text-neutral-100',
-      },
-      destructive: {
-        container: 'bg-red-600',
-        label: 'text-white',
-        indicator: 'text-white',
-      },
-      ghost: {
-        container: 'bg-transparent',
-        label: 'text-black underline dark:text-white',
-        indicator: 'text-black dark:text-white',
-      },
-      link: {
-        container: 'bg-transparent',
-        label: 'text-black',
-        indicator: 'text-black',
-      },
-    },
-    size: {
-      default: {
-        container: 'h-10 px-4',
-        label: 'text-base',
-      },
-      lg: {
-        container: 'h-12 px-8',
-        label: 'text-xl',
-      },
-      sm: {
-        container: 'h-8 px-3',
-        label: 'text-sm',
-        indicator: 'h-2',
-      },
-      icon: { container: 'size-9' },
-    },
-    disabled: {
-      true: {
-        container: 'bg-neutral-300 dark:bg-neutral-300',
-        label: 'text-neutral-600 dark:text-neutral-600',
-        indicator: 'text-neutral-400 dark:text-neutral-400',
-      },
-    },
-    fullWidth: {
-      true: {
-        container: '',
-      },
-      false: {
-        container: 'self-center',
-      },
-    },
-  },
-  defaultVariants: {
-    variant: 'default',
-    disabled: false,
-    fullWidth: true,
-    size: 'default',
-  },
-});
+import {
+  createPressableAccessibilityProps,
+  createSizeStyles,
+  mergeStyles,
+  useInteractionState,
+  useThemedStyles,
+} from './base-component';
+import { Text } from './text';
+import type {
+  BasePressableProps,
+  ColorVariant,
+  SizeVariant,
+  VisualVariant,
+} from './types';
 
-type ButtonVariants = VariantProps<typeof button>;
-interface Props extends ButtonVariants, Omit<PressableProps, 'disabled'> {
-  label?: string;
-  loading?: boolean;
-  className?: string;
-  textClassName?: string;
+/* ================================
+   BUTTON COMPONENT INTERFACE
+   ================================ */
+
+interface ButtonProps extends BasePressableProps {
+  /** Button text content */
+  title?: string;
+  /** Visual style variant */
+  variant?: VisualVariant;
+  /** Color variant */
+  colorVariant?: ColorVariant;
+  /** Size variant */
+  size?: SizeVariant;
+  /** Whether button takes full width */
+  fullWidth?: boolean;
+  /** Icon to display (JSX element) */
+  icon?: React.ReactNode;
+  /** Icon position relative to text */
+  iconPosition?: 'left' | 'right';
+  /** Custom content (overrides title and icon) */
+  children?: React.ReactNode;
 }
 
-export const Button = React.forwardRef<View, Props>(
+/* ================================
+   STYLE CREATORS
+   ================================ */
+
+const createButtonStyles = (
+  theme: Theme,
+  props: ButtonProps & { isPressed: boolean; isFocused: boolean }
+) => {
+  const {
+    variant = 'solid',
+    colorVariant = 'primary',
+    size = 'medium',
+    disabled = false,
+    fullWidth = false,
+    isPressed,
+    isFocused,
+  } = props;
+
+  // Get base size styles
+  const sizeStyles = createSizeStyles(theme, size, 'button');
+
+  // Get color variants
+  const colors = theme.colors;
+
+  // Define color schemes based on available theme colors
+  const colorSchemes = {
+    primary: '#1068eb', // theme primary blue
+    secondary: colors.text.secondary,
+    success: '#10b981', // green
+    warning: '#f59e0b', // yellow
+    error: '#ef4444', // red
+  };
+
+  const buttonColor = colorSchemes[colorVariant];
+
+  // Base button styles
+  const baseStyles = {
+    ...sizeStyles,
+    borderRadius: theme.components.button.borderRadius,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    width: fullWidth ? ('100%' as any) : undefined,
+    opacity: disabled ? 0.6 : 1,
+  };
+
+  // Variant-specific styles
+  const variantStyles = {
+    solid: {
+      backgroundColor: buttonColor,
+      borderWidth: 0,
+    },
+    outline: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: buttonColor,
+    },
+    ghost: {
+      backgroundColor: 'transparent',
+      borderWidth: 0,
+    },
+    link: {
+      backgroundColor: 'transparent',
+      borderWidth: 0,
+      paddingHorizontal: 0,
+      paddingVertical: 0,
+      height: undefined,
+    },
+  };
+
+  // Interaction states
+  const interactionStyles = {
+    pressed: variant === 'solid' ? { opacity: 0.8 } : { opacity: 0.6 },
+    focused: {
+      shadowColor: buttonColor,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 4,
+    },
+  };
+
+  // Combine all styles
+  let finalStyles = { ...baseStyles, ...variantStyles[variant] };
+
+  if (isPressed) {
+    finalStyles = { ...finalStyles, ...interactionStyles.pressed };
+  }
+
+  if (isFocused) {
+    finalStyles = { ...finalStyles, ...interactionStyles.focused };
+  }
+
+  return finalStyles;
+};
+
+const createButtonTextStyles = (theme: Theme, props: ButtonProps) => {
+  const {
+    variant = 'solid',
+    colorVariant = 'primary',
+    size = 'medium',
+  } = props;
+
+  const colors = theme.colors;
+  const colorSchemes = {
+    primary: '#1068eb', // theme primary blue
+    secondary: colors.text.secondary,
+    success: '#10b981', // green
+    warning: '#f59e0b', // yellow
+    error: '#ef4444', // red
+  };
+
+  const buttonColor = colorSchemes[colorVariant];
+
+  // Text color based on variant
+  const textColors = {
+    solid: colors.text.inverse,
+    outline: buttonColor,
+    ghost: buttonColor,
+    link: buttonColor,
+  };
+
+  // Typography variant based on size
+  const typographyVariants = {
+    small: 'caption' as const,
+    medium: 'label' as const,
+    large: 'h3' as const,
+  };
+
+  return {
+    color: textColors[variant],
+    ...(theme.typography[typographyVariants[size]] || theme.typography.label),
+    fontWeight: '600' as const,
+  };
+};
+
+/* ================================
+   BUTTON COMPONENT
+   ================================ */
+
+export const Button = React.forwardRef<any, ButtonProps & PressableProps>(
   (
     {
-      label: text,
-      loading = false,
-      variant = 'default',
+      title,
+      variant = 'solid',
+      colorVariant = 'primary',
+      size = 'medium',
       disabled = false,
-      size = 'default',
-      className = '',
-      testID,
-      textClassName = '',
+      loading = false,
+      fullWidth = false,
+      icon,
+      iconPosition = 'left',
+      children,
+      style: userStyle,
+      onPress,
       ...props
     },
     ref
   ) => {
-    const styles = React.useMemo(
-      () => button({ variant, disabled, size }),
-      [variant, disabled, size]
+    // Manage interaction states
+    const { isPressed, isFocused, interactionProps } =
+      useInteractionState(disabled);
+
+    // Generate themed styles
+    const buttonStyles = useThemedStyles(createButtonStyles, {
+      variant,
+      colorVariant,
+      size,
+      disabled,
+      loading,
+      fullWidth,
+      isPressed,
+      isFocused,
+    });
+
+    const textStyles = useThemedStyles(createButtonTextStyles, {
+      variant,
+      colorVariant,
+      size,
+    });
+
+    // Merge with user-provided styles
+    const finalStyle = mergeStyles(buttonStyles, userStyle);
+
+    // Generate accessibility props
+    const accessibilityProps = createPressableAccessibilityProps(
+      { ...props, disabled: Boolean(disabled || loading) },
+      'button'
     );
+
+    // Handle press
+    const handlePress = React.useCallback(() => {
+      if (!disabled && !loading && onPress) {
+        onPress();
+      }
+    }, [disabled, loading, onPress]);
+
+    // Render content
+    const renderContent = () => {
+      if (children) return children;
+
+      const textElement = title ? (
+        <Text style={textStyles} numberOfLines={1}>
+          {title}
+        </Text>
+      ) : null;
+
+      const iconElement = icon ? <React.Fragment>{icon}</React.Fragment> : null;
+
+      const loadingElement = loading ? (
+        <ActivityIndicator
+          size="small"
+          color={textStyles.color}
+          style={{ marginRight: title ? 8 : 0 }}
+        />
+      ) : null;
+
+      if (loading && loadingElement) {
+        return (
+          <React.Fragment>
+            {loadingElement}
+            {textElement}
+          </React.Fragment>
+        );
+      }
+
+      if (iconPosition === 'left') {
+        return (
+          <React.Fragment>
+            {iconElement && <React.Fragment>{iconElement}</React.Fragment>}
+            {iconElement && textElement && <React.Fragment> </React.Fragment>}
+            {textElement}
+          </React.Fragment>
+        );
+      }
+
+      return (
+        <React.Fragment>
+          {textElement}
+          {iconElement && textElement && <React.Fragment> </React.Fragment>}
+          {iconElement && <React.Fragment>{iconElement}</React.Fragment>}
+        </React.Fragment>
+      );
+    };
 
     return (
       <Pressable
-        disabled={disabled || loading}
-        className={styles.container({ className })}
-        {...props}
         ref={ref}
-        testID={testID}
+        style={finalStyle}
+        onPress={handlePress}
+        disabled={disabled || loading}
+        {...accessibilityProps}
+        {...interactionProps}
+        {...props}
       >
-        {props.children ? (
-          props.children
-        ) : (
-          <>
-            {loading ? (
-              <ActivityIndicator
-                size="small"
-                className={styles.indicator()}
-                testID={testID ? `${testID}-activity-indicator` : undefined}
-              />
-            ) : (
-              <Text
-                testID={testID ? `${testID}-label` : undefined}
-                className={styles.label({ className: textClassName })}
-              >
-                {text}
-              </Text>
-            )}
-          </>
-        )}
+        {renderContent()}
       </Pressable>
     );
   }
 );
+
+Button.displayName = 'Button';
+
+/* ================================
+   BUTTON VARIANT COMPONENTS
+   ================================ */
+
+/**
+ * Pre-configured button variants for common use cases
+ */
+
+export const PrimaryButton = React.forwardRef<
+  any,
+  Omit<ButtonProps, 'colorVariant'> & PressableProps
+>((props, ref) => <Button ref={ref} colorVariant="primary" {...props} />);
+PrimaryButton.displayName = 'PrimaryButton';
+
+export const SecondaryButton = React.forwardRef<
+  any,
+  Omit<ButtonProps, 'colorVariant'> & PressableProps
+>((props, ref) => <Button ref={ref} colorVariant="secondary" {...props} />);
+SecondaryButton.displayName = 'SecondaryButton';
+
+export const OutlineButton = React.forwardRef<
+  any,
+  Omit<ButtonProps, 'variant'> & PressableProps
+>((props, ref) => <Button ref={ref} variant="outline" {...props} />);
+OutlineButton.displayName = 'OutlineButton';
+
+export const GhostButton = React.forwardRef<
+  any,
+  Omit<ButtonProps, 'variant'> & PressableProps
+>((props, ref) => <Button ref={ref} variant="ghost" {...props} />);
+GhostButton.displayName = 'GhostButton';
+
+export const LinkButton = React.forwardRef<
+  any,
+  Omit<ButtonProps, 'variant'> & PressableProps
+>((props, ref) => <Button ref={ref} variant="link" {...props} />);
+LinkButton.displayName = 'LinkButton';
+
+/* ================================
+   SEMANTIC BUTTON COMPONENTS
+   ================================ */
+
+/**
+ * Buttons with semantic meaning
+ */
+
+export const SuccessButton = React.forwardRef<
+  any,
+  Omit<ButtonProps, 'colorVariant'> & PressableProps
+>((props, ref) => <Button ref={ref} colorVariant="success" {...props} />);
+SuccessButton.displayName = 'SuccessButton';
+
+export const WarningButton = React.forwardRef<
+  any,
+  Omit<ButtonProps, 'colorVariant'> & PressableProps
+>((props, ref) => <Button ref={ref} colorVariant="warning" {...props} />);
+WarningButton.displayName = 'WarningButton';
+
+export const ErrorButton = React.forwardRef<
+  any,
+  Omit<ButtonProps, 'colorVariant'> & PressableProps
+>((props, ref) => <Button ref={ref} colorVariant="error" {...props} />);
+ErrorButton.displayName = 'ErrorButton';

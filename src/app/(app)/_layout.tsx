@@ -1,39 +1,30 @@
-/* eslint-disable react/no-unstable-nested-components */
-import { Redirect, SplashScreen, Tabs } from 'expo-router';
-import React, { useCallback, useEffect } from 'react';
+/**
+ * App Layout
+ * Main layout for authenticated screens
+ */
 
-import {
-  Home as HomeIcon,
-} from '@/components/ui/icons';
+import { Redirect, Stack } from 'expo-router';
+import React from 'react';
+
 import useAuthStore from '@/stores/auth';
 
-export default function TabLayout() {
+export default function AppLayout() {
   const authState = useAuthStore();
 
-  const hideSplash = useCallback(async () => {
-    await SplashScreen.hideAsync();
-  }, []);
-  useEffect(() => {
-    setTimeout(() => {
-      if (hideSplash) {
-        hideSplash();
-      }
-    }, 1000);
-  }, []);
-
+  // Redirect to login if not authenticated
   if (!authState.token.accessToken) {
     return <Redirect href="/login" />;
   }
+
   return (
-    <Tabs>
-      <Tabs.Screen
+    <Stack>
+      <Stack.Screen
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <HomeIcon color={color} />,
-          tabBarButtonTestID: 'home-tab',
+          headerShown: true,
         }}
       />
-    </Tabs>
+    </Stack>
   );
 }
