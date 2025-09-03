@@ -181,7 +181,7 @@ function IncidentForm({
 }
 
 export function CreateIncidentForm({ onSuccess, initialLocation }: Props) {
-  const username = useAuthStore.getState().user?.username;
+  const username = useAuthStore.getState().user?.username || '';
 
   const { actions, isLoading } = useIncidentStore();
   const [formData, setFormData] = React.useState<CreateIncidentRequest>({

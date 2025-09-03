@@ -52,7 +52,7 @@ async function checkNetworkConnection(): Promise<void> {
 const createGeoEntityIfNeeded = (set: any, get: any) => async () => {
   try {
     const user = get().user;
-    const userId = user?.userId;
+    const userId = user?.id;
     const username = user?.username;
 
     if (!userId || !username) {

@@ -5,12 +5,8 @@ import useAuthStore from '@/stores/auth';
 
 // Create axios instance with default config
 export const apiClient = axios.create({
-  baseURL: 'https://web-base-dev.agilres.net/api',
+  baseURL: 'https://dev-api.agilres.net',
   headers: {
-    'X-API-Key':
-      'GNUj1mZYuKKIWMSONR0VCzNbwJPnCaj1EZVPbSP7RC6VcWtiPIE3CzToBCTRgCMU',
-    'X-Mobile-App':
-      'dy5K225i3j2PIfjNW5bK1BsyCjLUb0fM9mq1i2RqNbWrx662PEFSzVEhIFHrqaaq',
     'Content-Type': 'application/json',
     Accept: 'application/json',
   },
@@ -20,10 +16,6 @@ export const apiClient = axios.create({
 export const bftClient = axios.create({
   baseURL: 'https://bft-dev.agilres.net/api',
   headers: {
-    'X-API-Key':
-      'GNUj1mZYuKKIWMSONR0VCzNbwJPnCaj1EZVPbSP7RC6VcWtiPIE3CzToBCTRgCMU',
-    'X-Mobile-App':
-      'dy5K225i3j2PIfjNW5bK1BsyCjLUb0fM9mq1i2RqNbWrx662PEFSzVEhIFHrqaaq',
     'Content-Type': 'application/json',
     Accept: 'application/json',
   },
@@ -82,9 +74,12 @@ const responseFailedInterceptor = (error: any) => {
   }
 
   if (error.response?.status === 401) {
-    // Handle unauthorized access
-    // localStorage.removeItem('token');
-    window.location.href = '/login';
+    // Handle unauthorized access for mobile
+    // Clear auth state and let router handle redirect
+    const authStore = useAuthStore.getState();
+    if (authStore.actions.logout) {
+      authStore.actions.logout();
+    }
   }
   return Promise.reject(error);
 };

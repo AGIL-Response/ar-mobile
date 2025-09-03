@@ -1,7 +1,6 @@
 /* eslint-disable react/react-in-jsx-scope */
 import { Env } from '@env';
 import React from 'react';
-import { useEffect } from 'react';
 
 import { Item } from '@/components/settings/item';
 import { ItemsContainer } from '@/components/settings/items-container';
@@ -25,7 +24,7 @@ export default function Settings() {
           <ItemsContainer title="settings.about">
             <Item text="settings.username" value={authState.user?.username} />
             <Item text="Email" value={authState.user?.email} />
-            <Item text="User ID" value={authState.user?.userId} />
+            <Item text="User ID" value={authState.user?.id} />
           </ItemsContainer>
 
           {authState.geoEntity && (
@@ -36,7 +35,10 @@ export default function Settings() {
               <Item text="Active" value={String(authState.geoEntity.active)} />
               <Item text="GIS ID" value={authState.geoEntity.gisId} />
               <Item text="Created At" value={authState.geoEntity.createdAt} />
-              <Item text="Updated At" value={authState.geoEntity.updatedAt || ''} />
+              <Item
+                text="Updated At"
+                value={authState.geoEntity.updatedAt || ''}
+              />
             </ItemsContainer>
           )}
 
