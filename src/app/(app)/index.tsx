@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 
-import { LocationDisplay } from '@/components/location/location-display';
 import { FocusAwareStatusBar, ScrollView, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
 import useCurrentLocation from '@/lib/hooks/use-current-location';
@@ -45,7 +44,6 @@ const Home = () => {
             </Text>
             <Text>{locationText}</Text>
           </View>
-          {location && <LocationDisplay locationData={location} />}
         </View>
       </ScrollView>
     </>

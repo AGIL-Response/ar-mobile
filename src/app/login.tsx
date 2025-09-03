@@ -92,16 +92,6 @@ export default function Login() {
             )}
           </View>
 
-          {/* Footer */}
-          <View style={styles.registerContainer}>
-            <Text style={styles.registerText}>Don't have an account?</Text>
-            <Button
-              label="Register"
-              onPress={handlers.handleRegister}
-              variant="outline"
-            />
-          </View>
-
           <View style={styles.footerContainer}>
             <Text style={styles.footerText}>
               Secure authentication powered by Keycloak
