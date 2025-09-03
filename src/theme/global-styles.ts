@@ -52,6 +52,91 @@ export const LineHeight = {
 } as const;
 
 /* ================================
+   TYPOGRAPHY PRESETS
+   ================================ */
+export const Typography = {
+  // Headings
+  h1: {
+    fontSize: FontSize.size_28,
+    lineHeight: LineHeight.brand,
+    fontFamily: 'manropeBold' as const,
+    fontWeight: '700' as const,
+  },
+  h2: {
+    fontSize: FontSize.size_22,
+    lineHeight: LineHeight.large,
+    fontFamily: 'manropeBold' as const,
+    fontWeight: '700' as const,
+  },
+  h3: {
+    fontSize: FontSize.size_20,
+    lineHeight: LineHeight.heading,
+    fontFamily: 'manropeSemiBold' as const,
+    fontWeight: '600' as const,
+  },
+  h4: {
+    fontSize: FontSize.size_18,
+    lineHeight: LineHeight.relaxed,
+    fontFamily: 'manropeSemiBold' as const,
+    fontWeight: '600' as const,
+  },
+
+  // Body text
+  body: {
+    fontSize: FontSize.size_16,
+    lineHeight: LineHeight.loose,
+    fontFamily: 'manropeRegular' as const,
+    fontWeight: '400' as const,
+  },
+  bodyMedium: {
+    fontSize: FontSize.size_14,
+    lineHeight: LineHeight.relaxed,
+    fontFamily: 'manropeRegular' as const,
+    fontWeight: '400' as const,
+  },
+  bodySmall: {
+    fontSize: FontSize.size_12,
+    lineHeight: LineHeight.normal,
+    fontFamily: 'manropeRegular' as const,
+    fontWeight: '400' as const,
+  },
+
+  // Labels and UI text
+  label: {
+    fontSize: FontSize.size_14,
+    lineHeight: LineHeight.relaxed,
+    fontFamily: 'manropeMedium' as const,
+    fontWeight: '500' as const,
+  },
+  caption: {
+    fontSize: FontSize.size_12,
+    lineHeight: LineHeight.normal,
+    fontFamily: 'manropeRegular' as const,
+    fontWeight: '400' as const,
+  },
+  overline: {
+    fontSize: FontSize.size_10,
+    lineHeight: LineHeight.tight,
+    fontFamily: 'manropeMedium' as const,
+    fontWeight: '500' as const,
+  },
+
+  // Interactive elements
+  button: {
+    fontSize: FontSize.size_16,
+    lineHeight: LineHeight.loose,
+    fontFamily: 'manropeSemiBold' as const,
+    fontWeight: '600' as const,
+  },
+  link: {
+    fontSize: FontSize.size_14,
+    lineHeight: LineHeight.relaxed,
+    fontFamily: 'manropeMedium' as const,
+    fontWeight: '500' as const,
+  },
+} as const;
+
+/* ================================
    RAW COLOR PALETTE
    ================================ */
 export const Palette = {
@@ -132,6 +217,8 @@ const createColors = (isDark: boolean) => ({
     muted: isDark ? Palette.darkGray : Palette.gray600,
     disabled: isDark ? Palette.mediumGray : Palette.gray400,
     placeholder: isDark ? Palette.dimGray : Palette.gray500,
+    inverse: isDark ? Palette.charcoal950 : Palette.white, // For dark/light backgrounds
+    accent: Palette.primary, // For highlighted text
   },
 
   // Status colors (same for both themes)
@@ -326,6 +413,102 @@ export const Dimensions = {
 } as const;
 
 /* ================================
+   COMPONENT TOKENS
+   ================================ */
+export const ComponentTokens = {
+  // Button specifications
+  button: {
+    height: {
+      small: 32,
+      medium: 48,
+      large: 56,
+    },
+    borderRadius: BorderRadius.lg,
+    padding: {
+      horizontal: Padding.xxl,
+      vertical: Padding.lg,
+    },
+    minWidth: 104,
+  },
+
+  // Input specifications
+  input: {
+    height: 48,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    padding: {
+      horizontal: Padding.xxl,
+      vertical: Padding.xl,
+    },
+  },
+
+  // Card specifications
+  card: {
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    padding: {
+      small: Padding.xl,
+      medium: Padding.xxl,
+      large: 18, // Custom padding used in designs
+    },
+    gap: Gap.xl,
+  },
+
+  // Badge specifications
+  badge: {
+    borderRadius: BorderRadius.full,
+    padding: {
+      horizontal: Padding.md,
+      vertical: Padding.xs,
+    },
+    minHeight: 24,
+  },
+
+  // Avatar specifications
+  avatar: {
+    size: {
+      small: 32,
+      medium: 48,
+      large: 96,
+      xl: 120, // For login logo
+    },
+    borderRadius: BorderRadius.round,
+    borderWidth: 1,
+  },
+
+  // Navigation specifications
+  navigation: {
+    height: 72,
+    tabHeight: 39,
+    iconSize: 24,
+    badgeSize: 16,
+  },
+
+  // App bar specifications
+  appBar: {
+    height: 56,
+    padding: {
+      horizontal: Padding.xxl,
+      vertical: Padding.lg,
+    },
+  },
+
+  // Floating Action Button
+  fab: {
+    size: 56,
+    borderRadius: BorderRadius.full,
+    iconSize: 24,
+  },
+
+  // Modal specifications
+  modal: {
+    borderRadius: BorderRadius.lg,
+    padding: Padding.xxl,
+    maxWidth: '90%',
+  },
+} as const;
+
+/* ================================
    Z-INDEX LAYERS
    ================================ */
 export const ZIndex = {
@@ -417,6 +600,7 @@ export const createTheme = (isDark: boolean) => ({
   fonts: FontFamily,
   fontSizes: FontSize,
   lineHeights: LineHeight,
+  typography: Typography,
   spacing: {
     gap: Gap,
     padding: Padding,
@@ -424,6 +608,7 @@ export const createTheme = (isDark: boolean) => ({
   },
   borderRadius: BorderRadius,
   dimensions: Dimensions,
+  components: ComponentTokens,
   zIndex: ZIndex,
   opacity: Opacity,
   common: CommonStyles,

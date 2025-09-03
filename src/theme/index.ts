@@ -10,10 +10,11 @@ export {
   // Legacy exports (for gradual migration)
   Color,
   CommonStyles,
+  // Design tokens
+  ComponentTokens,
   createTheme,
   darkTheme,
   Dimensions,
-  // Design tokens
   FontFamily,
   FontSize,
   Gap,
@@ -24,6 +25,7 @@ export {
   Padding,
   Palette,
   Shadow,
+  Typography,
   ZIndex,
 } from './global-styles';
 
