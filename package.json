@@ -41,19 +41,25 @@
     "e2e-test": "maestro test .maestro/ -e APP_ID=com.obytes.development"
   },
   "dependencies": {
+    "@expo-google-fonts/inter": "^0.4.1",
+    "@expo-google-fonts/manrope": "^0.4.1",
+    "@expo-google-fonts/roboto": "^0.4.0",
+    "@expo-google-fonts/russo-one": "^0.4.0",
     "@expo/metro-runtime": "^4.0.1",
     "@gorhom/bottom-sheet": "^5.0.5",
     "@hookform/resolvers": "^3.9.0",
+    "@react-native-community/netinfo": "11.4.1",
     "@shopify/flash-list": "1.7.1",
     "app-icon-badge": "^0.1.2",
     "axios": "^1.7.5",
     "expo": "~52.0.26",
     "expo-constants": "~17.0.4",
     "expo-dev-client": "~5.0.9",
-    "expo-font": "~13.0.3",
+    "expo-font": "~13.0.4",
     "expo-image": "~2.0.4",
     "expo-linking": "~7.0.4",
     "expo-localization": "~16.0.1",
+    "expo-location": "~18.0.10",
     "expo-router": "~4.0.17",
     "expo-splash-screen": "~0.29.21",
     "expo-status-bar": "~2.0.1",
@@ -82,9 +88,7 @@
     "react-native-web": "~0.19.13",
     "tailwind-variants": "^0.2.1",
     "zod": "^3.23.8",
-    "zustand": "^4.5.5",
-    "expo-location": "~18.0.10",
-    "@react-native-community/netinfo": "11.4.1"
+    "zustand": "^4.5.5"
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",

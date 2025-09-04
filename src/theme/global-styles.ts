@@ -8,19 +8,19 @@
    FONT FAMILIES
    ================================ */
 export const FontFamily = {
-  // Manrope family (primary)
-  manropeRegular: 'Manrope-Regular',
-  manropeMedium: 'Manrope-Medium',
-  manropeSemiBold: 'Manrope-SemiBold',
-  manropeBold: 'Manrope-Bold',
+  // Manrope family (primary) - using Expo Google Fonts naming
+  manropeRegular: 'Manrope_400Regular',
+  manropeMedium: 'Manrope_500Medium',
+  manropeSemiBold: 'Manrope_600SemiBold',
+  manropeBold: 'Manrope_700Bold',
 
-  // Secondary fonts
-  interBold: 'Inter-Bold',
-  sFProText: 'SF Pro Text',
-  robotoMedium: 'Roboto-Medium',
+  // Secondary fonts (now properly loaded)
+  interBold: 'Inter_700Bold',
+  sFProText: 'SF Pro Text', // iOS system font fallback
+  robotoMedium: 'Roboto_500Medium',
 
   // Accent fonts
-  russoOneRegular: 'RussoOne-Regular',
+  russoOneRegular: 'RussoOne_400Regular',
 } as const;
 
 /* ================================
@@ -59,25 +59,25 @@ export const Typography = {
   h1: {
     fontSize: FontSize.size_28,
     lineHeight: LineHeight.brand,
-    fontFamily: 'manropeBold' as const,
+    fontFamily: FontFamily.manropeBold,
     fontWeight: '700' as const,
   },
   h2: {
     fontSize: FontSize.size_22,
     lineHeight: LineHeight.large,
-    fontFamily: 'manropeBold' as const,
+    fontFamily: FontFamily.manropeBold,
     fontWeight: '700' as const,
   },
   h3: {
     fontSize: FontSize.size_20,
     lineHeight: LineHeight.heading,
-    fontFamily: 'manropeSemiBold' as const,
+    fontFamily: FontFamily.manropeSemiBold,
     fontWeight: '600' as const,
   },
   h4: {
     fontSize: FontSize.size_18,
     lineHeight: LineHeight.relaxed,
-    fontFamily: 'manropeSemiBold' as const,
+    fontFamily: FontFamily.manropeSemiBold,
     fontWeight: '600' as const,
   },
 
@@ -85,19 +85,19 @@ export const Typography = {
   body: {
     fontSize: FontSize.size_16,
     lineHeight: LineHeight.loose,
-    fontFamily: 'manropeRegular' as const,
+    fontFamily: FontFamily.manropeRegular,
     fontWeight: '400' as const,
   },
   bodyMedium: {
     fontSize: FontSize.size_14,
     lineHeight: LineHeight.relaxed,
-    fontFamily: 'manropeRegular' as const,
+    fontFamily: FontFamily.manropeRegular,
     fontWeight: '400' as const,
   },
   bodySmall: {
     fontSize: FontSize.size_12,
     lineHeight: LineHeight.normal,
-    fontFamily: 'manropeRegular' as const,
+    fontFamily: FontFamily.manropeRegular,
     fontWeight: '400' as const,
   },
 
@@ -105,19 +105,19 @@ export const Typography = {
   label: {
     fontSize: FontSize.size_14,
     lineHeight: LineHeight.relaxed,
-    fontFamily: 'manropeMedium' as const,
+    fontFamily: FontFamily.manropeMedium,
     fontWeight: '500' as const,
   },
   caption: {
     fontSize: FontSize.size_12,
     lineHeight: LineHeight.normal,
-    fontFamily: 'manropeRegular' as const,
+    fontFamily: FontFamily.manropeRegular,
     fontWeight: '400' as const,
   },
   overline: {
     fontSize: FontSize.size_10,
     lineHeight: LineHeight.tight,
-    fontFamily: 'manropeMedium' as const,
+    fontFamily: FontFamily.manropeMedium,
     fontWeight: '500' as const,
   },
 
@@ -125,13 +125,13 @@ export const Typography = {
   button: {
     fontSize: FontSize.size_16,
     lineHeight: LineHeight.loose,
-    fontFamily: 'manropeSemiBold' as const,
+    fontFamily: FontFamily.manropeSemiBold,
     fontWeight: '600' as const,
   },
   link: {
     fontSize: FontSize.size_14,
     lineHeight: LineHeight.relaxed,
-    fontFamily: 'manropeMedium' as const,
+    fontFamily: FontFamily.manropeMedium,
     fontWeight: '500' as const,
   },
 } as const;
@@ -236,6 +236,11 @@ const createColors = (isDark: boolean) => ({
     white: Palette.white,
     black: Palette.black,
     transparent: Palette.transparent,
+    success: '#10b981',
+    warning: '#f59e0b',
+    error: '#ef4444',
+    errorBackground: 'rgba(239, 68, 68, 0.1)',
+    errorBorder: 'rgba(239, 68, 68, 0.2)',
   },
 
   // Interactive states

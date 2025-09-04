@@ -73,11 +73,11 @@ const createButtonStyles = (
 
   // Define color schemes based on available theme colors
   const colorSchemes = {
-    primary: '#1068eb', // theme primary blue
+    primary: colors.primary,
     secondary: colors.text.secondary,
-    success: '#10b981', // green
-    warning: '#f59e0b', // yellow
-    error: '#ef4444', // red
+    success: colors.semantic.success,
+    warning: colors.semantic.warning,
+    error: colors.semantic.error,
   };
 
   const buttonColor = colorSchemes[colorVariant];
@@ -152,18 +152,18 @@ const createButtonTextStyles = (theme: Theme, props: ButtonProps) => {
 
   const colors = theme.colors;
   const colorSchemes = {
-    primary: '#1068eb', // theme primary blue
+    primary: colors.primary,
     secondary: colors.text.secondary,
-    success: '#10b981', // green
-    warning: '#f59e0b', // yellow
-    error: '#ef4444', // red
+    success: colors.semantic.success,
+    warning: colors.semantic.warning,
+    error: colors.semantic.error,
   };
 
   const buttonColor = colorSchemes[colorVariant];
 
   // Text color based on variant
   const textColors = {
-    solid: colors.text.inverse,
+    solid: colors.semantic.white, // Always white text on colored button backgrounds
     outline: buttonColor,
     ghost: buttonColor,
     link: buttonColor,

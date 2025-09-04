@@ -8,13 +8,7 @@ import {
 } from 'react-native';
 
 import { PasswordStep, UsernameStep } from '@/components/auth';
-import {
-  Button,
-  FocusAwareStatusBar,
-  Text,
-  ThemeToggle,
-  View,
-} from '@/components/ui';
+import { FocusAwareStatusBar, Text, ThemeToggle, View } from '@/components/ui';
 import { useLoginHandlers } from '@/hooks/use-login-handlers';
 import useAuthStore from '@/stores/auth';
 import { type Theme, useTheme } from '@/theme';
@@ -49,27 +43,34 @@ export default function Login() {
     <View style={styles.container}>
       <FocusAwareStatusBar />
       <ThemeToggle style={styles.themeToggle} size="medium" />
+
+      {/* Background Pattern */}
+      <View style={styles.backgroundPattern} />
+
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={styles.keyboardContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          {/* Header */}
-          <View style={styles.headerContainer}>
+          {/* Logo and Branding Section */}
+          <View style={styles.brandingContainer}>
             <View style={styles.logoContainer}>
-              <Text style={styles.logoText}>AR</Text>
+              <View style={styles.logoTriangle}>
+                <Text style={styles.logoIcon}>△</Text>
+              </View>
             </View>
-            <Text style={styles.appTitle}>AGIL Response</Text>
+            <Text style={styles.appTitle}>AR Responder</Text>
             <Text style={styles.appSubtitle}>
-              Emergency Response Management
+              Access your tactical command center.
             </Text>
           </View>
-          <View style={styles.loginCard}>
-            <Text style={styles.loginTitle}>Sign In</Text>
 
+          {/* Login Form */}
+          <View style={styles.loginFormContainer}>
             {step === 'username' ? (
               <UsernameStep
                 username={username}
@@ -77,7 +78,6 @@ export default function Login() {
                 onSubmit={handlers.handleUsernameSubmit}
                 isLoading={authState.isCheckingUsername}
                 error={authState.usernameError}
-                onDemoLogin={handlers.handleDemoLogin}
               />
             ) : (
               <PasswordStep
@@ -91,12 +91,6 @@ export default function Login() {
               />
             )}
           </View>
-
-          <View style={styles.footerContainer}>
-            <Text style={styles.footerText}>
-              Secure authentication powered by Keycloak
-            </Text>
-          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -105,85 +99,77 @@ export default function Login() {
 
 // Styles
 const createStyles = (theme: Theme) => {
-  const { colors, spacing, fontSizes, fonts, borderRadius } = theme;
+  const { colors, spacing, borderRadius } = theme;
 
   return StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: colors.background.primary,
     },
+    backgroundPattern: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: colors.background.primary,
+    },
     themeToggle: {
       position: 'absolute',
-      top: 50,
+      top: 100, // Use safe area top + small margin
       right: spacing.padding.xxl,
       zIndex: 10,
+    },
+    keyboardContainer: {
+      flex: 1,
     },
     scrollContainer: {
       flexGrow: 1,
       justifyContent: 'center',
-      padding: spacing.padding.xxxl,
-      backgroundColor: colors.background.primary,
+      paddingHorizontal: 24,
+      paddingVertical: 40,
     },
-    headerContainer: { marginBottom: 48, alignItems: 'center' },
+
+    // Branding Section (matches Figma layout)
+    brandingContainer: {
+      alignItems: 'center',
+      marginBottom: 120, // Large gap like in Figma
+    },
     logoContainer: {
-      width: 120,
-      height: 120,
-      marginBottom: spacing.margin.xl,
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    logoTriangle: {
+      width: 56,
+      height: 56,
+      borderRadius: borderRadius.lg,
+      backgroundColor: colors.utility.overlay,
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: borderRadius.round,
-      backgroundColor: colors.primary,
+      marginBottom: spacing.gap.lg,
     },
-    logoText: {
-      fontSize: fontSizes.size_28,
-      fontFamily: fonts.manropeBold,
-      color: colors.semantic.white,
+    logoIcon: {
+      ...theme.typography.h3,
+      color: colors.text.primary,
     },
     appTitle: {
-      textAlign: 'center',
-      fontSize: fontSizes.size_28,
-      fontFamily: fonts.manropeBold,
+      ...theme.typography.h1,
+      fontFamily: 'RussoOne_400Regular', // Use RussoOne for branding title like in Figma
       color: colors.text.primary,
-      marginBottom: spacing.margin.lg,
+      textAlign: 'center',
+      marginBottom: spacing.gap.lg,
     },
     appSubtitle: {
-      textAlign: 'center',
-      fontSize: fontSizes.size_16,
-      fontFamily: fonts.manropeRegular,
+      ...theme.typography.body,
       color: colors.text.secondary,
-    },
-    loginCard: {
-      borderRadius: borderRadius.lg,
-      borderWidth: 1,
-      borderColor: colors.surface.border,
-      backgroundColor: colors.surface.card,
-      padding: 18,
-      ...theme.shadows?.sm,
-    },
-    loginTitle: {
-      marginBottom: spacing.margin.lg,
-      fontSize: fontSizes.size_20,
-      fontFamily: fonts.manropeSemiBold,
-      color: colors.text.primary,
-    },
-    registerContainer: {
-      marginTop: spacing.margin.xxl,
-      paddingHorizontal: spacing.padding.lg,
-      paddingBottom: spacing.padding.xxl,
-    },
-    registerText: {
-      marginBottom: spacing.margin.lg,
       textAlign: 'center',
-      fontSize: fontSizes.size_14,
-      fontFamily: fonts.manropeRegular,
-      color: colors.text.muted,
     },
-    footerContainer: { marginTop: spacing.margin.xxl, alignItems: 'center' },
-    footerText: {
-      textAlign: 'center',
-      fontSize: fontSizes.size_12,
-      fontFamily: fonts.manropeRegular,
-      color: colors.text.disabled,
+
+    // Login Form Container
+    loginFormContainer: {
+      width: '100%',
+      maxWidth: 327, // Match Figma width
+      alignSelf: 'center',
     },
   });
 };

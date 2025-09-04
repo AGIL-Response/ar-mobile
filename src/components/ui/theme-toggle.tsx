@@ -37,9 +37,9 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
       justifyContent: 'center',
     },
     button: {
-      width: iconSize + 12,
-      height: iconSize + 12,
-      borderRadius: (iconSize + 12) / 2,
+      width: iconSize + 16, // Increased padding to prevent icon cutting
+      height: iconSize + 16,
+      borderRadius: (iconSize + 16) / 2,
       backgroundColor: colors.surface.card,
       borderWidth: 1,
       borderColor: colors.surface.border,
@@ -50,10 +50,13 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
       shadowOpacity: 0.1,
       shadowRadius: 4,
       elevation: 3,
+      paddingTop: 2,
     },
     icon: {
-      fontSize: iconSize,
+      fontSize: iconSize - 2, // Slightly smaller to ensure it fits well
       color: colors.text.primary,
+      textAlign: 'center',
+      lineHeight: iconSize, // Ensure proper vertical centering
     },
     label: {
       fontSize: 12,
