@@ -1,7 +1,7 @@
 import type { Router } from 'expo-router';
 import { Alert } from 'react-native';
 
-import { showError, showSuccess } from '@/components/ui/utils';
+import { showError, showSuccess } from '@/components/utils';
 
 interface UseLoginHandlersProps {
   authState: any;

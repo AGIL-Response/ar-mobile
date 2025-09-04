@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, TextInput } from 'react-native';
 
-import { Button, Text, View } from '@/components/ui';
+import { Button, Text, View } from '@/components';
 import { type Theme, useTheme } from '@/theme';
 
 type PasswordStepProps = {

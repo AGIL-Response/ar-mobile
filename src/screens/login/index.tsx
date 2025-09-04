@@ -9,7 +9,7 @@ import {
   StyleSheet,
 } from 'react-native';
 
-import { FocusAwareStatusBar, Text, ThemeToggle, View } from '@/components/ui';
+import { FocusAwareStatusBar, Text, ThemeToggle, View } from '@/components';
 import useAuthStore from '@/stores/auth';
 import { type Theme, useTheme } from '@/theme';
 

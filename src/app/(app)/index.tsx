@@ -20,7 +20,7 @@ import {
   Screen,
   ThemeToggle,
   View,
-} from '@/components/ui';
+} from '@/components';
 import useAuthStore from '@/stores/auth';
 
 export default function HomeScreen() {
