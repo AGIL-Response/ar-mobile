@@ -9,43 +9,51 @@ import { useController } from 'react-hook-form';
 import type { TextInputProps } from 'react-native';
 import { I18nManager, StyleSheet, View } from 'react-native';
 import { TextInput as NTextInput } from 'react-native';
-import { tv } from 'tailwind-variants';
 
-import colors from './colors';
+import { type Theme, useTheme } from '@/theme';
+
 import { Text } from './text';
 
-const inputTv = tv({
-  slots: {
-    container: 'mb-2',
-    label: 'text-grey-100 mb-1 text-lg dark:text-neutral-100',
-    input:
-      'mt-0 rounded-xl border-[0.5px] border-neutral-300 px-4 py-3 font-inter text-base  font-medium leading-5 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white',
-  },
+const createInputStyles = (
+  theme: Theme,
+  options: { focused?: boolean; error?: boolean; disabled?: boolean }
+) => {
+  const { colors, spacing, typography, components } = theme;
+  const { focused = false, error = false, disabled = false } = options;
 
-  variants: {
-    focused: {
-      true: {
-        input: 'border-neutral-400 dark:border-neutral-300',
-      },
+  return StyleSheet.create({
+    container: {
+      marginBottom: spacing.gap.md,
     },
-    error: {
-      true: {
-        input: 'border-danger-600',
-        label: 'text-danger-600 dark:text-danger-600',
-      },
+    label: {
+      ...typography.label,
+      color: error ? colors.semantic.error : colors.text.primary,
+      marginBottom: spacing.gap.sm,
     },
-    disabled: {
-      true: {
-        input: 'bg-neutral-200',
-      },
+    input: {
+      height: components.input.height,
+      borderRadius: components.input.borderRadius,
+      borderWidth: components.input.borderWidth,
+      paddingHorizontal: components.input.padding.horizontal,
+      paddingVertical: components.input.padding.vertical,
+      backgroundColor: disabled
+        ? colors.utility.lightGray
+        : colors.surface.input,
+      borderColor: error
+        ? colors.semantic.error
+        : focused
+          ? colors.primary
+          : colors.surface.border,
+      ...typography.body,
+      color: colors.text.primary,
     },
-  },
-  defaultVariants: {
-    focused: false,
-    error: false,
-    disabled: false,
-  },
-});
+    errorText: {
+      ...typography.caption,
+      color: colors.semantic.error,
+      marginTop: spacing.gap.xs,
+    },
+  });
+};
 
 export interface NInputProps extends TextInputProps {
   label?: string;
@@ -74,25 +82,26 @@ interface ControlledInputProps<T extends FieldValues>
 export const Input = React.forwardRef<NTextInput, NInputProps>((props, ref) => {
   const { label, error, testID, ...inputProps } = props;
   const [isFocussed, setIsFocussed] = React.useState(false);
+  const theme = useTheme();
   const onBlur = React.useCallback(() => setIsFocussed(false), []);
   const onFocus = React.useCallback(() => setIsFocussed(true), []);
 
   const styles = React.useMemo(
     () =>
-      inputTv({
+      createInputStyles(theme, {
         error: Boolean(error),
         focused: isFocussed,
         disabled: Boolean(props.disabled),
       }),
-    [error, isFocussed, props.disabled]
+    [theme, error, isFocussed, props.disabled]
   );
 
   return (
-    <View className={styles.container()}>
+    <View style={styles.container}>
       {label && (
         <Text
           testID={testID ? `${testID}-label` : undefined}
-          className={styles.label()}
+          style={styles.label}
         >
           {label}
         </Text>
@@ -100,21 +109,21 @@ export const Input = React.forwardRef<NTextInput, NInputProps>((props, ref) => {
       <NTextInput
         testID={testID}
         ref={ref}
-        placeholderTextColor={colors.neutral[400]}
-        className={styles.input()}
-        onBlur={onBlur}
-        onFocus={onFocus}
-        {...inputProps}
+        placeholderTextColor={theme.colors.text.placeholder}
         style={StyleSheet.flatten([
+          styles.input,
           { writingDirection: I18nManager.isRTL ? 'rtl' : 'ltr' },
           { textAlign: I18nManager.isRTL ? 'right' : 'left' },
           inputProps.style,
         ])}
+        onBlur={onBlur}
+        onFocus={onFocus}
+        {...inputProps}
       />
       {error && (
         <Text
           testID={testID ? `${testID}-error` : undefined}
-          className="text-sm text-danger-400 dark:text-danger-600"
+          style={styles.errorText}
         >
           {error}
         </Text>

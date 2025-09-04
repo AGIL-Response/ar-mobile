@@ -1,6 +1,8 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
+  Image,
+  ImageBackground,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -12,6 +14,7 @@ import { FocusAwareStatusBar, Text, ThemeToggle, View } from '@/components/ui';
 import { useLoginHandlers } from '@/hooks/use-login-handlers';
 import useAuthStore from '@/stores/auth';
 import { type Theme, useTheme } from '@/theme';
+import images from '../../assets/images';
 
 export default function Login() {
   const router = useRouter();
@@ -40,13 +43,12 @@ export default function Login() {
   });
 
   return (
-    <View style={styles.container}>
-      <FocusAwareStatusBar />
+    <ImageBackground
+      style={styles.container}
+      source={images.img_login_background}
+    >
+      <FocusAwareStatusBar theme={'light'}/>
       <ThemeToggle style={styles.themeToggle} size="medium" />
-
-      {/* Background Pattern */}
-      <View style={styles.backgroundPattern} />
-
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -59,9 +61,7 @@ export default function Login() {
           {/* Logo and Branding Section */}
           <View style={styles.brandingContainer}>
             <View style={styles.logoContainer}>
-              <View style={styles.logoTriangle}>
-                <Text style={styles.logoIcon}>△</Text>
-              </View>
+              <Image style={styles.logoTriangle} source={images.img_login_logo}/>
             </View>
             <Text style={styles.appTitle}>AR Responder</Text>
             <Text style={styles.appSubtitle}>
@@ -93,7 +93,7 @@ export default function Login() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </ImageBackground>
   );
 }
 
@@ -104,14 +104,6 @@ const createStyles = (theme: Theme) => {
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background.primary,
-    },
-    backgroundPattern: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
       backgroundColor: colors.background.primary,
     },
     themeToggle: {

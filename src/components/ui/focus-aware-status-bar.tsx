@@ -5,14 +5,15 @@ import { SystemBars } from 'react-native-edge-to-edge';
 
 import { useIsDarkTheme } from '@/theme';
 
-type Props = { hidden?: boolean };
-export const FocusAwareStatusBar = ({ hidden = false }: Props) => {
+type Props = { hidden?: boolean, theme?: string };
+export const FocusAwareStatusBar = ({ hidden = false, theme }: Props) => {
   const isFocused = useIsFocused();
   const isDark = useIsDarkTheme();
+  const style = theme || (isDark ? 'dark' : 'light');
 
   if (Platform.OS === 'web') return null;
 
   return isFocused ? (
-    <SystemBars style={isDark ? 'dark' : 'light'} hidden={hidden} />
+    <SystemBars style={style as any} hidden={hidden} />
   ) : null;
 };
