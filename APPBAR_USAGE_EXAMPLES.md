@@ -12,7 +12,7 @@ import {
   StatusBar,
   SimpleHeader,
   NavigationItem,
-} from '@/components/ui';
+} from '@/components';
 ```
 
 ## 📱 Component Examples

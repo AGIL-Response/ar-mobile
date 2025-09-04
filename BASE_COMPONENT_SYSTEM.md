@@ -87,7 +87,7 @@ import {
   createStyleCreator,
   mergeTypographyStyles,
   useThemedStyles,
-} from './base-component';
+} from '@/components/base-component';
 
 // 1. Create type-safe style creators
 const createComponentStyles = createStyleCreator<MyComponentProps>((theme, props) => {

@@ -11,7 +11,7 @@ This document defines the **mandatory pattern** for organizing screens and featu
 ```
 src/
 ├── api/              # Global API clients and endpoints
-├── components/ui/    # Global design system components
+├── components/       # Global design system components
 ├── stores/          # GLOBAL stores only (auth, app-wide state)
 ├── theme/           # Global theme and design tokens
 ├── types/           # Global TypeScript types
@@ -83,7 +83,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 
 // Global UI components
-import { Text, Button } from '@/components/ui';
+import { Text, Button } from '@/components';
 import { useTheme, type Theme } from '@/theme';
 
 // Global stores (only if needed)
@@ -129,7 +129,7 @@ export { AnotherComponent } from './another-component';
 // src/screens/{name}/components/specific-component.tsx
 import React from 'react';
 import { View } from 'react-native';
-import { Text, Button } from '@/components/ui'; // Use global UI components
+import { Text, Button } from '@/components'; // Use global UI components
 import { useTheme } from '@/theme';
 
 export function SpecificComponent() {
@@ -216,7 +216,7 @@ interface ProfileState {
 ### **❌ Don't Create Global Components in Screen Directories**
 
 ```typescript
-// ❌ BAD - This should be in src/components/ui/
+// ❌ BAD - This should be in src/components/
 // src/screens/profile/components/button.tsx
 export function Button() {
   // Reusable button component
@@ -279,7 +279,7 @@ src/screens/incidents/
 
 ## 🎯 **Decision Tree: Global vs Screen-Specific**
 
-### **When to Use Global (`src/stores/`, `src/components/ui/`, etc.)**
+### **When to Use Global (`src/stores/`, `src/components/`, etc.)**
 
 - ✅ Used by 2+ screens
 - ✅ Authentication/authorization
@@ -306,7 +306,7 @@ For every new screen, ensure:
 - [ ] Hooks organized: `src/screens/{name}/hooks/`
 - [ ] Only create `stores/` if screen needs local state
 - [ ] Use global stores for shared state
-- [ ] Use global UI components from `@/components/ui`
+- [ ] Use global UI components from `@/components`
 - [ ] Follow TypeScript patterns
 - [ ] Export pattern: `index.ts` files for clean imports
 
@@ -326,7 +326,7 @@ For every new screen, ensure:
 - `src/app/` = Navigation config only
 - `src/screens/{name}/` = Full screen implementation
 - `src/stores/` = Global state only (auth, app-wide)
-- `src/components/ui/` = Reusable components
+- `src/components/` = Reusable components
 - `src/screens/{name}/stores/` = Screen-specific state only
 
 **Follow this pattern for ALL future screens and features!** 🎯

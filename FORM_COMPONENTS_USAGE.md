@@ -11,7 +11,7 @@ Complete documentation for all Phase 4 Form Components with examples and best pr
 ### **Basic Usage**
 
 ```typescript
-import { Input, EmailInput, PasswordInput, NumberInput } from '@/components/ui';
+import { Input, EmailInput, PasswordInput, NumberInput } from '@/components';
 
 // Basic input
 <Input
@@ -54,7 +54,7 @@ import { Input, EmailInput, PasswordInput, NumberInput } from '@/components/ui';
 ### **Input with Icons**
 
 ```typescript
-import { Search, User } from '@/components/ui/icons';
+import { Search, User } from '@/components/icons';
 
 <Input
   placeholder="Search..."
@@ -113,7 +113,7 @@ import { Search, User } from '@/components/ui/icons';
 ### **Basic Usage**
 
 ```typescript
-import { Select } from '@/components/ui';
+import { Select } from '@/components';
 
 const options = [
   { label: 'Option 1', value: '1' },
@@ -162,7 +162,7 @@ const options = [
 ### **Select with Icon**
 
 ```typescript
-import { Location } from '@/components/ui/icons';
+import { Location } from '@/components/icons';
 
 <Select
   label="Location"
@@ -180,7 +180,7 @@ import { Location } from '@/components/ui/icons';
 ### **Basic Usage**
 
 ```typescript
-import { TextArea, CommentTextArea, DescriptionTextArea } from '@/components/ui';
+import { TextArea, CommentTextArea, DescriptionTextArea } from '@/components';
 
 // Basic textarea
 <TextArea
@@ -264,7 +264,7 @@ import { TextArea, CommentTextArea, DescriptionTextArea } from '@/components/ui'
 ### **Basic Usage**
 
 ```typescript
-import { FileUpload, ImageUpload, DocumentUpload } from '@/components/ui';
+import { FileUpload, ImageUpload, DocumentUpload } from '@/components';
 
 // Basic file upload
 <FileUpload
@@ -350,7 +350,7 @@ import { FileUpload, ImageUpload, DocumentUpload } from '@/components/ui';
 ### **Basic Usage**
 
 ```typescript
-import { Checkbox, CheckboxGroup } from '@/components/ui';
+import { Checkbox, CheckboxGroup } from '@/components';
 
 // Single checkbox
 <Checkbox
@@ -489,7 +489,7 @@ import {
   Checkbox,
   CheckboxGroup,
   Button,
-} from '@/components/ui';
+} from '@/components';
 
 export function CompleteFormExample() {
   const [formData, setFormData] = useState({
