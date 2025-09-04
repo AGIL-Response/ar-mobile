@@ -14,6 +14,14 @@ module.exports = {
   parserOptions: {
     project: './tsconfig.json',
   },
+  settings: {
+    'import/resolver': {
+      typescript: {
+        alwaysTryTypes: true,
+        project: './tsconfig.json',
+      },
+    },
+  },
   rules: {
     'prettier/prettier': 'warn',
     'unicorn/filename-case': [

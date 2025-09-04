@@ -7,8 +7,8 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 import { Text, View } from 'react-native';
 
-// Import icons from our design system
-import { Home, List, MessageSquare, User } from '@/components/icons';
+// Import the new Icon component and constants
+import { Icon, type IconName, iconNames } from '@/components';
 import { useTheme } from '@/theme';
 
 function TabBarIcon({
@@ -20,20 +20,19 @@ function TabBarIcon({
   color: string;
   focused: boolean;
 }) {
-  const iconSize = 24;
-
-  switch (name) {
-    case 'index':
-      return <Home width={iconSize} height={iconSize} color={color} />;
-    case 'tasks':
-      return <List width={iconSize} height={iconSize} color={color} />;
-    case 'chat':
-      return <MessageSquare width={iconSize} height={iconSize} color={color} />;
-    case 'profile':
-      return <User width={iconSize} height={iconSize} color={color} />;
-    default:
-      return null;
-  }
+  // Map route names to icon names using constants
+  const iconMap: Record<string, IconName> = {
+    index: iconNames.home,
+    tasks: iconNames.list,
+    chat: iconNames.message_square,
+    profile: iconNames.user,
+  };
+  
+  const iconName = iconMap[name];
+  
+  if (!iconName) return null;
+  
+  return <Icon name={iconName} size={24} color={color} />;
 }
 
 function TabBarBadge({ count }: { count?: number }) {

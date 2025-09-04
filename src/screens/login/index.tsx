@@ -13,10 +13,10 @@ import { FocusAwareStatusBar, Text, ThemeToggle, View } from '@/components';
 import useAuthStore from '@/stores/auth';
 import { type Theme, useTheme } from '@/theme';
 
-import images from '../../../assets/images';
 import { PasswordStep } from './components/password-step';
 import { UsernameStep } from './components/username-step';
 import { useLoginHandlers } from './hooks/use-login-handlers';
+import images from '@assets/images';
 
 export default function Login() {
   const router = useRouter();
