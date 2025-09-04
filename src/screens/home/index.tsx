@@ -13,22 +13,20 @@ import { AppHeader } from './components/app-header';
 import { FloatingActionButton } from './components/floating-action-button';
 import { IncidentsSection } from './components/incidents-section';
 import { MembersSection } from './components/members-section';
-import { StatusBar } from './components/status-bar';
 import { TabSelector } from './components/tab-selector';
+import useAuthStore from '@/stores/auth';
 
 export default function HomeScreen() {
   const theme = useTheme();
+  const currentRealm = useAuthStore(state => state.currentRealm) || '';
 
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: theme.colors.background.primary }}
     >
       <Screen>
-        {/* Status Bar */}
-        <StatusBar />
-
         {/* App Bar */}
-        <AppHeader />
+        <AppHeader title={currentRealm} />
 
         {/* Tab Selector */}
         <TabSelector />

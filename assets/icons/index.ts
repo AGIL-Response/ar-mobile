@@ -4,6 +4,8 @@ import HomeIcon from './home.svg';
 import ListIcon from './list.svg';
 import MessageSquareIcon from './message-square.svg';
 import UserIcon from './user.svg';
+import SearchIcon from './search.svg';
+import NotificationBadgeIcon from './notification-badge.svg';
 
 // Icon component type
 type IconComponent = React.ComponentType<SvgProps>;
@@ -14,9 +16,10 @@ export const iconNames = {
   list: 'list',
   message_square: 'messageSquare', // maps to message-square.svg but uses messageSquare as value
   user: 'user',
+  search: 'search',
+  notification_badge: 'notificationBadge',
   // Add more icon names here as needed:
   // settings: 'settings',
-  // search: 'search',
   // notification: 'notification',
 } as const;
 
@@ -31,9 +34,10 @@ const icons: Record<string, IconComponent> = {
   [iconNames.list]: ListIcon,
   [iconNames.message_square]: MessageSquareIcon,
   [iconNames.user]: UserIcon,
+  [iconNames.search]: SearchIcon,
+  [iconNames.notification_badge]: NotificationBadgeIcon,
   // Add more icons here as needed:
   // [iconNames.settings]: SettingsIcon,
-  // [iconNames.search]: SearchIcon,
   // [iconNames.notification]: NotificationIcon,
 } as const;
 

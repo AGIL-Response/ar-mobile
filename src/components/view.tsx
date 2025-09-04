@@ -99,21 +99,10 @@ const createViewStyles = (theme: Theme, props: ViewProps) => {
     ...((shadow && theme.shadows && (theme.shadows as any)[shadow]) || {}),
   };
 
-  // Safe area styles
-  const safeAreaStyles = safeArea
-    ? {
-        paddingTop: theme.spacing.safeArea.top,
-        paddingBottom: theme.spacing.safeArea.bottom,
-        paddingLeft: theme.spacing.safeArea.left,
-        paddingRight: theme.spacing.safeArea.right,
-      }
-    : {};
-
   return {
     ...baseStyles,
     ...layoutStyles,
     ...visualStyles,
-    ...safeAreaStyles,
   };
 };
 

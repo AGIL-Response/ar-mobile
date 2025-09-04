@@ -173,6 +173,7 @@ export const Palette = {
   // Status colors
   success: '#37b24d',
   successAlt: '#1ce783',
+  mediumSpringGreen: '#1ce783', // Figma design status indicator
   warning: '#f59f00',
   warningAlt: '#f76707',
   error: '#c92a2a',
@@ -185,7 +186,8 @@ export const Palette = {
 
   // Additional colors from designs
   gainsboro: '#dee2e6',
-  lightGray: '#ced4da',
+  lightGray: '#ced4da', 
+  lightGrayOpacity: 'rgba(209, 209, 209, 0.05)', // Figma design avatar background
   darkGray: '#adb5bd',
   mediumGray: '#6a7178',
   dimGray: '#4f575e',
