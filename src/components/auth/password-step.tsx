@@ -30,14 +30,21 @@ export function PasswordStep({
     <>
       {/* Welcome back section */}
       <View style={styles.welcomeContainer}>
-        <Text style={styles.welcomeText}>
-          Welcome back, <Text style={styles.usernameText}>{username}</Text>
+        <Text variant="h3" color={theme.colors.text.primary}>
+          Welcome back,{' '}
+          <Text variant="h3" color={theme.colors.primary}>
+            {username}
+          </Text>
         </Text>
         {currentRealm && (
           <View style={styles.realmContainer}>
-            <Text style={styles.realmLabel}>Organization:</Text>
+            <Text variant="caption" color={theme.colors.text.secondary}>
+              Organization:
+            </Text>
             <View style={styles.realmBadge}>
-              <Text style={styles.realmText}>{currentRealm}</Text>
+              <Text variant="caption" color={theme.colors.text.primary}>
+                {currentRealm}
+              </Text>
             </View>
           </View>
         )}
@@ -45,7 +52,9 @@ export function PasswordStep({
 
       {/* Password input */}
       <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Password</Text>
+        <Text variant="label" color={theme.colors.text.primary}>
+          Password
+        </Text>
         <View style={styles.inputWrapper}>
           <TextInput
             style={styles.inputText}
@@ -91,24 +100,9 @@ const createStyles = (theme: Theme) => {
     welcomeContainer: {
       marginBottom: spacing.gap.xl,
     },
-    welcomeText: {
-      ...typography.body,
-      color: colors.text.secondary,
-      marginBottom: spacing.gap.md,
-    },
-    usernameText: {
-      ...typography.bodyMedium,
-      color: colors.text.primary,
-      fontWeight: '600',
-    },
     realmContainer: {
       flexDirection: 'row',
       alignItems: 'center',
-    },
-    realmLabel: {
-      ...typography.caption,
-      color: colors.text.secondary,
-      marginRight: spacing.gap.sm,
     },
     realmBadge: {
       backgroundColor: colors.utility.overlay,
@@ -118,18 +112,8 @@ const createStyles = (theme: Theme) => {
       borderWidth: 1,
       borderColor: colors.surface.border,
     },
-    realmText: {
-      ...typography.caption,
-      color: colors.primary,
-      fontWeight: '500',
-    },
     inputContainer: {
       marginBottom: spacing.gap.xl,
-    },
-    inputLabel: {
-      ...typography.label,
-      color: colors.text.primary,
-      marginBottom: spacing.gap.sm,
     },
     inputWrapper: {
       height: components.input.height,

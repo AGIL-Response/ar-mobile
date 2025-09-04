@@ -14,6 +14,7 @@ import { FocusAwareStatusBar, Text, ThemeToggle, View } from '@/components/ui';
 import { useLoginHandlers } from '@/hooks/use-login-handlers';
 import useAuthStore from '@/stores/auth';
 import { type Theme, useTheme } from '@/theme';
+
 import images from '../../assets/images';
 
 export default function Login() {
@@ -47,7 +48,7 @@ export default function Login() {
       style={styles.container}
       source={images.img_login_background}
     >
-      <FocusAwareStatusBar theme={'light'}/>
+      <FocusAwareStatusBar theme={'light'} />
       <ThemeToggle style={styles.themeToggle} size="medium" />
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
@@ -61,10 +62,15 @@ export default function Login() {
           {/* Logo and Branding Section */}
           <View style={styles.brandingContainer}>
             <View style={styles.logoContainer}>
-              <Image style={styles.logoTriangle} source={images.img_login_logo}/>
+              <Image
+                style={styles.logoTriangle}
+                source={images.img_login_logo}
+              />
             </View>
-            <Text style={styles.appTitle}>AR Responder</Text>
-            <Text style={styles.appSubtitle}>
+            <Text variant="h1" centered color={theme.colors.text.primary}>
+              AR Responder
+            </Text>
+            <Text variant="body" centered color={theme.colors.text.secondary}>
               Access your tactical command center.
             </Text>
           </View>
@@ -143,18 +149,6 @@ const createStyles = (theme: Theme) => {
     logoIcon: {
       ...theme.typography.h3,
       color: colors.text.primary,
-    },
-    appTitle: {
-      ...theme.typography.h1,
-      fontFamily: 'RussoOne_400Regular', // Use RussoOne for branding title like in Figma
-      color: colors.text.primary,
-      textAlign: 'center',
-      marginBottom: spacing.gap.lg,
-    },
-    appSubtitle: {
-      ...theme.typography.body,
-      color: colors.text.secondary,
-      textAlign: 'center',
     },
 
     // Login Form Container

@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, TextInput } from 'react-native';
 
-import { Button, Text, View } from '@/components/ui';
+import { Button, ErrorText, Text, View } from '@/components/ui';
 import { type Theme, useTheme } from '@/theme';
 
 type UsernameStepProps = {
@@ -25,7 +25,9 @@ export function UsernameStep({
   return (
     <>
       <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>User Name</Text>
+        <Text variant="label" color={theme.colors.text.primary}>
+          User Name
+        </Text>
         <View style={styles.inputWrapper}>
           <TextInput
             style={styles.inputText}
@@ -50,7 +52,11 @@ export function UsernameStep({
         fullWidth
       />
 
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {error && (
+        <ErrorText variant="caption" centered style={styles.errorWrapper}>
+          {error}
+        </ErrorText>
+      )}
     </>
   );
 }
@@ -61,11 +67,6 @@ const createStyles = (theme: Theme) => {
   return StyleSheet.create({
     inputContainer: {
       marginBottom: spacing.gap.xl,
-    },
-    inputLabel: {
-      ...typography.label,
-      color: colors.text.primary,
-      marginBottom: spacing.gap.sm,
     },
     inputWrapper: {
       height: components.input.height,
@@ -86,10 +87,7 @@ const createStyles = (theme: Theme) => {
       backgroundColor: colors.primary,
       borderRadius: components.button.borderRadius,
     },
-    errorText: {
-      ...typography.caption,
-      color: colors.semantic.error,
-      textAlign: 'center',
+    errorWrapper: {
       marginTop: spacing.gap.md,
       paddingHorizontal: spacing.padding.md,
       paddingVertical: spacing.padding.sm,
