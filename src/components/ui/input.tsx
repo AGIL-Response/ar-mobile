@@ -1,152 +1,364 @@
-import * as React from 'react';
-import type {
-  Control,
-  FieldValues,
-  Path,
-  RegisterOptions,
-} from 'react-hook-form';
-import { useController } from 'react-hook-form';
-import type { TextInputProps } from 'react-native';
-import { I18nManager, StyleSheet, View } from 'react-native';
-import { TextInput as NTextInput } from 'react-native';
+import React, { forwardRef } from 'react';
+import { TextInput, type TextInputProps } from 'react-native';
 
-import { type Theme, useTheme } from '@/theme';
+import {
+  createAccessibilityProps,
+  createStyleCreator,
+  mergeStyles,
+  useThemedStyles,
+} from './base-component';
+import { ErrorText, Text } from './text';
+import type { BaseComponentProps } from './types';
+import { View } from './view';
 
-import { Text } from './text';
+/* ================================
+   TYPES & INTERFACES
+   ================================ */
 
-const createInputStyles = (
-  theme: Theme,
-  options: { focused?: boolean; error?: boolean; disabled?: boolean }
-) => {
-  const { colors, spacing, typography, components } = theme;
-  const { focused = false, error = false, disabled = false } = options;
-
-  return StyleSheet.create({
-    container: {
-      marginBottom: spacing.gap.md,
-    },
-    label: {
-      ...typography.label,
-      color: error ? colors.semantic.error : colors.text.primary,
-      marginBottom: spacing.gap.sm,
-    },
-    input: {
-      height: components.input.height,
-      borderRadius: components.input.borderRadius,
-      borderWidth: components.input.borderWidth,
-      paddingHorizontal: components.input.padding.horizontal,
-      paddingVertical: components.input.padding.vertical,
-      backgroundColor: disabled
-        ? colors.utility.lightGray
-        : colors.surface.input,
-      borderColor: error
-        ? colors.semantic.error
-        : focused
-          ? colors.primary
-          : colors.surface.border,
-      ...typography.body,
-      color: colors.text.primary,
-    },
-    errorText: {
-      ...typography.caption,
-      color: colors.semantic.error,
-      marginTop: spacing.gap.xs,
-    },
-  });
-};
-
-export interface NInputProps extends TextInputProps {
+export interface InputProps
+  extends BaseComponentProps,
+    Omit<TextInputProps, 'style' | 'accessibilityRole' | 'accessibilityState'> {
+  /** Input label */
   label?: string;
+  /** Error message to display */
+  error?: string | null;
+  /** Helper text to display below input */
+  helperText?: string;
+  /** Input size variant */
+  size?: 'small' | 'medium' | 'large';
+  /** Input visual variant */
+  variant?: 'default' | 'outlined' | 'filled';
+  /** Input state */
+  state?: 'default' | 'error' | 'success' | 'disabled';
+  /** Left icon component */
+  leftIcon?: React.ReactNode;
+  /** Right icon component */
+  rightIcon?: React.ReactNode;
+  /** Whether input is disabled */
   disabled?: boolean;
-  error?: string;
+  /** Whether input is required */
+  required?: boolean;
+  /** Custom container style */
+  containerStyle?: any;
+  /** Custom input style */
+  inputStyle?: any;
 }
 
-type TRule<T extends FieldValues> =
-  | Omit<
-      RegisterOptions<T>,
-      'disabled' | 'valueAsNumber' | 'valueAsDate' | 'setValueAs'
-    >
-  | undefined;
+/* ================================
+   STYLE CREATORS
+   ================================ */
 
-export type RuleType<T extends FieldValues> = { [name in keyof T]: TRule<T> };
-export type InputControllerType<T extends FieldValues> = {
-  name: Path<T>;
-  control: Control<T>;
-  rules?: RuleType<T>;
-};
+const createInputContainerStyles = createStyleCreator<InputProps>(
+  (theme, _props) => {
+    const { spacing } = theme;
 
-interface ControlledInputProps<T extends FieldValues>
-  extends NInputProps,
-    InputControllerType<T> {}
+    return {
+      marginBottom: spacing.gap.lg,
+    };
+  }
+);
 
-export const Input = React.forwardRef<NTextInput, NInputProps>((props, ref) => {
-  const { label, error, testID, ...inputProps } = props;
-  const [isFocussed, setIsFocussed] = React.useState(false);
-  const theme = useTheme();
-  const onBlur = React.useCallback(() => setIsFocussed(false), []);
-  const onFocus = React.useCallback(() => setIsFocussed(true), []);
+const createInputWrapperStyles = createStyleCreator<InputProps>(
+  (theme, props) => {
+    const {
+      size = 'medium',
+      variant = 'default',
+      state = 'default',
+      disabled = false,
+    } = props;
+    const { colors, spacing, components } = theme;
 
-  const styles = React.useMemo(
-    () =>
-      createInputStyles(theme, {
-        error: Boolean(error),
-        focused: isFocussed,
-        disabled: Boolean(props.disabled),
-      }),
-    [theme, error, isFocussed, props.disabled]
-  );
+    // Size variants
+    const sizeStyles = {
+      small: {
+        height: 40,
+        paddingHorizontal: spacing.padding.sm,
+      },
+      medium: {
+        height: components.input.height,
+        paddingHorizontal: components.input.padding.horizontal,
+      },
+      large: {
+        height: 56,
+        paddingHorizontal: spacing.padding.lg,
+      },
+    };
 
-  return (
-    <View style={styles.container}>
-      {label && (
-        <Text
-          testID={testID ? `${testID}-label` : undefined}
-          style={styles.label}
-        >
-          {label}
-        </Text>
-      )}
-      <NTextInput
-        testID={testID}
-        ref={ref}
-        placeholderTextColor={theme.colors.text.placeholder}
-        style={StyleSheet.flatten([
-          styles.input,
-          { writingDirection: I18nManager.isRTL ? 'rtl' : 'ltr' },
-          { textAlign: I18nManager.isRTL ? 'right' : 'left' },
-          inputProps.style,
-        ])}
-        onBlur={onBlur}
-        onFocus={onFocus}
-        {...inputProps}
-      />
-      {error && (
-        <Text
-          testID={testID ? `${testID}-error` : undefined}
-          style={styles.errorText}
-        >
-          {error}
-        </Text>
-      )}
-    </View>
-  );
+    // Visual variants
+    const variantStyles = {
+      default: {
+        backgroundColor: colors.surface.input,
+        borderWidth: components.input.borderWidth,
+        borderColor: colors.surface.border,
+      },
+      outlined: {
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: colors.surface.border,
+      },
+      filled: {
+        backgroundColor: colors.surface.card,
+        borderWidth: 0,
+      },
+    };
+
+    // State variants
+    const stateStyles = {
+      default: {},
+      error: {
+        borderColor: colors.semantic.error,
+        borderWidth: 1,
+      },
+      success: {
+        borderColor: colors.semantic.success,
+        borderWidth: 1,
+      },
+      disabled: {
+        backgroundColor: colors.surface.disabled || colors.utility.lightGray,
+        borderColor: colors.surface.border,
+        opacity: 0.6,
+      },
+    };
+
+    return {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderRadius: components.input.borderRadius,
+      justifyContent: 'center',
+      ...sizeStyles[size],
+      ...variantStyles[variant],
+      ...stateStyles[disabled ? 'disabled' : state],
+    };
+  }
+);
+
+const createInputTextStyles = createStyleCreator<InputProps>((theme, props) => {
+  const { size = 'medium', disabled = false } = props;
+  const { colors, typography } = theme;
+
+  // Size-based typography
+  const typographyVariants = {
+    small: typography.caption,
+    medium: typography.body,
+    large: typography.h4,
+  };
+
+  return {
+    flex: 1,
+    color: disabled ? colors.text.muted : colors.text.primary,
+    ...typographyVariants[size],
+  };
 });
 
-// only used with react-hook-form
-export function ControlledInput<T extends FieldValues>(
-  props: ControlledInputProps<T>
-) {
-  const { name, control, rules, ...inputProps } = props;
+const createLabelStyles = createStyleCreator<InputProps>((theme, _props) => {
+  const { colors, spacing } = theme;
 
-  const { field, fieldState } = useController({ control, name, rules });
-  return (
-    <Input
-      ref={field.ref}
-      autoCapitalize="none"
-      onChangeText={field.onChange}
-      value={(field.value as string) || ''}
-      {...inputProps}
-      error={fieldState.error?.message}
-    />
-  );
-}
+  return {
+    marginBottom: spacing.gap.xs,
+    color: colors.text.primary,
+  };
+});
+
+const createIconStyles = createStyleCreator<InputProps>((theme, _props) => {
+  const { spacing } = theme;
+
+  return {
+    marginHorizontal: spacing.padding.xs,
+  };
+});
+
+const createHelperTextStyles = createStyleCreator<InputProps>(
+  (theme, props) => {
+    const { state = 'default' } = props;
+    const { colors, spacing } = theme;
+
+    const stateColors = {
+      default: colors.text.secondary,
+      error: colors.semantic.error,
+      success: colors.semantic.success,
+      disabled: colors.text.muted,
+    };
+
+    return {
+      marginTop: spacing.gap.xs,
+      color: stateColors[state],
+    };
+  }
+);
+
+/* ================================
+   INPUT COMPONENT
+   ================================ */
+
+export const Input = forwardRef<TextInput, InputProps>(
+  (
+    {
+      label,
+      error,
+      helperText,
+      size = 'medium',
+      variant = 'default',
+      state = 'default',
+      leftIcon,
+      rightIcon,
+      disabled = false,
+      required = false,
+      containerStyle,
+      inputStyle,
+      placeholderTextColor,
+      testID,
+      accessible = true,
+      accessibilityLabel,
+      accessibilityHint,
+      ...textInputProps
+    },
+    ref
+  ) => {
+    // Determine actual state based on error and disabled
+    const actualState = error ? 'error' : disabled ? 'disabled' : state;
+
+    // Generate themed styles
+    const containerStyles = useThemedStyles(createInputContainerStyles, {
+      size,
+      variant,
+      state: actualState,
+      disabled,
+    });
+
+    const wrapperStyles = useThemedStyles(createInputWrapperStyles, {
+      size,
+      variant,
+      state: actualState,
+      disabled,
+    });
+
+    const textStyles = useThemedStyles(createInputTextStyles, {
+      size,
+      disabled,
+    });
+
+    const labelStyles = useThemedStyles(createLabelStyles, {
+      required,
+    });
+
+    const iconStyles = useThemedStyles(createIconStyles, {});
+
+    const helperStyles = useThemedStyles(createHelperTextStyles, {
+      state: actualState,
+    });
+
+    // Create accessibility props
+    const accessibilityProps = createAccessibilityProps({
+      testID,
+      accessible,
+      accessibilityLabel: accessibilityLabel || label,
+      accessibilityHint,
+    });
+
+    // Merge styles
+    const finalContainerStyle = mergeStyles(containerStyles, containerStyle);
+    const finalInputStyle = mergeStyles(textStyles, inputStyle);
+
+    return (
+      <View style={finalContainerStyle}>
+        {/* Label */}
+        {label && (
+          <Text variant="label" style={labelStyles}>
+            {label}
+            {required && <Text color="error"> *</Text>}
+          </Text>
+        )}
+
+        {/* Input Wrapper */}
+        <View style={wrapperStyles}>
+          {/* Left Icon */}
+          {leftIcon && <View style={iconStyles}>{leftIcon}</View>}
+
+          {/* Text Input */}
+          <TextInput
+            ref={ref}
+            style={finalInputStyle}
+            editable={!disabled}
+            placeholderTextColor={placeholderTextColor}
+            {...accessibilityProps}
+            {...textInputProps}
+          />
+
+          {/* Right Icon */}
+          {rightIcon && <View style={iconStyles}>{rightIcon}</View>}
+        </View>
+
+        {/* Error Message */}
+        {error && (
+          <ErrorText variant="caption" style={helperStyles}>
+            {error}
+          </ErrorText>
+        )}
+
+        {/* Helper Text */}
+        {helperText && !error && (
+          <Text variant="caption" style={helperStyles}>
+            {helperText}
+          </Text>
+        )}
+      </View>
+    );
+  }
+);
+
+Input.displayName = 'Input';
+
+/* ================================
+   SEMANTIC COMPONENTS
+   ================================ */
+
+export const EmailInput = forwardRef<
+  TextInput,
+  Omit<InputProps, 'keyboardType' | 'autoCapitalize' | 'autoComplete'>
+>((props, ref) => (
+  <Input
+    ref={ref}
+    keyboardType="email-address"
+    autoCapitalize="none"
+    autoComplete="email"
+    {...props}
+  />
+));
+
+export const PasswordInput = forwardRef<
+  TextInput,
+  Omit<InputProps, 'secureTextEntry' | 'autoCapitalize' | 'autoComplete'>
+>((props, ref) => (
+  <Input
+    ref={ref}
+    secureTextEntry
+    autoCapitalize="none"
+    autoComplete="password"
+    {...props}
+  />
+));
+
+export const NumberInput = forwardRef<
+  TextInput,
+  Omit<InputProps, 'keyboardType'>
+>((props, ref) => <Input ref={ref} keyboardType="numeric" {...props} />);
+
+export const PhoneInput = forwardRef<
+  TextInput,
+  Omit<InputProps, 'keyboardType' | 'autoComplete'>
+>((props, ref) => (
+  <Input ref={ref} keyboardType="phone-pad" autoComplete="tel" {...props} />
+));
+
+export const SearchInput = forwardRef<
+  TextInput,
+  Omit<InputProps, 'autoCapitalize' | 'autoCorrect'>
+>((props, ref) => (
+  <Input ref={ref} autoCapitalize="none" autoCorrect={false} {...props} />
+));
+
+/* ================================
+   EXPORTS
+   ================================ */
+
+export default Input;

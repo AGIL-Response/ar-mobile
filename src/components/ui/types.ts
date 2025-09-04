@@ -3,7 +3,12 @@
  * Provides consistent typing patterns for all UI components
  */
 
-import type { PressableProps, TextProps, ViewProps } from 'react-native';
+import type {
+  AccessibilityRole,
+  PressableProps,
+  TextProps,
+  ViewProps,
+} from 'react-native';
 
 import type { Theme } from '@/theme';
 
@@ -19,6 +24,14 @@ export interface BaseComponentProps {
   testID?: string;
   /** Optional accessibility label */
   accessibilityLabel?: string;
+  /** Optional accessibility hint */
+  accessibilityHint?: string;
+  /** Whether the component is accessible */
+  accessible?: boolean;
+  /** Accessibility role */
+  accessibilityRole?: AccessibilityRole;
+  /** Accessibility state */
+  accessibilityState?: any;
 }
 
 /**

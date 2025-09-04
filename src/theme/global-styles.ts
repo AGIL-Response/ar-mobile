@@ -256,6 +256,7 @@ const createColors = (isDark: boolean) => ({
     input: isDark ? Palette.charcoal950 : Palette.white,
     border: isDark ? '#272b30' : Palette.gray300,
     divider: isDark ? Palette.dimGray : Palette.gray300,
+    disabled: isDark ? Palette.charcoal800 : Palette.gray100,
   },
 
   // Additional utility colors
