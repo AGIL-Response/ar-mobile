@@ -3,15 +3,25 @@
  * Central export point for all design system components
  */
 
-// Base component utilities
-export * from './base-component';
+// Base component utilities (essential functions only)
+export {
+  createAccessibilityProps,
+  createStyleCreator,
+  createTextStyles,
+  mergeStyles,
+  mergeTypographyStyles,
+  useThemedStyles,
+} from './base-component';
 export * from './types';
 
 // Core components
+export * from './app-bar';
 export * from './avatar';
 export * from './badge';
 export * from './button';
 export * from './card';
+export * from './floating-action-button';
+export * from './tab-bar';
 export * from './text';
 export * from './view';
 

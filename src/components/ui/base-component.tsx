@@ -36,6 +36,32 @@ export function useThemedStyles<TProps = any>(
   );
 }
 
+/**
+ * Type-safe version of useThemedStyles with proper prop validation
+ * @param styleCreator Function that creates styles based on theme and partial props
+ * @param props Partial props object
+ */
+export function useThemedStylesSafe<
+  TFullProps,
+  TPartialProps extends Partial<TFullProps>,
+>(
+  styleCreator: (theme: Theme, props: TPartialProps) => any,
+  props: TPartialProps
+) {
+  const theme = useTheme();
+  return React.useMemo(() => styleCreator(theme, props), [theme, props]);
+}
+
+/**
+ * Creates a type-safe style creator function for components
+ * @param styleCreator Function that creates styles based on theme and partial props
+ */
+export function createStyleCreator<TProps>(
+  styleCreator: (theme: Theme, props: Partial<TProps>) => any
+) {
+  return styleCreator;
+}
+
 /* ================================
    STYLE MERGING UTILITIES
    ================================ */
@@ -77,6 +103,30 @@ export function createConditionalStyle<T extends ViewStyle | TextStyle>(
   });
 
   return result;
+}
+
+/**
+ * Safely merges typography styles with custom overrides
+ * Handles fontWeight conflicts properly
+ * @param typographyStyle Base typography style from theme
+ * @param overrides Custom style overrides
+ */
+export function mergeTypographyStyles(
+  typographyStyle: TextStyle,
+  overrides?: Partial<TextStyle>
+): TextStyle {
+  if (!overrides) return typographyStyle;
+
+  // Create a clean merge without fontWeight conflicts
+  const { fontWeight: _themeWeight, ...themeRest } = typographyStyle;
+  const { fontWeight: overrideWeight, ...overrideRest } = overrides;
+
+  return {
+    ...themeRest,
+    ...overrideRest,
+    // Override fontWeight takes precedence, fallback to theme
+    fontWeight: overrideWeight || _themeWeight,
+  };
 }
 
 /* ================================
