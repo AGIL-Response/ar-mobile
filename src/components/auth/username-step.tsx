@@ -48,7 +48,6 @@ export function UsernameStep({
         onPress={onSubmit}
         loading={isLoading}
         disabled={isLoading || !username.trim()}
-        style={styles.loginButton}
         fullWidth
       />
 
@@ -81,11 +80,6 @@ const createStyles = (theme: Theme) => {
       ...typography.body,
       color: colors.text.primary,
       flex: 1,
-    },
-    loginButton: {
-      height: components.button.height.medium,
-      backgroundColor: colors.primary,
-      borderRadius: components.button.borderRadius,
     },
     errorWrapper: {
       marginTop: spacing.gap.md,

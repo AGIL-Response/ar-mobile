@@ -77,18 +77,13 @@ export function PasswordStep({
         onPress={onSubmit}
         loading={isLoading}
         disabled={isLoading || !password.trim()}
-        style={styles.loginButton}
         fullWidth
       />
 
       {/* Back button */}
-      <Button
-        title="Back"
-        onPress={onBack}
-        variant="outline"
-        style={styles.backButton}
-        fullWidth
-      />
+      <View style={styles.buttonSpacing}>
+        <Button title="Back" onPress={onBack} variant="outline" fullWidth />
+      </View>
     </>
   );
 }
@@ -129,18 +124,8 @@ const createStyles = (theme: Theme) => {
       color: colors.text.primary,
       flex: 1,
     },
-    loginButton: {
-      height: components.button.height.medium,
-      backgroundColor: colors.primary,
-      borderRadius: components.button.borderRadius,
-      marginBottom: spacing.gap.md,
-    },
-    backButton: {
-      height: components.button.height.medium,
-      borderRadius: components.button.borderRadius,
-      borderWidth: 1,
-      borderColor: colors.surface.border,
-      backgroundColor: 'transparent',
+    buttonSpacing: {
+      marginTop: spacing.gap.md,
     },
   });
 };
