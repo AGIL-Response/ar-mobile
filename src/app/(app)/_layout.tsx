@@ -19,10 +19,9 @@ export default function AppLayout() {
   return (
     <Stack>
       <Stack.Screen
-        name="index"
+        name="(tabs)"
         options={{
-          title: 'Home',
-          headerShown: true,
+          headerShown: false,
         }}
       />
     </Stack>

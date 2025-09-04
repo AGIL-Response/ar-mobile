@@ -14,8 +14,9 @@ import useAuthStore from '@/stores/auth';
 import { type Theme, useTheme } from '@/theme';
 
 import images from '../../../assets/images';
-import { PasswordStep, UsernameStep } from './components';
-import { useLoginHandlers } from './hooks';
+import { PasswordStep } from './components/password-step';
+import { UsernameStep } from './components/username-step';
+import { useLoginHandlers } from './hooks/use-login-handlers';
 
 export default function Login() {
   const router = useRouter();
