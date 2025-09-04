@@ -214,23 +214,7 @@ export const Container = React.forwardRef<
 >((props, ref) => <View ref={ref} fullWidth padding="xl" {...props} />);
 Container.displayName = 'Container';
 
-export const Card = React.forwardRef<
-  RNView,
-  Omit<ViewProps, 'rounded' | 'bordered' | 'shadow' | 'padding'> & RNViewProps
->(({ backgroundColor, ...props }, ref) => {
-  const theme = useTheme();
-  return (
-    <View
-      ref={ref}
-      rounded="md"
-      shadow="sm"
-      padding="xl"
-      backgroundColor={backgroundColor || theme.colors.surface.card}
-      {...props}
-    />
-  );
-});
-Card.displayName = 'Card';
+// Card component moved to ./card.tsx for better organization and features
 
 export const Surface = React.forwardRef<
   RNView,

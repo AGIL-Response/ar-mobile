@@ -8,7 +8,10 @@ export * from './base-component';
 export * from './types';
 
 // Core components
+export * from './avatar';
+export * from './badge';
 export * from './button';
+export * from './card';
 export * from './text';
 export * from './view';
 
