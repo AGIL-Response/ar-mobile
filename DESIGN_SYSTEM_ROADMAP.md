@@ -152,4 +152,13 @@ Border Radius: 3, 4, 8, 10, 64, 100px
 
 **Last Updated:** Current
 **Status:** Phase 3 Layout Components Complete ✅
-**Current Task:** Tasks 3.1-3.5 completed ✅ - All layout components (AppBar, TabBar, FAB, Navigation) created
+
+## 🏗️ **Architecture Pattern Established**
+
+**Screen Organization Pattern**: Documented in `SCREEN_ORGANIZATION_PATTERN.md`
+
+- ✅ Global stores: `src/stores/` (auth, app-wide state)
+- ✅ Screen-specific: `src/screens/{name}/` (components, hooks, stores, types)
+- ✅ Navigation config only: `src/app/` (imports from screens)
+- ✅ Login screen reorganized following this pattern
+  **Current Task:** Tasks 3.1-3.5 completed ✅ - All layout components (AppBar, TabBar, FAB, Navigation) created
