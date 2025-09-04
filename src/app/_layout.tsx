@@ -1,5 +1,4 @@
 // Import  global CSS file
-import '../../global.css';
 import '@/lib/reanimated';
 
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
