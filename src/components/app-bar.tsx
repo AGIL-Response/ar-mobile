@@ -236,7 +236,7 @@ export const AppBar = React.forwardRef<any, AppBarProps & ViewProps>(
     const contentStyles = useThemedStyles(createContentStyles, { variant });
     
     // Get theme colors for back button
-    const theme = useThemedStyles((theme: Theme) => theme);
+    const theme = useThemedStyles((theme: Theme) => theme, {});
 
     // Merge with user-provided styles
     const finalStyle = mergeStyles(appBarStyles, userStyle);
