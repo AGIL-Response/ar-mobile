@@ -59,6 +59,7 @@ export const Text = React.forwardRef<RNText, TextProps & RNTextProps>(
       variant = 'body',
       color,
       centered = false,
+      font,
       text,
       tx,
       txOptions,
@@ -74,6 +75,7 @@ export const Text = React.forwardRef<RNText, TextProps & RNTextProps>(
       variant,
       color,
       centered,
+      font,
       rtl,
     });
 

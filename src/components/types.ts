@@ -68,6 +68,8 @@ export interface BaseTextProps extends TextProps, BaseComponentProps {
   color?: string;
   /** Whether text should be centered */
   centered?: boolean;
+  /** Font family override */
+  font?: string;
 }
 
 /**

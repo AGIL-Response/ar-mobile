@@ -334,6 +334,7 @@ export const createTextStyles = (theme: Theme, props: any) => ({
   ...(theme.typography as any)[props.variant || 'body'],
   color: props.color || theme.colors.text.primary,
   textAlign: props.centered ? ('center' as const) : undefined,
+  fontFamily: props.font || (theme.typography as any)[props.variant || 'body'].fontFamily,
 });
 
 /**

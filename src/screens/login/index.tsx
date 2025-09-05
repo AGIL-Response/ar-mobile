@@ -1,3 +1,4 @@
+import images from '@assets/images';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -16,7 +17,6 @@ import { type Theme, useTheme } from '@/theme';
 import { PasswordStep } from './components/password-step';
 import { UsernameStep } from './components/username-step';
 import { useLoginHandlers } from './hooks/use-login-handlers';
-import images from '@assets/images';
 
 export default function Login() {
   const router = useRouter();

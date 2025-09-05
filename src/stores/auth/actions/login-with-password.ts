@@ -1,7 +1,7 @@
 // eslint-disable-next-line import/no-cycle
 import { authApi, handleApiError } from '@/api';
 import { decodeJWT } from '@/lib/utils';
-import { type AuthState } from '@/stores/auth';
+import { type AuthState, type ITenant } from '@/stores/auth';
 
 const loginWithPassword =
   (set: any, get: any) => async (username: string, password: string) => {
@@ -75,6 +75,26 @@ const loginWithPassword =
           permissions: [], // Extract from roles if needed
           teamRoles: profileResponse.data.teamRoles || [],
         };
+
+        // Set the selected tenant from the API response
+        if (profileResponse.data.tenants) {
+          const tenantFromResponse: ITenant = {
+            id: profileResponse.data.tenants.id,
+            name: profileResponse.data.tenants.name,
+            displayName: profileResponse.data.tenants.name, // Use name as displayName for now
+          };
+          
+          set((state: AuthState) => {
+            state.selectedTenant = tenantFromResponse;
+            // Also add to tenants array if not already there
+            const existingTenant = state.tenants.find(t => t.id === tenantFromResponse.id);
+            if (!existingTenant) {
+              state.tenants.push(tenantFromResponse);
+            }
+          });
+          
+          console.log('Selected tenant set from profile:', tenantFromResponse);
+        }
       } catch (profileError) {
         console.warn(
           'Failed to get user profile from API, using JWT data:',

@@ -43,7 +43,6 @@ export const useLoginHandlers = ({
     console.log('Login screen: Starting login process for username:', username);
     try {
       await authState.actions.loginWithPassword(username, password);
-      showSuccess('Login successful!');
       router.push('/');
     } catch (error: any) {
       const errorMessage =
@@ -61,19 +60,9 @@ export const useLoginHandlers = ({
     authState.actions.setSelectedTenant(null);
   };
 
-  const handleRegister = () => {
-    router.push('/register');
-  };
-
-  const handleDemoLogin = () => {
-    setUsername('alexis.hills40');
-  };
-
   return {
     handleUsernameSubmit,
     handlePasswordSubmit,
     handleBackToUsername,
-    handleRegister,
-    handleDemoLogin,
   };
 };

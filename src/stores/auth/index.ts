@@ -20,6 +20,7 @@ interface ITokens {
 }
 
 export interface ITenant {
+  id: string;
   name: string;
   displayName: string;
 }
@@ -141,6 +142,6 @@ const authStore = (set: any, get: any) => ({
   reset: () => resetStore(initialState, set),
 });
 
-const useAuthStore = createStore<AuthState>(authStore);
+export const useAuthStore = createStore<AuthState>(authStore);
 
 export default useAuthStore;
