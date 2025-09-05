@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 
-import { AppBar, Avatar, Button, Icon, Text, View } from '@/components';
+import { AppBar, Avatar, Icon, Text, View } from '@/components';
 import icons, { iconNames } from '@assets/icons';
 import { useAuthStore } from '@/stores/auth';
 import { useUsersStore } from '@/stores/users';
@@ -116,11 +116,8 @@ export function MembersScreen(): React.JSX.Element {
     <View style={styles.container}>
       <AppBar
         title="Members"
-        leftContent={
-          <Button variant="ghost" size="small" onPress={() => router.back()}>
-            <Icon name={iconNames.arrow_left} size={16} />
-          </Button>
-        }
+        showBackButton={true}
+        onBackPress={() => router.back()}
         safeArea
       />
 

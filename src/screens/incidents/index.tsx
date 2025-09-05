@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 import { IncidentListCard } from './components';
-import { Icon, Text, View, iconNames } from '@/components';
+import { AppBar, Icon, Text, View, iconNames } from '@/components';
 import { useAuthStore } from '@/stores/auth';
 import { useIncidentsStore } from '@/stores/incidents';
 import { Palette, useTheme } from '@/theme';
@@ -36,10 +36,6 @@ export default function IncidentsScreen() {
 
   const handleCreateIncident = () => {
     router.push('/incidents/create');
-  };
-
-  const handleBackPress = () => {
-    router.back();
   };
 
   const renderIncident = ({ item }: { item: Incident }) => (
@@ -76,79 +72,19 @@ export default function IncidentsScreen() {
     </View>
   );
 
-  const renderHeader = () => (
-    <View
-      style={{
-        paddingBottom: 16,
-      }}
-    >
-      <Text
-        variant="body"
-        style={{
-          color: theme.colors.text.muted,
-        }}
-      >
-        {incidentsState.incidents.length} incident{incidentsState.incidents.length !== 1 ? 's' : ''} found
-      </Text>
-    </View>
-  );
-
   return (
-    <SafeAreaView
+    <View
       style={{
         flex: 1,
         backgroundColor: theme.colors.background.primary,
       }}
     >
-      {/* Header */}
-      <View
-        style={{
-          height: 56,
-          paddingHorizontal: 16,
-          paddingVertical: 8,
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 16,
-          borderBottomWidth: 1,
-          borderBottomColor: theme.colors.surface.border,
-        }}
-      >
-        <TouchableOpacity onPress={handleBackPress}>
-          <View
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 16,
-              backgroundColor: theme.colors.surface.card,
-              borderWidth: 1,
-              borderColor: theme.colors.surface.border,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <Icon
-              name={iconNames.arrow_left}
-              size={16}
-              color={theme.colors.text.primary}
-            />
-          </View>
-        </TouchableOpacity>
-
-        <View style={{ flex: 1, justifyContent: 'center' }}>
-          <Text
-            variant="h3"
-            style={{
-              color: theme.colors.text.primary,
-              textAlign: 'center',
-            }}
-          >
-            Incidents
-          </Text>
-        </View>
-
-        {/* Placeholder for alignment */}
-        <View style={{ width: 32 }} />
-      </View>
+      <AppBar
+        title="Incidents"
+        showBackButton={true}
+        onBackPress={() => router.back()}
+        safeArea
+      />
 
       {/* Content */}
       <View style={{ flex: 1 }}>
@@ -181,7 +117,6 @@ export default function IncidentsScreen() {
             }}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={renderEmpty}
-            ListHeaderComponent={incidentsState.incidents.length > 0 ? renderHeader : null}
           />
         )}
       </View>
@@ -212,6 +147,6 @@ export default function IncidentsScreen() {
           color={Palette.white}
         />
       </TouchableOpacity>
-    </SafeAreaView>
+    </View>
   );
 }

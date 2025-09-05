@@ -154,7 +154,7 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
         </View>
 
         {/* Location */}
-        {incident.location && (
+        {incident.description && (
           <View
             style={{
               flexDirection: 'row',
@@ -174,7 +174,7 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
                 flex: 1,
               }}
             >
-              {incident.location}
+              {incident.description}
             </Text>
           </View>
         )}
