@@ -42,6 +42,12 @@ export default function AppLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="task/[id]"
+        options={{
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }
