@@ -3,40 +3,45 @@
  * Flat View / Map View toggle
  */
 
-import React, { useState } from 'react';
+import React from 'react';
+import { TouchableOpacity } from 'react-native';
 
 import { Text, View } from '@/components';
-import { useTheme } from '@/theme';
+import { Palette, useTheme } from '@/theme';
 
-export function TabSelector() {
+interface TabSelectorProps {
+  activeTab: 'flat' | 'map';
+  onTabChange: (tab: 'flat' | 'map') => void;
+}
+
+export function TabSelector({ activeTab, onTabChange }: TabSelectorProps) {
   const theme = useTheme();
-  const [activeTab, setActiveTab] = useState<'flat' | 'map'>('flat');
 
   return (
     <View
       style={{
-        height: 39,
+        height: 56,
         backgroundColor: theme.colors.background.primary,
         flexDirection: 'row',
         alignItems: 'center',
+        paddingHorizontal: 16,
       }}
     >
-      <View
+      <TouchableOpacity
         style={{
           flex: 1,
           height: '100%',
           justifyContent: 'center',
           alignItems: 'center',
+          position: 'relative',
         }}
+        onPress={() => onTabChange('flat')}
       >
         <Text
+          variant="label"
           style={{
-            color: theme.colors.text.primary,
-            fontSize: 14,
-            lineHeight: 21,
+            color: activeTab === 'flat' ? theme.colors.text.primary : theme.colors.text.muted,
             textAlign: 'center',
-            fontWeight: '600',
-            fontFamily: 'Manrope-SemiBold',
           }}
         >
           Flat View
@@ -46,29 +51,29 @@ export function TabSelector() {
             style={{
               position: 'absolute',
               bottom: 0,
-              height: 2,
+              height: 3,
               width: '100%',
-              backgroundColor: '#1068eb', // Blue indicator
+              backgroundColor: Palette.primary,
             }}
           />
         )}
-      </View>
-      <View
+      </TouchableOpacity>
+      
+      <TouchableOpacity
         style={{
           flex: 1,
           height: '100%',
           justifyContent: 'center',
           alignItems: 'center',
+          position: 'relative',
         }}
+        onPress={() => onTabChange('map')}
       >
         <Text
+          variant="label"
           style={{
-            color: '#6a7178', // Dim gray from Figma
-            fontSize: 14,
-            lineHeight: 21,
+            color: activeTab === 'map' ? theme.colors.text.primary : theme.colors.text.muted,
             textAlign: 'center',
-            fontWeight: '500',
-            fontFamily: 'Manrope-Medium',
           }}
         >
           Map View
@@ -78,13 +83,13 @@ export function TabSelector() {
             style={{
               position: 'absolute',
               bottom: 0,
-              height: 2,
+              height: 3,
               width: '100%',
-              backgroundColor: '#1068eb', // Blue indicator
+              backgroundColor: Palette.primary,
             }}
           />
         )}
-      </View>
+      </TouchableOpacity>
     </View>
   );
 }
