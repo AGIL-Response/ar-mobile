@@ -10,6 +10,8 @@ import ArrowLeftIcon from './arrow-left.svg';
 import LocationIcon from './location.svg';
 import ClockIcon from './clock.svg';
 import PlusIcon from './plus.svg';
+import SunIcon from './sun.svg';
+import SettingsIcon from './settings.svg';
 
 // Icon component type
 type IconComponent = React.ComponentType<SvgProps>;
@@ -26,9 +28,8 @@ export const iconNames = {
   location: 'location',
   clock: 'clock',
   plus: 'plus',
-  // Add more icon names here as needed:
-  // settings: 'settings',
-  // notification: 'notification',
+  sun: 'sun',
+  settings: 'settings',
 } as const;
 
 // Icons object with proper typing
@@ -48,9 +49,8 @@ const icons: Record<string, IconComponent> = {
   [iconNames.location]: LocationIcon,
   [iconNames.clock]: ClockIcon,
   [iconNames.plus]: PlusIcon,
-  // Add more icons here as needed:
-  // [iconNames.settings]: SettingsIcon,
-  // [iconNames.notification]: NotificationIcon,
+  [iconNames.sun]: SunIcon,
+  [iconNames.settings]: SettingsIcon,
 } as const;
 
 // Export icon names as type for better TypeScript support

@@ -4,80 +4,223 @@
  */
 
 import React from 'react';
+import { ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, Center, Screen, Text, ThemeToggle, View } from '@/components';
-import useAuthStore from '@/stores/auth';
+import { AppBar, Avatar, Icon, iconNames, Text, ThemeToggle, View } from '@/components';
+import { useAuthStore } from '@/stores/auth';
 import { useTheme } from '@/theme';
-
-import { ProfileHeader } from './components/profile-header';
+import images from '@assets/images';
 
 export default function ProfileScreen() {
   const theme = useTheme();
   const authState = useAuthStore();
 
-  const handleLogout = () => {
-    authState.actions.logout();
+  const user = authState.user;
+  const selectedTenant = authState.selectedTenant;
+
+  // Get user display name
+  const getDisplayName = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    if (user?.firstName) {
+      return user.firstName;
+    }
+    return user?.username || 'User';
   };
+
+  // Get user role/title
+  const getUserRole = () => {
+    if (user?.roles && user.roles.length > 0) {
+      const role = user.roles[0];
+      const teamName = selectedTenant?.displayName || selectedTenant?.name || 'Team';
+      return `${role}, ${teamName}`;
+    }
+    return selectedTenant?.displayName || selectedTenant?.name || 'Team Member';
+  };
+
+  const handleNotificationPress = () => {
+    // TODO: Navigate to notification settings
+    console.log('Navigate to notification settings');
+  };
+
+  const handleAccountSettingsPress = () => {
+    // TODO: Navigate to account settings
+    console.log('Navigate to account settings');
+  };
+
+  const settingsItems = [
+    {
+      id: 'notifications',
+      icon: iconNames.notification_badge,
+      title: 'Notification Preferences',
+      onPress: handleNotificationPress,
+      showChevron: true,
+    },
+    {
+      id: 'theme',
+      icon: iconNames.sun,
+      title: 'Dark Mode',
+      onPress: null, // Handled by toggle
+      showChevron: false,
+      rightComponent: <ThemeToggle size="small" />,
+    },
+    {
+      id: 'account',
+      icon: iconNames.settings,
+      title: 'Account Settings',
+      onPress: handleAccountSettingsPress,
+      showChevron: true,
+    },
+  ];
 
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: theme.colors.background.primary }}
     >
-      <Screen>
-        {/* Header */}
-        <ProfileHeader />
+      <AppBar
+        title="Profile"
+      />
 
-        {/* Content */}
-        <View style={{ flex: 1, padding: 16 }}>
-          <Center style={{ flex: 1 }}>
-            <Text
-              variant="h1"
-              style={{
-                color: theme.colors.text.primary,
-                textAlign: 'center',
-                marginBottom: theme.spacing.gap.md,
-              }}
-            >
-              Profile
-            </Text>
-            <Text
-              variant="body"
-              style={{
-                color: theme.colors.text.secondary,
-                textAlign: 'center',
-                marginBottom: theme.spacing.gap.xl,
-              }}
-            >
-              User profile and settings will be added here
-            </Text>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 24 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* User Profile Section */}
+        <View
+          style={{
+            alignItems: 'center',
+            paddingVertical: 32,
+            paddingHorizontal: 16,
+          }}
+        >
+          {/* Avatar */}
+          <Avatar
+            source={images.avatar_image}
+            size="xl"
+            fallback={getDisplayName()}
+            style={{ marginBottom: 16 }}
+          />
 
-            {/* Theme Toggle Demo */}
-            <View style={{ marginBottom: theme.spacing.gap.lg }}>
-              <Text
-                variant="label"
-                style={{
-                  color: theme.colors.text.primary,
-                  textAlign: 'center',
-                  marginBottom: theme.spacing.gap.sm,
-                }}
-              >
-                Theme Settings
-              </Text>
-              <ThemeToggle size="medium" />
-            </View>
+          {/* User Name */}
+          <Text
+            variant="h2"
+            style={{
+              color: theme.colors.text.primary,
+              textAlign: 'center',
+              marginBottom: 4,
+            }}
+          >
+            {getDisplayName()}
+          </Text>
 
-            {/* Logout Button */}
-            <Button
-              title="Logout"
-              variant="outline"
-              colorVariant="error"
-              onPress={handleLogout}
-              style={{ marginTop: theme.spacing.gap.xl }}
-            />
-          </Center>
+          {/* User Role/Title */}
+          <Text
+            variant="bodyMedium"
+            style={{
+              color: theme.colors.text.secondary,
+              textAlign: 'center',
+            }}
+          >
+            {getUserRole()}
+          </Text>
         </View>
-      </Screen>
+
+        {/* Settings Section */}
+        <View style={{ paddingHorizontal: 16 }}>
+          <Text
+            variant="h4"
+            style={{
+              color: theme.colors.text.primary,
+              marginBottom: 12,
+            }}
+          >
+            Settings
+          </Text>
+
+          <View
+            style={{
+              backgroundColor: theme.colors.surface.card,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: theme.colors.surface.border,
+              overflow: 'hidden',
+            }}
+          >
+            {settingsItems.map((item, index) => (
+              <React.Fragment key={item.id}>
+                <TouchableOpacity
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingVertical: 12,
+                    paddingHorizontal: 16,
+                    opacity: item.onPress ? 1 : 1, // Keep opacity consistent
+                  }}
+                  onPress={item.onPress}
+                  disabled={!item.onPress}
+                >
+                  {/* Icon */}
+                  <View
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 16,
+                      backgroundColor: theme.colors.surface.input,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      marginRight: 12,
+                    }}
+                  >
+                    <Icon
+                      name={item.icon}
+                      size={18}
+                      color={theme.colors.text.secondary}
+                    />
+                  </View>
+
+                  {/* Title */}
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      variant="body"
+                      style={{
+                        color: theme.colors.text.primary,
+                      }}
+                    >
+                      {item.title}
+                    </Text>
+                  </View>
+
+                  {/* Right Content */}
+                  {item.rightComponent ? (
+                    item.rightComponent
+                  ) : item.showChevron ? (
+                    <Icon
+                      name={iconNames.arrow_left} // We'll rotate this or add a right arrow
+                      size={16}
+                      color={theme.colors.text.secondary}
+                      style={{ transform: [{ rotate: '180deg' }] }}
+                    />
+                  ) : null}
+                </TouchableOpacity>
+
+                {/* Divider */}
+                {index < settingsItems.length - 1 && (
+                  <View
+                    style={{
+                      height: 1,
+                      backgroundColor: theme.colors.surface.border,
+                      marginLeft: 60, // Align with text (32px icon + 12px margin + 16px padding)
+                    }}
+                  />
+                )}
+              </React.Fragment>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
