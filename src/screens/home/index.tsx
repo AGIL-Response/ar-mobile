@@ -7,6 +7,7 @@ import React from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Screen, View } from '@/components';
+import useAuthStore from '@/stores/auth';
 import { useTheme } from '@/theme';
 
 import { AppHeader } from './components/app-header';
@@ -14,7 +15,6 @@ import { FloatingActionButton } from './components/floating-action-button';
 import { IncidentsSection } from './components/incidents-section';
 import { MembersSection } from './components/members-section';
 import { TabSelector } from './components/tab-selector';
-import useAuthStore from '@/stores/auth';
 
 export default function HomeScreen() {
   const theme = useTheme();

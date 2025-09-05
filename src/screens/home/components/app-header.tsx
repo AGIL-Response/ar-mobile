@@ -3,12 +3,12 @@
  * Pixel-perfect implementation matching Figma design
  */
 
+import images from '@assets/images';
 import React from 'react';
 import { Image, ImageBackground } from 'react-native';
 
-import { Icon, Text, View, iconNames } from '@/components';
+import { Icon, iconNames,Text, View } from '@/components';
 import { Palette, useTheme } from '@/theme';
-import images from '@assets/images';
 
 export function AppHeader({ title }) {
   const theme = useTheme();
