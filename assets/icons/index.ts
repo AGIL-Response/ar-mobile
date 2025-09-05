@@ -7,6 +7,9 @@ import UserIcon from './user.svg';
 import SearchIcon from './search.svg';
 import NotificationBadgeIcon from './notification-badge.svg';
 import ArrowLeftIcon from './arrow-left.svg';
+import LocationIcon from './location.svg';
+import ClockIcon from './clock.svg';
+import PlusIcon from './plus.svg';
 
 // Icon component type
 type IconComponent = React.ComponentType<SvgProps>;
@@ -20,6 +23,9 @@ export const iconNames = {
   search: 'search',
   notification_badge: 'notificationBadge',
   arrow_left: 'arrowLeft',
+  location: 'location',
+  clock: 'clock',
+  plus: 'plus',
   // Add more icon names here as needed:
   // settings: 'settings',
   // notification: 'notification',
@@ -39,6 +45,9 @@ const icons: Record<string, IconComponent> = {
   [iconNames.search]: SearchIcon,
   [iconNames.notification_badge]: NotificationBadgeIcon,
   [iconNames.arrow_left]: ArrowLeftIcon,
+  [iconNames.location]: LocationIcon,
+  [iconNames.clock]: ClockIcon,
+  [iconNames.plus]: PlusIcon,
   // Add more icons here as needed:
   // [iconNames.settings]: SettingsIcon,
   // [iconNames.notification]: NotificationIcon,

@@ -30,6 +30,12 @@ export default function AppLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="incidents"
+        options={{
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }
