@@ -12,6 +12,7 @@ import { Text, View } from '@/components';
 import { IncidentListCard } from '@/screens/incidents/components';
 import { useAuthStore } from '@/stores/auth';
 import { useIncidentsStore } from '@/stores/incidents';
+import { useUsersStore } from '@/stores/users';
 import { Palette, useTheme } from '@/theme';
 
 export function IncidentsSection() {
@@ -19,12 +20,18 @@ export function IncidentsSection() {
   const router = useRouter();
   const authState = useAuthStore();
   const incidentsState = useIncidentsStore();
+  const usersState = useUsersStore();
 
   const tenantId = authState.selectedTenant?.id;
 
   useEffect(() => {
     if (tenantId) {
-      incidentsState.actions.fetchIncidents(tenantId, { limit: 3 });
+      incidentsState.actions.fetchIncidents(tenantId);
+      // Note: Users are already fetched by the MembersSection on the same screen
+      // but we ensure they're available here as well
+      if (usersState.users.length === 0) {
+        usersState.actions.fetchUsers(tenantId);
+      }
     }
   }, [tenantId]);
 

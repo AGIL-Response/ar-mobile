@@ -9,6 +9,7 @@ import { TouchableOpacity } from 'react-native';
 
 import type { Incident, IncidentSeverity } from '@/api/incidents/types';
 import { Icon, iconNames,Text, View } from '@/components';
+import { useUsersStore } from '@/stores/users';
 import { Palette, useTheme } from '@/theme';
 
 interface IncidentCardProps {
@@ -70,6 +71,7 @@ const formatTimeAgo = (dateString: string): string => {
 
 export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
   const theme = useTheme();
+  const usersState = useUsersStore();
 
   const handlePress = () => {
     onPress?.(incident);
@@ -78,6 +80,22 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
   // Use provided severity or map from incident type
   const displaySeverity =
     incident.severity || mapIncidentTypeToSeverity(incident.type);
+
+  // Get user name from the users store
+  const getCreatedByName = () => {
+    if (incident.reportedBy) {
+      return incident.reportedBy;
+    }
+    
+    if (incident.createdBy) {
+      const user = usersState.users.find(user => user.id === incident.createdBy);
+      if (user) {
+        return user.fullName || user.username || 'Unknown User';
+      }
+    }
+    
+    return 'Unknown Reporter';
+  };
 
   return (
     <TouchableOpacity
@@ -149,7 +167,7 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
               color: theme.colors.text.secondary,
             }}
           >
-            {incident.reportedBy || incident.createdBy || 'Unknown Reporter'}
+            {getCreatedByName()}
           </Text>
         </View>
 

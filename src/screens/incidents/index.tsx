@@ -12,6 +12,7 @@ import { IncidentListCard } from './components';
 import { AppBar, Icon, Text, View, iconNames } from '@/components';
 import { useAuthStore } from '@/stores/auth';
 import { useIncidentsStore } from '@/stores/incidents';
+import { useUsersStore } from '@/stores/users';
 import { Palette, useTheme } from '@/theme';
 import type { Incident } from '@/api/incidents/types';
 
@@ -20,12 +21,14 @@ export default function IncidentsScreen() {
   const router = useRouter();
   const authState = useAuthStore();
   const incidentsState = useIncidentsStore();
+  const usersState = useUsersStore();
 
   const tenantId = authState.selectedTenant?.id;
 
   useEffect(() => {
     if (tenantId) {
       incidentsState.actions.fetchIncidents(tenantId);
+      usersState.actions.fetchUsers(tenantId);
     }
   }, [tenantId]);
 
