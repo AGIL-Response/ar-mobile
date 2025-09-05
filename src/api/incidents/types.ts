@@ -63,7 +63,9 @@ export interface CreateIncidentRequest {
   description: string;
   type: IncidentType;
   status: IncidentStatus;
-  location?: string;
+  location?: {
+    coordinates: number[]; // [longitude, latitude, altitude]
+  };
   severity?: IncidentSeverity;
 }
 

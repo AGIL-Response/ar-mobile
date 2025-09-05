@@ -36,6 +36,12 @@ export default function AppLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="incidents/create"
+        options={{
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }

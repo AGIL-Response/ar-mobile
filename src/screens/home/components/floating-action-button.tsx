@@ -4,19 +4,29 @@
  */
 
 import React from 'react';
+import { TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 
-import { Text, View } from '@/components';
+import { Icon, iconNames, Text, View } from '@/components';
+import { Palette } from '@/theme';
 
 export function FloatingActionButton() {
+  const router = useRouter();
+
+  const handlePress = () => {
+    // Navigate to create incident screen (location permission will be handled there)
+    router.push('/incidents/create');
+  };
   return (
-    <View
+    <TouchableOpacity
+      onPress={handlePress}
       style={{
         position: 'absolute',
-        bottom: 100, // Above tab bar
+        bottom: 24,
         right: 16,
         width: 56,
         height: 56,
-        backgroundColor: '#1068eb', // Blue from Figma
+        backgroundColor: Palette.primary,
         borderRadius: 28,
         justifyContent: 'center',
         alignItems: 'center',
@@ -27,15 +37,11 @@ export function FloatingActionButton() {
         shadowRadius: 4,
       }}
     >
-      <Text
-        style={{
-          color: 'white',
-          fontSize: 24,
-          fontWeight: 'bold',
-        }}
-      >
-        +
-      </Text>
-    </View>
+      <Icon
+        name={iconNames.plus}
+        size={24}
+        color={Palette.white}
+      />
+    </TouchableOpacity>
   );
 }

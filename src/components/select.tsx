@@ -160,10 +160,17 @@ const createSelectTextStyles = createStyleCreator<SelectProps>(
       large: typography.h4,
     };
 
+    const sizeLineHeights = {
+      small: 40, // Match container height
+      medium: 48, // Match container height  
+      large: 56, // Match container height
+    };
+
     return {
-      flex: 1,
       color: disabled ? colors.text.muted : colors.text.primary,
       ...typographyVariants[size],
+      lineHeight: sizeLineHeights[size],
+      textAlignVertical: 'center', // Android-specific
     };
   }
 );
@@ -179,9 +186,17 @@ const createPlaceholderStyles = createStyleCreator<SelectProps>(
       large: typography.h4,
     };
 
+    const sizeLineHeights = {
+      small: 40, // Match container height
+      medium: 48, // Match container height  
+      large: 56, // Match container height
+    };
+
     return {
-      color: colors.text.muted,
+      color: colors.text.secondary,
       ...typographyVariants[size],
+      lineHeight: sizeLineHeights[size],
+      textAlignVertical: 'center', // Android-specific
     };
   }
 );
@@ -215,6 +230,15 @@ const createDropdownStyles = createStyleCreator<SelectProps>(
       shadowOpacity: 0.25,
       shadowRadius: 8,
       elevation: 5,
+    };
+  }
+);
+
+const createTextContainerStyles = createStyleCreator<SelectProps>(
+  (theme, props) => {
+    return {
+      flex: 1,
+      justifyContent: 'center',
     };
   }
 );
@@ -388,6 +412,8 @@ export const Select = forwardRef<RNView, SelectProps>(
       state: actualState,
     });
 
+    const textContainerStyles = useThemedStyles(createTextContainerStyles, {});
+
     // Create accessibility props
     const accessibilityProps = createAccessibilityProps({
       testID,
@@ -429,7 +455,7 @@ export const Select = forwardRef<RNView, SelectProps>(
           {leftIcon && <View style={{ marginRight: 8 }}>{leftIcon}</View>}
 
           {/* Selected Value or Placeholder */}
-          <View style={{ flex: 1 }}>
+          <View style={textContainerStyles}>
             {selectedOption ? (
               <Text style={textStyles}>{selectedOption.label}</Text>
             ) : (

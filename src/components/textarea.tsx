@@ -286,6 +286,10 @@ export const TextArea = forwardRef<TextInput, TextAreaProps>(
 
     const footerRowStyles = useThemedStyles(createFooterRowStyles, {});
 
+    // Get theme for default placeholder color
+    const theme = useThemedStyles((theme) => theme, {});
+    const defaultPlaceholderColor = placeholderTextColor || theme.colors.text.secondary;
+
     // Create accessibility props
     const accessibilityProps = createAccessibilityProps({
       testID,
@@ -324,7 +328,7 @@ export const TextArea = forwardRef<TextInput, TextAreaProps>(
           style={[dynamicWrapperStyle, finalTextAreaStyle]}
           multiline
           editable={!disabled}
-          placeholderTextColor={placeholderTextColor}
+          placeholderTextColor={defaultPlaceholderColor}
           maxLength={maxLength}
           value={value}
           {...accessibilityProps}
