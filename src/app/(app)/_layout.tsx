@@ -24,6 +24,12 @@ export default function AppLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="members"
+        options={{
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }
