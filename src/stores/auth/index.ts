@@ -19,6 +19,11 @@ interface ITokens {
   idToken?: string;
 }
 
+export interface ITenant {
+  name: string;
+  displayName: string;
+}
+
 interface IUser {
   id: string;
   username: string;
@@ -40,10 +45,11 @@ export interface AuthState extends IBaseState {
     idToken?: string | undefined;
   };
   user: IUser | undefined;
+  tenants: ITenant[];
+  selectedTenant: ITenant | null;
   isLoading: boolean;
   isCheckingUsername: boolean;
   usernameError: string | null;
-  currentRealm: string | null;
   geoEntity: GeoEntity | undefined;
 
   actions: {
@@ -53,8 +59,9 @@ export interface AuthState extends IBaseState {
     logout: () => void;
     setTokens: (tokens: ITokens) => void;
     setUser: (user: IUser) => void;
+    setTenants: (tenants: ITenant[]) => void;
+    setSelectedTenant: (tenant: ITenant | null) => void;
     setGeoEntity: (geoEntity: GeoEntity) => void;
-    setCurrentRealm: (realm: string | null) => void;
     clearUsernameError: () => void;
     createGeoEntityIfNeeded: () => Promise<void>;
     updateGeoEntityLocation: (lat: number, lon: number) => Promise<void>;
@@ -69,10 +76,11 @@ const initialState: InitStateType<AuthState> = {
     idToken: undefined,
   },
   user: undefined,
+  tenants: [],
+  selectedTenant: null,
   isLoading: false,
   isCheckingUsername: false,
   usernameError: null,
-  currentRealm: null,
   geoEntity: undefined,
 };
 
@@ -86,8 +94,9 @@ const authStore = (set: any, get: any) => ({
       set((state: AuthState) => {
         state.token = initialState.token;
         state.user = undefined;
+        state.tenants = [];
+        state.selectedTenant = null;
         state.geoEntity = undefined;
-        state.currentRealm = null;
         state.usernameError = null;
         state.isCheckingUsername = false;
       });
@@ -102,14 +111,23 @@ const authStore = (set: any, get: any) => ({
         state.user = user;
       });
     },
+    setTenants: (tenants: ITenant[]) => {
+      set((state: AuthState) => {
+        state.tenants = tenants;
+        // Auto-select first tenant if available
+        if (tenants.length > 0 && !state.selectedTenant) {
+          state.selectedTenant = tenants[0];
+        }
+      });
+    },
+    setSelectedTenant: (tenant: ITenant | null) => {
+      set((state: AuthState) => {
+        state.selectedTenant = tenant;
+      });
+    },
     setGeoEntity: (geoEntity: GeoEntity) => {
       set((state: AuthState) => {
         state.geoEntity = geoEntity;
-      });
-    },
-    setCurrentRealm: (realm: string | null) => {
-      set((state: AuthState) => {
-        state.currentRealm = realm;
       });
     },
     clearUsernameError: () => {

@@ -29,10 +29,10 @@ export default function Login() {
   const [step, setStep] = useState<'username' | 'password'>('username');
 
   useEffect(() => {
-    if (username && authState.currentRealm) {
+    if (username && authState.selectedTenant) {
       setStep('password');
     }
-  }, [username, authState.currentRealm]);
+  }, [username, authState.selectedTenant]);
 
   const handlers = useLoginHandlers({
     authState,
@@ -99,7 +99,7 @@ export default function Login() {
                 onSubmit={handlers.handlePasswordSubmit}
                 onBack={handlers.handleBackToUsername}
                 isLoading={authState.isLoading}
-                currentRealm={authState.currentRealm}
+                selectedTenant={authState.selectedTenant}
               />
             )}
           </View>

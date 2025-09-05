@@ -58,7 +58,7 @@ export const useLoginHandlers = ({
     setStep('username');
     setPassword('');
     authState.actions.clearUsernameError();
-    authState.actions.setCurrentRealm(null);
+    authState.actions.setSelectedTenant(null);
   };
 
   const handleRegister = () => {

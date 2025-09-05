@@ -19,10 +19,10 @@ const checkUsername =
       });
 
       console.log('Getting tenant information for username:', username);
-      const response = await authApi.getTenantsByUsername(username);
-      console.log('Tenant resolved:', response);
+      const allTenants = await authApi.getAllTenantsByUsername(username);
+      console.log('Tenants resolved:', allTenants);
 
-      if (!response) {
+      if (!allTenants || allTenants.length === 0) {
         set((state: AuthState) => {
           state.usernameError =
             'Username not found. Please check your username and try again.';
@@ -30,12 +30,15 @@ const checkUsername =
         return null;
       }
 
-      const realm = response?.name;
+      // Store all tenants and select first one
+      const firstTenant = allTenants[0];
+      const realm = firstTenant?.name;
       console.log('Found realm:', realm);
 
-      // Store the realm for later use
+      // Save all tenants and select first one
       set((state: AuthState) => {
-        state.currentRealm = realm;
+        state.tenants = allTenants;
+        state.selectedTenant = firstTenant;
       });
 
       console.log('Username check completed for realm:', realm);

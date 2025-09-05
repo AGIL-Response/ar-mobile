@@ -35,6 +35,20 @@ export const authApi = {
   },
 
   /**
+   * Get all tenants for a username
+   */
+  getAllTenantsByUsername: async (username: string): Promise<any> => {
+    try {
+      const response = await apiClient.get(
+        `/auth/username/${encodeURIComponent(username)}/tenants`
+      );
+      return response?.data?.data || [];
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  /**
    * Login with Keycloak using password grant
    */
   loginWithKeycloak: async (

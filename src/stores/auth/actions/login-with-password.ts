@@ -10,7 +10,7 @@ const loginWithPassword =
     }
 
     const state: AuthState = get();
-    if (!state.currentRealm) {
+    if (!state.selectedTenant) {
       throw new Error('Please check your username first');
     }
 
@@ -23,14 +23,14 @@ const loginWithPassword =
         'Authenticating with password grant for username:',
         username,
         'in realm:',
-        state.currentRealm
+        state.selectedTenant.name
       );
 
       // Use Keycloak token endpoint
       const tokenData = await authApi.loginWithKeycloak(
         username,
         password,
-        state.currentRealm
+        state.selectedTenant.name
       );
 
       console.log(
@@ -68,7 +68,7 @@ const loginWithPassword =
           lastName:
             profileResponse.data.fullName?.split(' ').slice(1).join(' ') || '',
           tenantId: profileResponse.data.tenantId,
-          realm: state.currentRealm || '',
+          realm: state.selectedTenant?.name || '',
           roles:
             profileResponse.data.tenantRoles?.map((role: any) => role.name) ||
             [],
@@ -88,7 +88,7 @@ const loginWithPassword =
           firstName: jwtPayload?.given_name || '',
           lastName: jwtPayload?.family_name || '',
           tenantId: tenantId || '',
-          realm: state.currentRealm || '',
+          realm: state.selectedTenant?.name || '',
           roles: [],
           permissions: [],
           teamRoles: [],
@@ -100,6 +100,9 @@ const loginWithPassword =
 
       // Set user data
       get().actions.setUser(enhancedUserProfile);
+
+      // Note: Tenants are already fetched and stored during username check
+      // No need to fetch them again here
 
       // Create geo entity if needed (non-blocking)
       try {

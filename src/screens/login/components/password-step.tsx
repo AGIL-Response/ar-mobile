@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, TextInput } from 'react-native';
 
 import { Button, Text, View } from '@/components';
+import { type ITenant } from '@/stores/auth';
 import { type Theme, useTheme } from '@/theme';
 
 type PasswordStepProps = {
@@ -11,7 +12,7 @@ type PasswordStepProps = {
   onSubmit: () => void;
   onBack: () => void;
   isLoading: boolean;
-  currentRealm: string | null;
+  selectedTenant: ITenant | null;
 };
 
 export function PasswordStep({
@@ -21,7 +22,7 @@ export function PasswordStep({
   onSubmit,
   onBack,
   isLoading,
-  currentRealm,
+  selectedTenant,
 }: PasswordStepProps) {
   const theme = useTheme();
   const styles = createStyles(theme);
@@ -36,14 +37,14 @@ export function PasswordStep({
             {username}
           </Text>
         </Text>
-        {currentRealm && (
+        {selectedTenant && (
           <View style={styles.realmContainer}>
             <Text variant="caption" color={theme.colors.text.secondary}>
               Organization:
             </Text>
             <View style={styles.realmBadge}>
               <Text variant="caption" color={theme.colors.text.primary}>
-                {currentRealm}
+                {selectedTenant.displayName || selectedTenant.name}
               </Text>
             </View>
           </View>
