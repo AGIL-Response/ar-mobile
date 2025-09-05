@@ -5,11 +5,12 @@
 
 import React from 'react';
 import type { ViewProps } from 'react-native';
-import { SafeAreaView } from 'react-native';
+import { SafeAreaView, TouchableOpacity } from 'react-native';
 
 import type { Theme } from '@/theme';
 
 import { Badge } from './badge';
+import { Icon, iconNames } from './icon';
 import {
   createAccessibilityProps,
   mergeStyles,
@@ -40,6 +41,10 @@ export interface AppBarProps extends Omit<BaseContainerProps, 'padding'> {
   backgroundColor?: string;
   /** Elevation/shadow level */
   elevation?: 'none' | 'low' | 'medium' | 'high';
+  /** Show default back button when leftContent is not provided */
+  showBackButton?: boolean;
+  /** Callback for back button press (required when showBackButton is true) */
+  onBackPress?: () => void;
 }
 
 export interface StatusBarProps extends Omit<AppBarProps, 'variant'> {
@@ -84,7 +89,7 @@ const createAppBarStyles = (theme: Theme, props: AppBarProps) => {
 
   // Base styles
   const baseStyles = {
-    backgroundColor: props.backgroundColor || colors.surface.card,
+    backgroundColor: props.backgroundColor || colors.background.primary,
     width: '100%',
   };
 
@@ -104,6 +109,7 @@ const createAppBarStyles = (theme: Theme, props: AppBarProps) => {
       paddingVertical: spacing.padding.sm,
       flexDirection: 'row' as const,
       alignItems: 'center' as const,
+      gap: 16,
       borderBottomWidth: 1,
       borderBottomColor: colors.surface.border,
     },
@@ -211,6 +217,8 @@ export const AppBar = React.forwardRef<any, AppBarProps & ViewProps>(
       centerContent,
       safeArea = true,
       elevation = 'low',
+      showBackButton = false,
+      onBackPress,
       children,
       style: userStyle,
       ...props
@@ -226,12 +234,47 @@ export const AppBar = React.forwardRef<any, AppBarProps & ViewProps>(
     });
 
     const contentStyles = useThemedStyles(createContentStyles, { variant });
+    
+    // Get theme colors for back button
+    const theme = useThemedStyles((theme: Theme) => theme);
 
     // Merge with user-provided styles
     const finalStyle = mergeStyles(appBarStyles, userStyle);
 
     // Generate accessibility props
     const accessibilityProps = createAccessibilityProps(props);
+
+    // Create default back button if needed
+    const getLeftContent = () => {
+      if (leftContent) return leftContent;
+      if (showBackButton && onBackPress) {
+        return (
+          <TouchableOpacity onPress={onBackPress}>
+            <View
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: theme.colors.surface.card,
+                borderWidth: 1,
+                borderColor: theme.colors.surface.border,
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginLeft: 16,
+                marginBottom: 8,
+              }}
+            >
+              <Icon
+                name={iconNames.arrow_left}
+                size={16}
+                color={theme.colors.text.primary}
+              />
+            </View>
+          </TouchableOpacity>
+        );
+      }
+      return null;
+    };
 
     // Render content based on variant
     const renderContent = () => {
@@ -240,7 +283,7 @@ export const AppBar = React.forwardRef<any, AppBarProps & ViewProps>(
       if (variant === 'status-bar') {
         return (
           <>
-            <View style={contentStyles.left}>{leftContent}</View>
+            <View style={contentStyles.left}>{getLeftContent()}</View>
             <View style={contentStyles.center}>
               {centerContent ||
                 (title && <Text variant="caption">{title}</Text>)}
@@ -252,11 +295,13 @@ export const AppBar = React.forwardRef<any, AppBarProps & ViewProps>(
 
       return (
         <>
-          <View style={contentStyles.left}>{leftContent}</View>
+          <View style={contentStyles.left}>{getLeftContent()}</View>
           <View style={contentStyles.center}>
             {centerContent || (title && <Text variant="h3">{title}</Text>)}
           </View>
-          <View style={contentStyles.right}>{rightContent}</View>
+          <View style={contentStyles.right}>
+            {rightContent || (showBackButton && <View style={{ width: 32 }} />)}
+          </View>
         </>
       );
     };
