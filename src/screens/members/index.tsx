@@ -35,18 +35,24 @@ export function MembersScreen(): React.JSX.Element {
     return user.username?.charAt(0)?.toUpperCase() || 'U';
   };
 
+  // Helper function to capitalize first character of role name
+  const capitalizeRoleName = (roleName: string) => {
+    return roleName.charAt(0).toUpperCase() + roleName.slice(1);
+  };
+
   // Group users by role
   const groupedUsers = useMemo(() => {
     const groups: { [key: string]: User[] } = {};
 
     usersState.users.forEach((user) => {
       if (user.roles && user.roles.length > 0) {
-        // Use the first role for grouping (primary role)
-        const primaryRole = user.roles[0];
-        if (!groups[primaryRole.name]) {
-          groups[primaryRole.name] = [];
+        // Use the last role for grouping
+        const lastRole = user.roles[user.roles.length - 1];
+        const capitalizedRoleName = capitalizeRoleName(lastRole.name);
+        if (!groups[capitalizedRoleName]) {
+          groups[capitalizedRoleName] = [];
         }
-        groups[primaryRole.name].push(user);
+        groups[capitalizedRoleName].push(user);
       } else {
         // Users without roles go to "Members" group
         if (!groups['Members']) {

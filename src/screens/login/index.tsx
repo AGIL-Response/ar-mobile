@@ -74,7 +74,7 @@ export default function Login() {
               color={theme.colors.text.primary}
               style={styles.brandTitle}
             >
-              AR Responder
+              AGIL Response
             </Text>
             <Text variant="body" centered color={theme.colors.text.secondary}>
               Access your tactical command center.
