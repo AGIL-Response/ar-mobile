@@ -11,6 +11,10 @@ platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
 install! 'cocoapods',
   :deterministic_uuids => false
 
+pre_install do |installer|
+  $RNMapboxMaps.pre_install(installer)
+end
+
 prepare_react_native_project!
 
 target 'armobile' do
@@ -45,6 +49,7 @@ target 'armobile' do
   )
 
   post_install do |installer|
+    $RNMapboxMaps.post_install(installer)
     react_native_post_install(
       installer,
       config[:reactNativePath],
