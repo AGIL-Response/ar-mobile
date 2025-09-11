@@ -6,39 +6,36 @@
 import React from 'react';
 
 import { Text, View } from '@/components';
-import { useTheme } from '@/theme';
+import { type Theme, useTheme } from '@/theme';
+import { StyleSheet } from 'react-native';
+import Mapbox, { MapView as MapboxMapView } from '@rnmapbox/maps';
+
+Mapbox.setAccessToken(
+  'sk.eyJ1IjoibGFpem4iLCJhIjoiY21lamxqZzh4MDQ0bjJrcXZ0dWRiZHAzNyJ9.NU6sHZrIkDuDpHCEManSJQ'
+);
 
 export function MapView() {
   const theme = useTheme();
+  const styles = createStyles(theme);
 
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 16,
-      }}
-    >
-      <Text
-        variant="h3"
-        style={{
-          color: theme.colors.text.secondary,
-          textAlign: 'center',
-          marginBottom: 8,
-        }}
-      >
-        Map View
-      </Text>
-      <Text
-        variant="body"
-        style={{
-          color: theme.colors.text.muted,
-          textAlign: 'center',
-        }}
-      >
-        Map interface will be implemented here
-      </Text>
+    <View style={styles.container}>
+      <View style={{ flex: 1, width: '100%' }}>
+        <MapboxMapView style={styles.map} />
+      </View>
     </View>
   );
 }
+
+const createStyles = (theme: Theme) => {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    map: {
+      flex: 1,
+    },
+  });
+};
