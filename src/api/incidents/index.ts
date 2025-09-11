@@ -26,7 +26,7 @@ export const incidentsApi = {
       });
 
       const queryString = queryParams.toString();
-      const url = `/tenants/${tenantId}/incidents${queryString ? `?${queryString}` : ''}`;
+      const url = `/incidents${queryString ? `?${queryString}` : ''}`;
       
       const response = await apiClient.get<IncidentsResponse>(url);
       return response.data.data || [];
@@ -41,7 +41,7 @@ export const incidentsApi = {
   getIncident: async (tenantId: string, incidentId: string): Promise<Incident> => {
     try {
       const response = await apiClient.get<IncidentResponse>(
-        `/tenants/${tenantId}/incidents/${incidentId}`
+        `/incidents/${incidentId}`
       );
       return response.data.data;
     } catch (error) {
@@ -58,7 +58,7 @@ export const incidentsApi = {
   ): Promise<Incident> => {
     try {
       const response = await apiClient.post<IncidentResponse>(
-        `/tenants/${tenantId}/incidents`,
+        `/incidents`,
         data
       );
       return response.data.data;
@@ -77,7 +77,7 @@ export const incidentsApi = {
     try {
       const { id, ...updateData } = data;
       const response = await apiClient.put<IncidentResponse>(
-        `/tenants/${tenantId}/incidents/${id}`,
+        `/incidents/${id}`,
         updateData
       );
       return response.data.data;
@@ -91,7 +91,7 @@ export const incidentsApi = {
    */
   deleteIncident: async (tenantId: string, incidentId: string): Promise<void> => {
     try {
-      await apiClient.delete(`/tenants/${tenantId}/incidents/${incidentId}`);
+      await apiClient.delete(`/incidents/${incidentId}`);
     } catch (error) {
       throw handleApiError(error);
     }

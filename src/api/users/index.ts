@@ -31,7 +31,7 @@ export async function getUsersByTenant(
       queryParams.append('sort', params.sort.toString());
     }
 
-    const url = `/tenants/${tenantId}/users${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const url = `/users${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     
     const response = await apiClient.get<{ data: any[] }>(url);
     
@@ -68,7 +68,7 @@ export async function getUserRoles(
   tenantId: string,
 ): Promise<Role[]> {
   try {
-    const url = `/tenants/${tenantId}/users/${userId}/roles`;
+    const url = `/users/${userId}/roles`;
     const response = await apiClient.get<{ data: Role[] }>(url);
     
     return response.data.data;

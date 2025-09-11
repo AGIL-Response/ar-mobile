@@ -104,7 +104,7 @@ export const authApi = {
   getUserProfile: async (tenantId: string, userId: string): Promise<any> => {
     try {
       const response = await apiClient.get(
-        `/tenants/${tenantId}/users/${userId}`
+        `/users/${userId}`
       );
       return response.data;
     } catch (error) {
