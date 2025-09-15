@@ -2,6 +2,7 @@
 import { authApi, handleApiError } from '@/api';
 import { decodeJWT } from '@/lib/utils';
 import { type AuthState, type ITenant } from '@/stores/auth';
+import { useLocationStore } from '@/stores/location';
 
 const loginWithPassword =
   (set: any, get: any) => async (username: string, password: string) => {
@@ -133,6 +134,25 @@ const loginWithPassword =
           geoError
         );
         // Don't block login if geo entity creation fails
+      }
+
+      // Initialize location monitoring after successful login (non-blocking)
+      try {
+        const locationStore = useLocationStore.getState();
+        
+        // Connect to WebSocket with access token
+        locationStore.actions.connectToWebSocket(tokens.accessToken);
+        
+        // Start location monitoring
+        await locationStore.actions.startLocationMonitoring();
+        
+        console.log('📍 Location monitoring initialized after login');
+      } catch (locationError) {
+        console.warn(
+          'Location monitoring initialization failed, continuing with login:',
+          locationError
+        );
+        // Don't block login if location monitoring fails
       }
 
       set((state: AuthState) => {

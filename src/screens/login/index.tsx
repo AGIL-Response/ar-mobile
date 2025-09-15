@@ -24,7 +24,7 @@ export default function Login() {
   const theme = useTheme();
   const styles = createStyles(theme);
 
-  const [username, setUsername] = useState(__DEV__ ? 'alexis.hills40' : '');
+  const [username, setUsername] = useState(__DEV__ ? 'asher.tran' : '');
   const [password, setPassword] = useState(__DEV__ ? '12345678' : '');
   const [step, setStep] = useState<'username' | 'password'>('username');
 

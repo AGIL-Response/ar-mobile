@@ -9,6 +9,7 @@ import register from '@/stores/auth/actions/register';
 import updateGeoEntityLocation from '@/stores/auth/actions/update-geo-entity-location';
 import type IBaseState from '@/stores/interfaces/IBaseState';
 import { type InitStateType } from '@/stores/interfaces/IBaseState';
+import { useLocationStore } from '@/stores/location';
 import { createStore, resetStore } from '@/stores/utils';
 import { type GeoEntity } from '@/types/geo-entity';
 
@@ -92,6 +93,19 @@ const authStore = (set: any, get: any) => ({
     loginWithPassword: loginWithPassword(set, get),
     register: register(set, get),
     logout: () => {
+      // Stop location monitoring and disconnect WebSocket
+      try {
+        const locationStore = useLocationStore.getState();
+        locationStore.actions.stopLocationMonitoring();
+        locationStore.actions.disconnectFromWebSocket();
+        console.log('📍 Location monitoring stopped during logout');
+      } catch (error) {
+        console.warn(
+          'Error stopping location monitoring during logout:',
+          error
+        );
+      }
+
       set((state: AuthState) => {
         state.token = initialState.token;
         state.user = undefined;

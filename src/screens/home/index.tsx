@@ -13,6 +13,7 @@ import { useTheme } from '@/theme';
 import { AppHeader } from './components/app-header';
 import { FlatView } from './components/flat-view';
 import { FloatingActionButton } from './components/floating-action-button';
+import { LocationStatus } from './components/location-status';
 import { MapView } from './components/map-view';
 import { TabSelector } from './components/tab-selector';
 
@@ -35,6 +36,9 @@ export default function HomeScreen() {
 
         {/* Tab Selector */}
         <TabSelector activeTab={activeTab} onTabChange={handleTabChange} />
+
+        {/* Location Status */}
+        <LocationStatus />
 
         {/* Content - ViewPager */}
         <View style={{ flex: 1 }}>
