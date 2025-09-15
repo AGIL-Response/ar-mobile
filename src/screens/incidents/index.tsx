@@ -115,7 +115,7 @@ export default function IncidentsScreen() {
             keyExtractor={(item) => item.id}
             contentContainerStyle={{
               padding: 16,
-              gap: 12,
+              gap: 16,
               paddingBottom: 100, // Space for FAB
             }}
             showsVerticalScrollIndicator={false}

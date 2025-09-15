@@ -8,7 +8,7 @@ import React from 'react';
 import { TouchableOpacity } from 'react-native';
 
 import type { Incident, IncidentSeverity } from '@/api/incidents/types';
-import { Icon, iconNames,Text, View } from '@/components';
+import { Icon, iconNames, Text, View } from '@/components';
 import { useUsersStore } from '@/stores/users';
 import { Palette, useTheme } from '@/theme';
 
@@ -103,7 +103,8 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
       style={{
         backgroundColor: theme.colors.surface.card,
         borderRadius: 12,
-        padding: 16,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
         borderWidth: 1,
         borderColor: theme.colors.surface.border,
       }}
@@ -113,7 +114,7 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
         style={{
           flexDirection: 'row',
           justifyContent: 'space-between',
-          alignItems: 'flex-start',
+          alignItems: 'center',
           marginBottom: 12,
         }}
       >
@@ -130,13 +131,13 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
         <View
           style={{
             backgroundColor: getSeverityColor(displaySeverity),
-            paddingHorizontal: 12,
-            paddingVertical: 4,
+            paddingHorizontal: 6,
+            paddingVertical: 2,
             borderRadius: 12,
           }}
         >
           <Text
-            variant="caption"
+            variant="bodySmall"
             style={{
               color: Palette.white,
             }}
@@ -147,7 +148,14 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
       </View>
 
       {/* Details Section */}
-      <View style={{ gap: 8 }}>
+      <View
+        style={{
+          gap: 8,
+          backgroundColor: theme.colors.utility.overlay,
+          borderRadius: 12,
+          padding: 12,
+        }}
+      >
         {/* Reporter/Created By */}
         <View
           style={{
@@ -157,14 +165,14 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
           }}
         >
           <Icon
-            name={iconNames.user}
+            name={iconNames.user_edit}
             size={16}
             color={theme.colors.text.muted}
           />
           <Text
-            variant="bodySmall"
+            variant="bodyMedium"
             style={{
-              color: theme.colors.text.secondary,
+              color: theme.colors.text.primary,
             }}
           >
             {getCreatedByName()}
@@ -186,9 +194,9 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
               color={theme.colors.text.muted}
             />
             <Text
-              variant="bodySmall"
+              variant="bodyMedium"
               style={{
-                color: theme.colors.text.secondary,
+                color: theme.colors.text.primary,
                 flex: 1,
               }}
             >
@@ -211,9 +219,9 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
             color={theme.colors.text.muted}
           />
           <Text
-            variant="bodySmall"
+            variant="bodyMedium"
             style={{
-              color: theme.colors.text.secondary,
+              color: theme.colors.text.primary,
             }}
           >
             {formatTimeAgo(incident.createdAt)}

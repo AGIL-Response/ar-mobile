@@ -12,7 +12,7 @@ import ClockIcon from './clock.svg';
 import PlusIcon from './plus.svg';
 import SunIcon from './sun.svg';
 import SettingsIcon from './settings.svg';
-
+import UserEditIcon from './user-edit.svg';
 // Icon component type
 type IconComponent = React.ComponentType<SvgProps>;
 
@@ -30,6 +30,7 @@ export const iconNames = {
   plus: 'plus',
   sun: 'sun',
   settings: 'settings',
+  user_edit: 'userEdit',
 } as const;
 
 // Icons object with proper typing
@@ -51,6 +52,7 @@ const icons: Record<string, IconComponent> = {
   [iconNames.plus]: PlusIcon,
   [iconNames.sun]: SunIcon,
   [iconNames.settings]: SettingsIcon,
+  [iconNames.user_edit]: UserEditIcon,
 } as const;
 
 // Export icon names as type for better TypeScript support
