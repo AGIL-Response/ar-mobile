@@ -44,14 +44,15 @@ export async function getUsersByTenant(
       emailVerified: userResponse.emailVerified,
       createdAt: userResponse.createdAt, // Keep as number since API returns timestamp
       enabled: userResponse.enabled,
-      roles: userResponse.roles ? userResponse.roles.map((roleName: string) => ({
-        id: roleName,
-        name: roleName,
-        description: '',
-        composite: false,
-        clientRole: false,
-        containerId: '',
-      })) : [], // Transform role names to Role objects
+      roles: userResponse.roles ? userResponse.roles.map((role: any) => ({
+        id: role.id,
+        name: role.name,
+        displayName: role.displayName,
+        description: role.description || '',
+        composite: role.composite || false,
+        clientRole: role.clientRole || false,
+        containerId: role.containerId || '',
+      })) : [], // Transform role objects to Role objects
     }));
 
     return users;

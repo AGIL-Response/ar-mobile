@@ -12,6 +12,7 @@ export type User = {
 export type Role = {
   id: string;
   name: string;
+  displayName?: string;
   description?: string;
   composite: boolean;
   clientRole: boolean;

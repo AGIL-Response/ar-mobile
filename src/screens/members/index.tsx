@@ -35,9 +35,10 @@ export function MembersScreen(): React.JSX.Element {
     return user.username?.charAt(0)?.toUpperCase() || 'U';
   };
 
-  // Helper function to capitalize first character of role name
-  const capitalizeRoleName = (roleName: string) => {
-    return roleName.charAt(0).toUpperCase() + roleName.slice(1);
+  // Helper function to get display name for role
+  const getRoleDisplayName = (role: any) => {
+    if (!role) return 'Unknown';
+    return role.displayName || role.name || 'Unknown';
   };
 
   // Group users by role
@@ -48,11 +49,11 @@ export function MembersScreen(): React.JSX.Element {
       if (user.roles && user.roles.length > 0) {
         // Use the last role for grouping
         const lastRole = user.roles[user.roles.length - 1];
-        const capitalizedRoleName = capitalizeRoleName(lastRole.name);
-        if (!groups[capitalizedRoleName]) {
-          groups[capitalizedRoleName] = [];
+        const roleDisplayName = getRoleDisplayName(lastRole);
+        if (!groups[roleDisplayName]) {
+          groups[roleDisplayName] = [];
         }
-        groups[capitalizedRoleName].push(user);
+        groups[roleDisplayName].push(user);
       } else {
         // Users without roles go to "Members" group
         if (!groups['Members']) {
