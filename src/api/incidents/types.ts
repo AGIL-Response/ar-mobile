@@ -42,7 +42,9 @@ export interface Incident {
   
   // Additional computed fields for UI
   severity?: IncidentSeverity;
-  location?: string;
+  location?: {
+    coordinates: number[];
+  };
   reportedBy?: string;
 }
 

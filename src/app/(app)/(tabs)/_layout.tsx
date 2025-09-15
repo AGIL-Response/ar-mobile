@@ -24,6 +24,7 @@ function TabBarIcon({
   const iconMap: Record<string, IconName> = {
     index: iconNames.home,
     tasks: iconNames.list,
+    incidents: iconNames.incident,
     chat: iconNames.message_square,
     profile: iconNames.user,
   };
@@ -109,6 +110,15 @@ export default function TabLayout() {
               <TabBarIcon name="tasks" color={color} focused={focused} />
               {/*<TabBarBadge count={1} />*/}
             </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="incidents"
+        options={{
+          title: 'Incidents',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name="incidents" color={color} focused={focused} />
           ),
         }}
       />
