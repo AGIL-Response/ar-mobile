@@ -5,6 +5,7 @@
 
 import { taskApi } from '@/api';
 import type { Task } from '@/api/tasks/types';
+import { TaskTab } from '@/screens/tasks/components/task-tab-selector';
 import type { IBaseState, InitStateType } from '@/stores/interfaces/IBaseState';
 import { createStore, resetStore } from '@/stores/utils';
 
@@ -15,6 +16,7 @@ export interface TasksState extends IBaseState {
   isLoading: boolean;
   isLoadingDetail: boolean;
   error: string | null;
+  activeTab: TaskTab;
 
   // Computed properties
   pendingTasks: Task[];
@@ -29,6 +31,7 @@ export interface TasksState extends IBaseState {
       taskId: string,
       status: Task['status']
     ) => Promise<void>;
+    setActiveTab: (tab: TaskTab) => void;
     clearSelectedTask: () => void;
     clearError: () => void;
     reset: () => void;
@@ -43,6 +46,7 @@ const initialState: InitStateType<TasksState> = {
   error: null,
   pendingTasks: [],
   completedTasks: [],
+  activeTab: 'all',
 };
 
 const tasksStore = (set: any, get: any) => ({
@@ -144,6 +148,12 @@ const tasksStore = (set: any, get: any) => ({
     clearError: () => {
       set((state: TasksState) => {
         state.error = null;
+      });
+    },
+
+    setActiveTab: (tab: TaskTab) => {
+      set((state: TasksState) => {
+        state.activeTab = tab;
       });
     },
   },

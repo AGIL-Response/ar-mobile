@@ -48,6 +48,12 @@ export default function AppLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="incidents/[id]"
+        options={{
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }

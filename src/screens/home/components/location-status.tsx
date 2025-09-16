@@ -42,6 +42,8 @@ export function LocationStatus() {
     return '🔄';
   };
 
+  return null;
+
   return (
     <View
       style={{

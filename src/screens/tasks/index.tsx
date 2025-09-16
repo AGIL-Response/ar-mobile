@@ -5,8 +5,8 @@
 
 import images from '@assets/images';
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { FlatList, RefreshControl, ScrollView } from 'react-native';
+import React, { useEffect } from 'react';
+import { RefreshControl, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
@@ -30,8 +30,6 @@ export default function TasksScreen() {
   const theme = useTheme();
   const authState = useAuthStore();
   const tasksState = useTasksStore();
-  const [activeTab, setActiveTab] = useState<TaskTab>('all');
-
   const selectedTenant = authState.selectedTenant;
 
   // Fetch tasks on mount
@@ -156,7 +154,7 @@ export default function TasksScreen() {
     }
 
     // Render based on active tab
-    switch (activeTab) {
+    switch (tasksState.activeTab) {
       case 'pending':
         if (pendingTasks.length === 0) {
           return (
@@ -306,8 +304,8 @@ export default function TasksScreen() {
 
       {/* Tab Selector */}
       <TaskTabSelector
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
+        activeTab={tasksState.activeTab}
+        onTabChange={tasksState.actions.setActiveTab}
         pendingCount={
           tasksState.tasks.filter(
             (task) => !task.status || task.status !== 'completed'

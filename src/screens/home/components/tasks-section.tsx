@@ -1,0 +1,125 @@
+/**
+ * Incidents Section Component
+ * Display task cards and reports
+ */
+
+import { useRouter } from 'expo-router';
+import React, { useEffect } from 'react';
+import { TouchableOpacity } from 'react-native';
+
+import { Text, View } from '@/components';
+import { useAuthStore } from '@/stores/auth';
+import { useTasksStore } from '@/stores/tasks';
+import { Palette, useTheme } from '@/theme';
+import { TaskCard } from '@/screens/tasks/components/task-card';
+
+export function TasksSection() {
+  const theme = useTheme();
+  const router = useRouter();
+  const authState = useAuthStore();
+  const tasksState = useTasksStore();
+  const selectedTenant = authState.selectedTenant;
+
+  // Fetch tasks on mount
+  useEffect(() => {
+    if (selectedTenant?.id) {
+      tasksState.actions.fetchTasks(selectedTenant.id);
+    }
+  }, [selectedTenant?.id]);
+
+  const handleViewAll = () => {
+    tasksState.actions.setActiveTab('pending');
+    router.push('/tasks');
+  };
+
+  const handleTaskPress = (taskId: string) => {
+    router.push(`/task/${taskId}`);
+  };
+
+  if (tasksState.isLoading && tasksState.tasks.length === 0) {
+    return (
+      <View style={{ gap: 16 }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Text
+            variant="h4"
+            style={{
+              color: theme.colors.text.primary,
+            }}
+          >
+            On-going tasks
+          </Text>
+          <TouchableOpacity onPress={handleViewAll}>
+            <Text
+              variant="caption"
+              style={{
+                color: Palette.primary,
+              }}
+            >
+              View All
+            </Text>
+          </TouchableOpacity>
+        </View>
+        <Text variant="body" style={{ color: theme.colors.text.muted }}>
+          Loading tasks...
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ gap: 16 }}>
+      {/* Header Row */}
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <Text
+          variant="h4"
+          style={{
+            color: theme.colors.text.primary,
+          }}
+        >
+          On-going tasks
+        </Text>
+        <TouchableOpacity onPress={handleViewAll}>
+          <Text
+            variant="caption"
+            style={{
+              color: Palette.primary,
+            }}
+          >
+            View All
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Task Cards */}
+      <View style={{ gap: 12 }}>
+        {tasksState.pendingTasks.length === 0 ? (
+          <Text variant="body" style={{ color: theme.colors.text.muted }}>
+            No on-going tasks found
+          </Text>
+        ) : (
+          tasksState.pendingTasks
+            .slice(0, 3)
+            .map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                onPress={() => handleTaskPress(task.id)}
+              />
+            ))
+        )}
+      </View>
+    </View>
+  );
+}

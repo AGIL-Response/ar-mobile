@@ -8,15 +8,15 @@ import { ScrollView } from 'react-native';
 
 import { View } from '@/components';
 
-import { IncidentsSection } from './incidents-section';
+import { TasksSection } from './tasks-section';
 import { MembersSection } from './members-section';
 
 export function FlatView() {
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ 
-        padding: 16, 
+      contentContainerStyle={{
+        padding: 16,
         gap: 40,
         paddingBottom: 100, // Extra space for FAB
       }}
@@ -25,8 +25,8 @@ export function FlatView() {
       {/* Members Section */}
       <MembersSection />
 
-      {/* Incidents Section */}
-      <IncidentsSection />
+      {/* Tasks Section */}
+      <TasksSection />
     </ScrollView>
   );
 }
