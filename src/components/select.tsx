@@ -193,7 +193,7 @@ const createPlaceholderStyles = createStyleCreator<SelectProps>(
     };
 
     return {
-      color: colors.text.secondary,
+      color: colors.text.placeholder,
       ...typographyVariants[size],
       lineHeight: sizeLineHeights[size],
       textAlignVertical: 'center', // Android-specific

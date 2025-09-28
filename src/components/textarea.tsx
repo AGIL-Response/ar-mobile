@@ -88,8 +88,8 @@ const createTextAreaWrapperStyles = createStyleCreator<TextAreaProps>(
 
     const paddingMap = {
       small: spacing.padding.sm,
-      medium: spacing.padding.md,
-      large: spacing.padding.lg,
+      medium: spacing.padding.xxl,
+      large: spacing.padding.xxxl,
     };
 
     const lineHeight = lineHeightMap[size];
@@ -288,7 +288,7 @@ export const TextArea = forwardRef<TextInput, TextAreaProps>(
 
     // Get theme for default placeholder color
     const theme = useThemedStyles((theme) => theme, {});
-    const defaultPlaceholderColor = placeholderTextColor || theme.colors.text.secondary;
+    const defaultPlaceholderColor = placeholderTextColor || theme.colors.text.placeholder;
 
     // Create accessibility props
     const accessibilityProps = createAccessibilityProps({

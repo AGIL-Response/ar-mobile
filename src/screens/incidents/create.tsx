@@ -3,25 +3,41 @@
  * Form for creating new incidents
  */
 
-import React, { useState, useEffect } from 'react';
-import { ScrollView, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  ScrollView,
+  Alert,
+  Image,
+  TouchableOpacity,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
-import { AppBar, Button, Input, Text, View } from '@/components';
+import {
+  AppBar,
+  Button,
+  Icon,
+  iconNames,
+  Input,
+  Text,
+  useModal,
+  View,
+} from '@/components';
 import { Select } from '@/components/select';
 import { TextArea } from '@/components/textarea';
 import { LocationPermissionScreen } from './components';
 import { useAuthStore } from '@/stores/auth';
 import { useIncidentsStore } from '@/stores/incidents';
 import { useLocation } from '@/lib/hooks/use-location';
-import { useTheme } from '@/theme';
+import { Palette, useTheme } from '@/theme';
 import type { CreateIncidentRequest } from '@/api/incidents/types';
+import { IncidentUploadModel } from './components/incident-upload-model';
 
 interface CreateIncidentForm {
   name: string;
   description: string;
   type: string;
+  images: string;
 }
 
 const incidentTypes = [
@@ -38,11 +54,12 @@ export default function CreateIncidentScreen() {
   const authState = useAuthStore();
   const incidentsState = useIncidentsStore();
   const location = useLocation();
-
+  const { ref, present, dismiss } = useModal();
   const [form, setForm] = useState<CreateIncidentForm>({
     name: '',
     description: '',
     type: '',
+    images: '',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,8 +80,11 @@ export default function CreateIncidentScreen() {
     }
   }, [location.hasPermission, location.coordinates]);
 
-  const handleInputChange = (field: keyof CreateIncidentForm, value: string) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (
+    field: keyof CreateIncidentForm,
+    value: string
+  ) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleRequestPermission = async () => {
@@ -110,19 +130,30 @@ export default function CreateIncidentScreen() {
       };
 
       await incidentsState.actions.createIncident(tenantId, incidentData);
-      
-      Alert.alert(
-        'Success',
-        'Incident created successfully',
-        [{ text: 'OK', onPress: () => router.replace('/incidents') }]
-      );
+
+      Alert.alert('Success', 'Incident created successfully', [
+        { text: 'OK', onPress: () => router.replace('/incidents') },
+      ]);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create incident';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to create incident';
       Alert.alert('Error', errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const handleOpenModal = () => {
+    present();
+  };
+
+  const handleImagePicked = useCallback(
+    (image: string) => {
+      setForm((prev) => ({ ...prev, images: image }));
+      dismiss();
+    },
+    [dismiss, setForm]
+  );
 
   // Show loading while checking permissions
   if (location.hasPermission === null) {
@@ -161,6 +192,8 @@ export default function CreateIncidentScreen() {
           showBackButton={true}
           onBackPress={() => router.back()}
           safeArea={false}
+          titleAlign="left"
+          style={{ borderBottomWidth: 0 }}
         />
         <LocationPermissionScreen
           onRequestPermission={handleRequestPermission}
@@ -185,10 +218,12 @@ export default function CreateIncidentScreen() {
         showBackButton={true}
         onBackPress={() => router.back()}
         safeArea={false}
+        titleAlign="left"
+        style={{ borderBottomWidth: 0 }}
       />
 
       <ScrollView
-        style={{ flex: 1 }}
+        style={{ flex: 1, paddingTop: 4 }}
         contentContainerStyle={{
           padding: 16,
         }}
@@ -197,7 +232,7 @@ export default function CreateIncidentScreen() {
         {/* Incident Name */}
         <View style={{ marginBottom: 16 }}>
           <Text
-            variant="label"
+            variant="h4"
             style={{
               color: theme.colors.text.primary,
               marginBottom: 8,
@@ -216,7 +251,7 @@ export default function CreateIncidentScreen() {
         {/* Description */}
         <View style={{ marginBottom: 16 }}>
           <Text
-            variant="label"
+            variant="h4"
             style={{
               color: theme.colors.text.primary,
               marginBottom: 8,
@@ -233,9 +268,9 @@ export default function CreateIncidentScreen() {
         </View>
 
         {/* Incident Type */}
-        <View>
+        <View style={{ marginBottom: 16 }}>
           <Text
-            variant="label"
+            variant="h4"
             style={{
               color: theme.colors.text.primary,
               marginBottom: 8,
@@ -250,6 +285,84 @@ export default function CreateIncidentScreen() {
             options={incidentTypes}
           />
         </View>
+
+        {/* Image Upload */}
+        <View style={{ marginBottom: 16 }}>
+          <Text
+            variant="h4"
+            style={{
+              color: theme.colors.text.primary,
+              marginBottom: 8,
+            }}
+          >
+            Image Upload
+          </Text>
+
+          <View
+            style={{
+              padding: 12,
+              width: '100%',
+              height: 250,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: theme.colors.surface.border,
+            }}
+          >
+            <View style={{ flex: 1 }}>
+              <View
+                style={{
+                  flex: 1,
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: theme.colors.surface.border,
+                  backgroundColor: theme.colors.background.primary,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                {form.images ? (
+                  <Image
+                    source={{ uri: form.images }}
+                    style={{ width: '100%', height: '100%', borderRadius: 8 }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Text
+                    variant="body"
+                    style={{ color: theme.colors.text.secondary }}
+                  >
+                    No image uploaded
+                  </Text>
+                )}
+              </View>
+
+              <TouchableOpacity onPress={handleOpenModal}>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    gap: 4,
+                    marginTop: 12,
+                  }}
+                >
+                  <Icon
+                    name={iconNames.change}
+                    size={18}
+                    color={Palette.primary}
+                  />
+                  <Text
+                    style={{
+                      color: Palette.primary,
+                    }}
+                  >
+                    Change
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <IncidentUploadModel ref={ref} onImagePicked={handleImagePicked} />
+        </View>
       </ScrollView>
 
       {/* Submit Button */}
@@ -261,7 +374,7 @@ export default function CreateIncidentScreen() {
       >
         <Button
           variant="solid"
-          size="medium"
+          size="large"
           title={isSubmitting ? 'Creating...' : 'Create Incident'}
           onPress={handleSubmit}
           disabled={isSubmitting}

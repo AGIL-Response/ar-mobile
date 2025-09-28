@@ -39,9 +39,14 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { Path, Svg } from 'react-native-svg';
 
 import { Text } from './text';
+import { Theme } from '@/theme';
+import { createStyleCreator, useThemedStyles } from './base-component';
 
 type ModalProps = BottomSheetModalProps & {
   title?: string;
+  overlayColor?: string;
+  contentColor?: string;
+  titleColor?: string;
 };
 
 type ModalRef = React.ForwardedRef<BottomSheetModal>;
@@ -49,7 +54,26 @@ type ModalRef = React.ForwardedRef<BottomSheetModal>;
 type ModalHeaderProps = {
   title?: string;
   dismiss: () => void;
+  overlayColor?: string;
+  contentColor?: string;
+  titleColor?: string;
 };
+
+const createModalStyles = createStyleCreator<ModalProps>(
+  (theme: Theme, props) => {
+    return {
+      modal: {
+        backgroundColor: props.overlayColor || theme.colors.background.tertiary,
+      },
+      content: {
+        backgroundColor: props.contentColor || theme.colors.background.tertiary,
+      },
+      title: {
+        color: props.titleColor || theme.colors.text.primary,
+      },
+    };
+  }
+);
 
 export const useModal = () => {
   const ref = React.useRef<BottomSheetModal>(null);
@@ -68,10 +92,18 @@ export const Modal = React.forwardRef(
       snapPoints: _snapPoints = ['60%'],
       title,
       detached = false,
+      overlayColor,
+      contentColor,
+      titleColor,
       ...props
     }: ModalProps,
     ref: ModalRef
   ) => {
+    const styles = useThemedStyles(createModalStyles, {
+      overlayColor,
+      contentColor,
+      titleColor,
+    });
     const detachedProps = React.useMemo(
       () => getDetachedProps(detached),
       [detached]
@@ -104,6 +136,7 @@ export const Modal = React.forwardRef(
         backdropComponent={props.backdropComponent || renderBackdrop}
         enableDynamicSizing={false}
         handleComponent={renderHandleComponent}
+        backgroundStyle={{ backgroundColor: styles.modal.backgroundColor }}
       />
     );
   }

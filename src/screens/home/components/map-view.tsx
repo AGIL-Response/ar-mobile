@@ -18,6 +18,7 @@ import { useMemo } from 'react';
 import { getCoordinate } from '@/screens/incidents/utils';
 import { router } from 'expo-router';
 import useAuthStore from '@/stores/auth';
+import { IncidentCoordinate } from '../types';
 
 Mapbox.setAccessToken(
   'sk.eyJ1IjoibGFpem4iLCJhIjoiY21lamxqZzh4MDQ0bjJrcXZ0dWRiZHAzNyJ9.NU6sHZrIkDuDpHCEManSJQ'
@@ -37,11 +38,17 @@ export function MapView() {
     }
   }, [tenantId]);
 
-  const coordinates = useMemo(() => {
+  const coordinates = useMemo<IncidentCoordinate[]>(() => {
     return incidentsState.incidents
-      ?.flatMap((incident) => incident.location || [])
-      .map((coord) => getCoordinate(coord.coordinates))
-      .filter(Boolean) as [number, number][];
+      ?.filter((incident) => incident.location?.coordinates) // only with coords
+      .map((incident) => ({
+        id: incident.id,
+        coordinates: getCoordinate(incident.location!.coordinates) as [
+          number,
+          number,
+        ],
+      }))
+      .filter((item) => Boolean(item.coordinates));
   }, [incidentsState.incidents]);
 
   const handleMarkerPress = (incidentId: string) => {
@@ -51,7 +58,7 @@ export function MapView() {
   useEffect(() => {
     if (coordinates.length > 0 && cameraRef.current) {
       cameraRef.current.setCamera({
-        centerCoordinate: coordinates[0],
+        centerCoordinate: coordinates[0].coordinates,
         zoomLevel: 12,
         animationDuration: 1000,
       });
@@ -67,14 +74,12 @@ export function MapView() {
         >
           <Camera ref={cameraRef} />
 
-          {coordinates.map((coordinate, i) => (
+          {coordinates.map((coordinate) => (
             <PointAnnotation
-              key={`marker-${i}`}
-              id={`marker-${i}`}
-              coordinate={coordinate}
-              onSelected={() =>
-                handleMarkerPress(incidentsState.incidents[i].id)
-              }
+              key={`marker-${coordinate.id}`}
+              id={`marker-${coordinate.id}`}
+              coordinate={coordinate.coordinates}
+              onSelected={() => handleMarkerPress(coordinate.id)}
               draggable={false}
               onDragStart={() => {}}
               onDragEnd={() => {}}

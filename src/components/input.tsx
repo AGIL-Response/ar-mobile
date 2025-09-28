@@ -76,11 +76,11 @@ const createInputWrapperStyles = createStyleCreator<InputProps>(
       },
       medium: {
         height: components.input.height,
-        paddingHorizontal: components.input.padding.horizontal,
+        paddingHorizontal: spacing.padding.xxl,
       },
       large: {
         height: 56,
-        paddingHorizontal: spacing.padding.lg,
+        paddingHorizontal: spacing.padding.xxxl,
       },
     };
 
@@ -249,7 +249,7 @@ export const Input = forwardRef<TextInput, InputProps>(
 
     // Get theme for default placeholder color
     const theme = useThemedStyles((theme) => theme, {});
-    const defaultPlaceholderColor = placeholderTextColor || theme.colors.text.secondary;
+    const defaultPlaceholderColor = placeholderTextColor || theme.colors.text.placeholder;
 
     // Create accessibility props
     const accessibilityProps = createAccessibilityProps({

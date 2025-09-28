@@ -5,7 +5,7 @@ import useAuthStore from '@/stores/auth';
 
 // Create axios instance with default config
 export const apiClient = axios.create({
-  baseURL: 'https://dev-api.agilres.net',
+  baseURL: 'https://dev.agilres.net/be',
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',

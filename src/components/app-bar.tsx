@@ -24,11 +24,14 @@ import { View } from './view';
    APPBAR COMPONENT INTERFACE
    ================================ */
 
+export type AppBarTitleAlign = 'left' | 'center' | 'right';
 export interface AppBarProps extends Omit<BaseContainerProps, 'padding'> {
   /** AppBar variant */
   variant?: 'header' | 'bottom-navigation' | 'status-bar';
   /** Title text */
   title?: string;
+  /** Title alignment */
+  titleAlign?: AppBarTitleAlign;
   /** Left side content (back button, logo, etc.) */
   leftContent?: React.ReactNode;
   /** Right side content (actions, avatar, etc.) */
@@ -212,6 +215,7 @@ export const AppBar = React.forwardRef<any, AppBarProps & ViewProps>(
     {
       variant = 'header',
       title,
+      titleAlign = 'center',
       leftContent,
       rightContent,
       centerContent,
@@ -295,12 +299,37 @@ export const AppBar = React.forwardRef<any, AppBarProps & ViewProps>(
 
       return (
         <>
-          <View style={contentStyles.left}>{getLeftContent()}</View>
-          <View style={contentStyles.center}>
-            {centerContent || (title && <Text variant="h3">{title}</Text>)}
+          <View style={contentStyles.left}>
+            {leftContent ||
+              (titleAlign === 'left' ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  {getLeftContent()}
+                  {title && (
+                    <View style={{ marginLeft: getLeftContent() ? 16 : 0 }}>
+                      <Text variant="h3">{title}</Text>
+                    </View>
+                  )}
+                </View>
+              ) : (
+                getLeftContent()
+              ))}
           </View>
+
+          <View style={contentStyles.center}>
+            {titleAlign === 'center'
+              ? centerContent || <Text variant="h3">{title}</Text>
+              : centerContent}
+          </View>
+
           <View style={contentStyles.right}>
-            {rightContent || (showBackButton && <View style={{ width: 32 }} />)}
+            {titleAlign === 'right' ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text variant="h3">{title}</Text>
+                {rightContent}
+              </View>
+            ) : (
+              rightContent || (showBackButton && <View style={{ width: 32 }} />)
+            )}
           </View>
         </>
       );

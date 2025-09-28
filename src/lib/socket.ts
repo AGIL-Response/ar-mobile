@@ -26,11 +26,13 @@ export interface SocketLocationUpdateEvent {
  * @returns Socket.IO client instance
  */
 export const initMapSocket = (accessToken: string): Socket => {
-  const baseUrl = 'https://dev-api.agilres.net';
+  const baseUrl = 'https://dev.agilres.net';
 
-  return io(`${baseUrl}/maps`, {
-    extraHeaders: {
-      Authorization: `Bearer ${accessToken}`,
+  return io(`${baseUrl}`, {
+    path: '/be/ws',
+    withCredentials: true,
+    auth: {
+      authorization: `Bearer ${accessToken}`,
     },
     transports: ['websocket', 'polling'],
   });

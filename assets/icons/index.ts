@@ -14,6 +14,7 @@ import SunIcon from './sun.svg';
 import SettingsIcon from './settings.svg';
 import UserEditIcon from './user-edit.svg';
 import IncidentIcon from './incident.svg';
+import ChangeIcon from './change.svg';
 // Icon component type
 type IconComponent = React.ComponentType<SvgProps>;
 
@@ -33,6 +34,7 @@ export const iconNames = {
   settings: 'settings',
   user_edit: 'userEdit',
   incident: 'incident',
+  change: 'change',
 } as const;
 
 // Icons object with proper typing
@@ -56,6 +58,7 @@ const icons: Record<string, IconComponent> = {
   [iconNames.settings]: SettingsIcon,
   [iconNames.user_edit]: UserEditIcon,
   [iconNames.incident]: IncidentIcon,
+  [iconNames.change]: ChangeIcon,
 } as const;
 
 // Export icon names as type for better TypeScript support

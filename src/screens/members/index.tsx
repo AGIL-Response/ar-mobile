@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 
 import { AppBar, Avatar, Icon, Text, View } from '@/components';
@@ -8,12 +8,16 @@ import { useAuthStore } from '@/stores/auth';
 import { useUsersStore } from '@/stores/users';
 import { useTheme } from '@/theme';
 import type { User } from '@/types';
+import { Modal, useModal } from '@/components/modal';
+import { MemberDetailModal } from './components/member-detail-modal';
 
 export function MembersScreen(): React.JSX.Element {
   const router = useRouter();
   const authState = useAuthStore();
   const usersState = useUsersStore();
   const theme = useTheme();
+  const { ref, present } = useModal();
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const tenantId = authState.selectedTenant?.id;
 
@@ -66,41 +70,42 @@ export function MembersScreen(): React.JSX.Element {
     return groups;
   }, [usersState.users]);
 
+  const handleViewRoles = (user: User) => {
+    setSelectedUser(user);
+    present();
+  };
+
   const renderUserCard = (user: User) => {
     const styles = createStyles(theme);
 
     return (
-      <View key={user.id} style={styles.userCard}>
-        <View style={styles.userInfo}>
-          <View style={styles.avatarContainer}>
-            <Avatar
-              size="small"
-              fallback={getInitials(user)}
-              style={styles.avatar}
-            />
-            {/* Status indicator */}
-            <View
-              style={[
-                styles.statusIndicator,
-                {
-                  backgroundColor: user.enabled
-                    ? theme.colors.semantic.success
-                    : theme.colors.surface.disabled,
-                },
-              ]}
-            />
+      <TouchableOpacity key={user.id} onPress={() => handleViewRoles(user)}>
+        <View style={styles.userCard}>
+          <View style={styles.userInfo}>
+            <View style={styles.avatarContainer}>
+              <Avatar
+                size="small"
+                fallback={getInitials(user)}
+                style={styles.avatar}
+              />
+              {/* Status indicator */}
+              <View
+                style={[
+                  styles.statusIndicator,
+                  {
+                    backgroundColor: user.enabled
+                      ? theme.colors.semantic.success
+                      : theme.colors.surface.disabled,
+                  },
+                ]}
+              />
+            </View>
+            <Text variant="body" style={styles.userName}>
+              {user.fullName || user.username}
+            </Text>
           </View>
-          <Text variant="body" style={styles.userName}>
-            {user.fullName || user.username}
-          </Text>
         </View>
-
-        <TouchableOpacity>
-          <Text variant="body" style={styles.menuIcon}>
-            ⋯
-          </Text>
-        </TouchableOpacity>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -109,7 +114,7 @@ export function MembersScreen(): React.JSX.Element {
 
     return (
       <View key={groupName} style={styles.groupSection}>
-        <Text variant="h3" style={styles.groupTitle}>
+        <Text variant="h4" style={styles.groupTitle}>
           {groupName}
         </Text>
         <View style={styles.cardContainer}>{users.map(renderUserCard)}</View>
@@ -123,9 +128,11 @@ export function MembersScreen(): React.JSX.Element {
     <View style={styles.container}>
       <AppBar
         title="Members"
+        titleAlign="left"
         showBackButton={true}
         onBackPress={() => router.back()}
         safeArea
+        style={{ borderBottomWidth: 0 }}
       />
 
       <ScrollView
@@ -167,6 +174,7 @@ export function MembersScreen(): React.JSX.Element {
           </View>
         )}
       </ScrollView>
+      <MemberDetailModal ref={ref} user={selectedUser} />
     </View>
   );
 }
@@ -179,6 +187,7 @@ const createStyles = (theme: any) =>
     },
     scrollView: {
       flex: 1,
+      paddingTop: 4,
     },
     scrollContent: {
       padding: 16,
@@ -214,17 +223,17 @@ const createStyles = (theme: any) =>
     },
     cardContainer: {
       gap: 16,
+      backgroundColor: theme.colors.surface.card,
+      borderWidth: 1,
+      borderColor: theme.colors.surface.border,
+      padding: 12,
+      borderRadius: 8,
     },
     userCard: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingVertical: 12,
-      paddingHorizontal: 16,
-      borderRadius: 8,
-      backgroundColor: theme.colors.surface.card,
-      borderWidth: 1,
-      borderColor: theme.colors.surface.border,
+      padding: 4,
     },
     userInfo: {
       flexDirection: 'row',
