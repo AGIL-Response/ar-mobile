@@ -3,7 +3,7 @@ import '@shopify/flash-list/jestSetup';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { NavigationContainer } from '@react-navigation/native';
 import type { RenderOptions } from '@testing-library/react-native';
-import { render, userEvent } from '@testing-library/react-native';
+import { render, screen, userEvent } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 import React from 'react';
 
@@ -34,6 +34,22 @@ export const setup = (
     ...render(ui, { wrapper: Wrapper, ...options }),
   };
 };
+
+/**
+ * Utility to extract and merge styles from a rendered component by testID.
+ * Commonly used in component tests for verifying expected styles.
+ */
+export function getStyle(testId: string): Record<string, any> {
+  const el = screen.getByTestId(testId);
+  const styleProp = el.props?.style;
+  if (Array.isArray(styleProp)) {
+    return styleProp.reduce(
+      (acc: Record<string, any>, s: any) => ({ ...acc, ...(s || {}) }),
+      {}
+    );
+  }
+  return styleProp || {};
+}
 
 export * from '@testing-library/react-native';
 export { customRender as render };

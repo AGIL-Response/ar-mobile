@@ -10,12 +10,13 @@ module.exports = {
     '!**/jest.setup.js',
     '!**/docs/**',
     '!**/cli/**',
+    '!src/screens/figma-generated/**',
   ],
   moduleFileExtensions: ['js', 'ts', 'tsx'],
   transformIgnorePatterns: [
     `node_modules/(?!(?:.pnpm/)?((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|@sentry/.*|native-base|react-native-svg))`,
   ],
-  coverageReporters: ['json-summary', ['text', { file: 'coverage.txt' }]],
+  coverageReporters: ['json-summary', ['html', { file: 'coverage.html' }]],
   reporters: [
     'default',
     ['github-actions', { silent: false }],

@@ -162,7 +162,7 @@ const createSelectTextStyles = createStyleCreator<SelectProps>(
 
     const sizeLineHeights = {
       small: 40, // Match container height
-      medium: 48, // Match container height  
+      medium: 48, // Match container height
       large: 56, // Match container height
     };
 
@@ -188,7 +188,7 @@ const createPlaceholderStyles = createStyleCreator<SelectProps>(
 
     const sizeLineHeights = {
       small: 40, // Match container height
-      medium: 48, // Match container height  
+      medium: 48, // Match container height
       large: 56, // Match container height
     };
 
@@ -449,6 +449,7 @@ export const Select = forwardRef<RNView, SelectProps>(
           style={finalTriggerStyle}
           onPress={() => !disabled && setIsOpen(true)}
           disabled={disabled}
+          accessibilityRole="button"
           {...accessibilityProps}
         >
           {/* Left Icon */}

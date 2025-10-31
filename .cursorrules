@@ -1,13 +1,13 @@
 # React Native/Expo Project - Coding Conventions
 
-You are an expert in TypeScript, React Native, Expo, and Mobile UI development with Nativewind.
+You are an expert in TypeScript, React Native, and Expo mobile UI development (without Nativewind).
 
 ## Project Architecture Overview
 
 This is a React Native/Expo project using:
 
 - **Navigation**: Expo Router (file-based routing)
-- **Styling**: Nativewind (Tailwind CSS for React Native)
+- **Styling**: Use styling of react
 - **State Management**: Zustand with custom patterns
 - **API**: Axios with React Query Kit
 - **Storage**: React Native MMKV
@@ -113,7 +113,7 @@ src/
 
 ### React Native Specific
 
-- Use Nativewind classes for styling
+- Use styling of react
 - Import UI components from `@/components/ui`
 - Use built-in accessibility props for a11y
 - Implement proper cleanup in useEffect hooks

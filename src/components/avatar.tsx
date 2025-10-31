@@ -190,6 +190,7 @@ export const Avatar = React.forwardRef<
             resizeMode="cover"
             {...accessibilityProps}
             {...props}
+            testID="avatar-image"
           />
         );
       }

@@ -10,12 +10,12 @@ import { SafeAreaView, TouchableOpacity } from 'react-native';
 import type { Theme } from '@/theme';
 
 import { Badge } from './badge';
-import { Icon, iconNames } from './icon';
 import {
   createAccessibilityProps,
   mergeStyles,
   useThemedStyles,
 } from './base-component';
+import { Icon, iconNames } from './icon';
 import { Text } from './text';
 import type { BaseContainerProps } from './types';
 import { View } from './view';
@@ -238,7 +238,7 @@ export const AppBar = React.forwardRef<any, AppBarProps & ViewProps>(
     });
 
     const contentStyles = useThemedStyles(createContentStyles, { variant });
-    
+
     // Get theme colors for back button
     const theme = useThemedStyles((theme: Theme) => theme, {});
 

@@ -274,7 +274,10 @@ export const Input = forwardRef<TextInput, InputProps>(
         )}
 
         {/* Input Wrapper */}
-        <View style={wrapperStyles}>
+        <View
+          style={wrapperStyles}
+          testID={testID ? `${testID}-wrapper` : undefined}
+        >
           {/* Left Icon */}
           {leftIcon && <View style={iconStyles}>{leftIcon}</View>}
 

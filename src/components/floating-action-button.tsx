@@ -224,10 +224,10 @@ export const FloatingActionButton = React.forwardRef<
 
     // Generate accessibility props
     const accessibilityProps = createAccessibilityProps({
+      ...props,
       accessibilityRole: 'button',
       accessibilityLabel: label || 'Floating action button',
       accessibilityState: { disabled },
-      ...props,
     });
 
     return (
