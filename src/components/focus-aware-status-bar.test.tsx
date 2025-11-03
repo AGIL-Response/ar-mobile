@@ -2,7 +2,7 @@ import * as Navigation from '@react-navigation/native';
 import React from 'react';
 import { Platform } from 'react-native';
 
-import { render, screen } from '@/lib/test-utils';
+import { reactNativeRender as render, screen } from '@/lib/test-utils';
 import * as Theme from '@/theme';
 
 import { FocusAwareStatusBar } from './focus-aware-status-bar';
@@ -27,11 +27,10 @@ describe('FocusAwareStatusBar component', () => {
   });
 
   it('returns null on web platform', async () => {
-    const originalOS = Platform.OS;
-    (Platform as any).OS = 'web';
+    Platform.OS = 'web';
     render(<FocusAwareStatusBar />);
     expect(screen.queryByTestId('system-bars')).toBeNull();
-    (Platform as any).OS = originalOS;
+    Platform.OS = 'ios';
   });
 
   it('uses light style when theme is light', async () => {

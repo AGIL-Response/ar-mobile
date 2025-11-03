@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { Center, Column, Row, Screen, View } from '@/components/view';
-import { getStyle, render } from '@/lib/test-utils';
+import { getStyle, reactNativeRender as render } from '@/lib/test-utils';
 
 describe('View component', () => {
   beforeEach(() => {

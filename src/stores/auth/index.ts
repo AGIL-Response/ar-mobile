@@ -13,7 +13,7 @@ import { useLocationStore } from '@/stores/location';
 import { createStore, resetStore } from '@/stores/utils';
 import { type GeoEntity } from '@/types/geo-entity';
 
-interface ITokens {
+export interface ITokens {
   accessToken: string;
   expiresIn: number;
   refreshToken: string;
@@ -26,7 +26,7 @@ export interface ITenant {
   displayName: string;
 }
 
-interface IUser {
+export interface IUser {
   id: string;
   username: string;
   email: string;

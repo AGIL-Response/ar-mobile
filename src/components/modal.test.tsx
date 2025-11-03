@@ -1,9 +1,10 @@
 import React from 'react';
 import { Text } from 'react-native';
 
-import { render, screen } from '@/lib/test-utils';
+import { reactNativeRender as render, screen } from '@/lib/test-utils';
 
 import { Modal, renderBackdrop, useModal } from './modal';
+import { BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 
 // Partially mock only useModal to avoid triggering React.useRef in implementation
 jest.mock('./modal', () => {
@@ -53,7 +54,7 @@ describe('Modal component', () => {
   });
 
   it('renderBackdrop returns backdrop component', () => {
-    const view = renderBackdrop({ style: {} } as any);
+    const view = renderBackdrop({ style: {} } as BottomSheetBackdropProps);
     expect(view).toBeTruthy();
   });
 });

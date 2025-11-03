@@ -248,6 +248,7 @@ export default function IncidentDetailScreen() {
         title="Incident Details"
         showBackButton
         onBackPress={handleBackPress}
+        testID="back-button"
       />
 
       <ScrollView

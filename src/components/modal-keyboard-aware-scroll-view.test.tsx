@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text } from 'react-native';
 
-import { render, screen } from '@/lib/test-utils';
+import { reactNativeRender as render, screen } from '@/lib/test-utils';
 
 import BottomSheetKeyboardAwareScrollView from './modal-keyboard-aware-scroll-view';
 
@@ -16,8 +16,9 @@ describe('BottomSheetKeyboardAwareScrollView component', () => {
   });
 
   it('has correct displayName', () => {
-    expect((BottomSheetKeyboardAwareScrollView as any).displayName).toBe(
-      'BottomSheetKeyboardAwareScrollView'
-    );
+    expect(
+      (BottomSheetKeyboardAwareScrollView as unknown as { displayName: string })
+        .displayName
+    ).toBe('BottomSheetKeyboardAwareScrollView');
   });
 });

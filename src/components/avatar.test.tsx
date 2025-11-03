@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text } from 'react-native';
 
-import { render, screen } from '@/lib/test-utils';
+import { reactNativeRender as render, screen } from '@/lib/test-utils';
 
 import { Avatar, AvatarGroup } from './avatar';
 

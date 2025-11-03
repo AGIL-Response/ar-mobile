@@ -1,6 +1,10 @@
 import React from 'react';
 
-import { fireEvent, render, screen } from '@/lib/test-utils';
+import {
+  fireEvent,
+  reactNativeRender as render,
+  screen,
+} from '@/lib/test-utils';
 
 import { Checkbox, CheckboxGroup } from './checkbox';
 describe('Checkbox', () => {

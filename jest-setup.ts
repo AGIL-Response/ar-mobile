@@ -10,15 +10,112 @@ global.window = global;
 // Global mocks for common modules
 // ------------------------------
 
-// Mock expo-router once for all tests; access push mock via:
-jest.mock('expo-router', () => {
-  const pushMock = jest.fn();
+jest.mock('@/api', () => ({
+  authApi: {
+    getAllTenantsByUsername: jest.fn(),
+    loginWithKeycloak: jest.fn(),
+    getUserProfile: jest.fn(),
+    register: jest.fn(),
+  },
+  handleApiError: jest.fn((error) => ({
+    message: error.message || 'API Error',
+  })),
+  taskApi: {
+    getTasks: jest.fn(),
+    getTask: jest.fn(),
+    updateTask: jest.fn(),
+  },
+  userApi: {
+    getUserRoles: jest.fn(),
+    getUsersByTenant: jest.fn(),
+  },
+}));
+
+jest.mock('@/stores/auth', () => {
+  const defaultAuthStoreState = {
+    token: { accessToken: undefined },
+    user: undefined,
+    tenants: [],
+    selectedTenant: null,
+    actions: {
+      logout: jest.fn(),
+    },
+  };
+
+  const useAuthStoreMock = jest.fn(() => defaultAuthStoreState);
   return {
     __esModule: true,
-    useRouter: () => ({ push: pushMock }),
-    __pushMock: pushMock,
+    useAuthStore: useAuthStoreMock,
+    default: useAuthStoreMock,
+    getState: jest.fn(() => defaultAuthStoreState),
   };
 });
+
+jest.mock('@/stores/tasks', () => {
+  const defaultTasksStoreState = {
+    tasks: [],
+    selectedTask: null,
+    isLoading: false,
+    isLoadingDetail: false,
+    error: null,
+    activeTab: 'all',
+  };
+
+  const useTasksStoreMock = jest.fn(() => defaultTasksStoreState);
+
+  return {
+    __esModule: true,
+    useTasksStore: useTasksStoreMock,
+    default: useTasksStoreMock,
+  };
+});
+
+jest.mock('@/stores/incidents', () => {
+  const defaultIncidentsStoreState = {
+    incidents: [],
+    isLoading: false,
+    error: null,
+  };
+  return {
+    __esModule: true,
+    useIncidentsStore: jest.fn(() => defaultIncidentsStoreState),
+    default: jest.fn(() => defaultIncidentsStoreState),
+  };
+});
+
+jest.mock('@/stores/users', () => {
+  const defaultUsersStoreState = {
+    users: [],
+    isLoading: false,
+    error: null,
+  };
+  return {
+    __esModule: true,
+    useUsersStore: jest.fn(() => defaultUsersStoreState),
+    default: jest.fn(() => defaultUsersStoreState),
+  };
+});
+
+jest.mock('@/stores/location', () => {
+  const defaultLocationStoreState = {
+    hasLocationPermission: true,
+    isLoading: false,
+    error: null,
+    currentLocation: null,
+    coordinates: null,
+    socket: null,
+    isSocketConnected: false,
+    isMonitoring: false,
+    monitoringInterval: null,
+  };
+  return {
+    __esModule: true,
+    useLocationStore: jest.fn(() => defaultLocationStoreState),
+    default: jest.fn(() => defaultLocationStoreState),
+    getState: jest.fn(() => defaultLocationStoreState),
+  };
+});
+
 // Minimal theme mock compatible with our styles; useTheme() returns design tokens
 jest.mock('@/theme', () => {
   const minimalTheme = {
@@ -85,6 +182,18 @@ jest.mock('@/theme', () => {
         fontFamily: 'System',
       },
       body: { fontSize: 16, lineHeight: 20, fontFamily: 'System' },
+      bodyMedium: {
+        fontSize: 14,
+        lineHeight: 18,
+        fontFamily: 'System',
+        fontWeight: '400' as const,
+      },
+      bodySmall: {
+        fontSize: 12,
+        lineHeight: 16,
+        fontFamily: 'System',
+        fontWeight: '400' as const,
+      },
       label: { fontSize: 14, lineHeight: 18, fontFamily: 'System' },
       caption: { fontSize: 12, lineHeight: 16, fontFamily: 'System' },
       button: {
@@ -126,17 +235,67 @@ jest.mock('@/theme', () => {
     useThemeColors: () => minimalTheme.colors,
     useThemeSelection: () => ({ setTheme: jest.fn() }),
     useIsDarkTheme: jest.fn(() => false),
+    Palette: {
+      primary: '#1068eb',
+      primaryLight: '#e8f0fd',
+      success: '#10b981',
+      warning: '#f59e0b',
+      error: '#ef4444',
+      white: '#ffffff',
+      black: '#000000',
+      gainsboro: '#dee2e6',
+      lightGray: '#e5e7eb',
+      mediumGray: '#6a7178',
+      darkGray: '#4b5563',
+      darkSlateGray: '#374151',
+      whiteSmoke: '#f8f9fa',
+      transparent: 'rgba(0,0,0,0)',
+    },
   };
 });
-
-jest.mock('react-native-flash-message', () => ({
-  __esModule: true,
-  showMessage: jest.fn(),
-}));
-
 // Mock i18n
 jest.mock('@/lib/i18n', () => ({
   translate: jest.fn((key: string) => `translated_${key}`),
+}));
+
+jest.mock('@/lib/utils', () => ({
+  decodeJWT: jest.fn(),
+}));
+
+jest.mock('@/components/utils', () => ({
+  showError: jest.fn(),
+  showSuccess: jest.fn(),
+}));
+
+jest.mock('@/lib/hooks/use-location', () => ({
+  useLocation: jest.fn(),
+}));
+
+jest.mock('@/lib/fonts', () => ({
+  useAppFonts: jest.fn(),
+  FontFamilies: {
+    manropeRegular: 'Manrope_400Regular',
+    manropeMedium: 'Manrope_500Medium',
+    manropeSemiBold: 'Manrope_600SemiBold',
+    manropeBold: 'Manrope_700Bold',
+    russoOneRegular: 'RussoOne_400Regular',
+    robotoMedium: 'Roboto_500Medium',
+    interBold: 'Inter_700Bold',
+    sFProText: 'SF Pro Text',
+  },
+}));
+
+jest.mock('@/lib/use-theme-config', () => ({
+  useThemeConfig: jest.fn(() => ({
+    dark: false,
+    colors: {
+      primary: '#1068eb',
+      background: '#ffffff',
+      text: '#111827',
+      border: '#e5e7eb',
+      card: '#ffffff',
+    },
+  })),
 }));
 
 jest.mock('@/components/icon', () => {
@@ -144,12 +303,15 @@ jest.mock('@/components/icon', () => {
   const { Text } = require('react-native');
   return {
     __esModule: true,
-    Icon: ({ size = 24, width, height, name, ...props }: any) =>
+    Icon: ({ size = 24, width, height, name, color, ...props }: any) =>
       React.createElement(
         Text,
         {
           ...props,
           testID: 'mock-icon',
+          size,
+          color,
+          name,
           style: { width: width ?? size, height: height ?? size },
         },
         name
@@ -158,81 +320,44 @@ jest.mock('@/components/icon', () => {
   };
 });
 
+jest.mock('@assets/images', () => ({
+  __esModule: true,
+  default: { avatar_image: 'avatar.png' },
+}));
+
 jest.mock('@react-navigation/native', () => {
+  const React = require('react');
   const actual = jest.requireActual('@react-navigation/native');
   return {
     __esModule: true,
     ...actual,
+    NavigationContainer:
+      actual?.NavigationContainer ||
+      (({ children }: any) =>
+        React.createElement(React.Fragment, null, children)),
+    ThemeProvider:
+      actual?.ThemeProvider ||
+      (({ children }: any) =>
+        React.createElement(React.Fragment, null, children)),
     useIsFocused: jest.fn(() => true),
+    useNavigation: jest.fn(() => ({
+      navigate: jest.fn(),
+      goBack: jest.fn(),
+      dispatch: jest.fn(),
+    })),
+    useRoute: jest.fn(() => ({})),
+    DefaultTheme: actual?.DefaultTheme || {},
+    DarkTheme: actual?.DarkTheme || {},
   };
 });
 
-// Global mock for react-native-edge-to-edge SystemBars component
-jest.mock('react-native-edge-to-edge', () => {
-  const React = require('react');
-  const { View } = require('react-native');
-  return {
-    __esModule: true,
-    SystemBars: ({ style, hidden }: any) =>
-      React.createElement(View, {
-        testID: 'system-bars',
-        'data-style': style,
-        'data-hidden': hidden,
-      }),
-  };
-});
+jest.mock('@/lib/socket', () => ({
+  initMapSocket: jest.fn(),
+  handleListenMapSocket: jest.fn(),
+  sendLocationToSocket: jest.fn(),
+  disconnectMapSocket: jest.fn(),
+}));
 
-// Mock @gorhom/bottom-sheet for Modal component
-jest.mock('@gorhom/bottom-sheet', () => {
-  const React = require('react');
-  return {
-    __esModule: true,
-    BottomSheetModal: React.forwardRef(function BottomSheetModalMock(
-      props: any,
-      ref: any
-    ) {
-      return React.createElement('div', {
-        ref,
-        'data-testid': 'bottom-sheet-modal',
-        ...props,
-      });
-    }),
-    // Add provider passthrough so components/tests using it don't break
-    BottomSheetModalProvider: ({ children }: any) =>
-      React.createElement(React.Fragment, null, children),
-    useBottomSheet: () => ({ close: jest.fn(), snapToIndex: jest.fn() }),
-    createBottomSheetScrollableComponent: jest.fn(
-      (_type: any, Component: any) => Component
-    ),
-    SCROLLABLE_TYPE: {
-      SCROLLVIEW: 'SCROLLVIEW',
-    },
-  };
-});
-
-// Mock react-native-reanimated for Modal animations
-jest.mock('react-native-reanimated', () => {
-  const React = require('react');
-  return {
-    __esModule: true,
-    default: {
-      createAnimatedComponent: (Component: any) => Component,
-    },
-    // createAnimatedComponent: (Component: any) => Component,
-    FadeIn: { duration: jest.fn(() => ({ duration: 50 })) },
-    FadeOut: { duration: jest.fn(() => ({ duration: 20 })) },
-  };
-});
-
-// Mock react-native-keyboard-controller for modal-keyboard-aware-scroll-view
-jest.mock('react-native-keyboard-controller', () => {
-  const React = require('react');
-  return {
-    KeyboardAwareScrollView: ({ children, ...props }: any) =>
-      React.createElement(
-        'View',
-        { testID: 'keyboard-aware-scroll-view', ...props },
-        children
-      ),
-  };
-});
+jest.mock('@/lib/storage', () => ({
+  storage: {},
+}));

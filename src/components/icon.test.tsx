@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { render, screen } from '@/lib/test-utils';
+import { reactNativeRender as render, screen } from '@/lib/test-utils';
 
 import { Icon } from './icon';
 
@@ -8,7 +8,7 @@ import { Icon } from './icon';
 jest.mock('@assets/icons', () => {
   const React = require('react');
   const { Text } = require('react-native');
-  const MockSvg = ({ testID = 'mock-svg', ...props }: any) =>
+  const MockSvg = ({ testID = 'mock-svg', ...props }) =>
     React.createElement(Text, { testID, ...props }, 'svg');
   return {
     __esModule: true,

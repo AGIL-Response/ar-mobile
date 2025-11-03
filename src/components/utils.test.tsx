@@ -11,7 +11,9 @@ import {
   WIDTH,
 } from './utils';
 
+jest.mock('@/components/utils', () => jest.requireActual('./utils'));
 const showMessageMock = require('react-native-flash-message');
+jest.mock('react-native-flash-message');
 
 // Mock console.log to avoid noisy output
 const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});

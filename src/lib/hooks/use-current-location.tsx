@@ -1,4 +1,5 @@
 import * as Location from 'expo-location';
+import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 

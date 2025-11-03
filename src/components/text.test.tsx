@@ -1,7 +1,13 @@
 import React from 'react';
+import type { I18nManagerStatic, Text as RNText } from 'react-native';
 import { I18nManager } from 'react-native';
 
-import { getStyle, render, screen } from '@/lib/test-utils';
+import type { TxKeyPath } from '@/lib/i18n';
+import {
+  getStyle,
+  reactNativeRender as render,
+  screen,
+} from '@/lib/test-utils';
 
 import { Text } from './text';
 
@@ -33,7 +39,7 @@ describe('Text component', () => {
   });
 
   it('uses translation when tx prop is provided', () => {
-    render(<Text testID="text" tx="common.hello" fe />);
+    render(<Text testID="text" tx={'common.hello' as TxKeyPath} />);
     expect(translateMock.translate).toHaveBeenCalledWith(
       'common.hello',
       undefined
@@ -43,7 +49,13 @@ describe('Text component', () => {
 
   it('passes txOptions to translate function', () => {
     const txOptions = { name: 'John' };
-    render(<Text testID="text" tx="common.greeting" txOptions={txOptions} />);
+    render(
+      <Text
+        testID="text"
+        tx={'common.greeting' as TxKeyPath}
+        txOptions={txOptions}
+      />
+    );
     expect(translateMock.translate).toHaveBeenCalledWith(
       'common.greeting',
       txOptions
@@ -52,7 +64,7 @@ describe('Text component', () => {
 
   it('prioritizes tx over text and children', () => {
     render(
-      <Text testID="text" tx="common.hello" text="From text">
+      <Text testID="text" tx={'common.hello' as TxKeyPath} text="From text">
         From children
       </Text>
     );
@@ -80,11 +92,11 @@ describe('Text component', () => {
   });
 
   it('applies RTL when I18nManager.isRTL is true', () => {
-    (I18nManager as any).isRTL = true;
+    (I18nManager as I18nManagerStatic).isRTL = true;
     render(<Text testID="text">RTL text</Text>);
     const style = getStyle('text');
     expect(style.writingDirection).toBe('rtl');
-    (I18nManager as any).isRTL = false;
+    (I18nManager as I18nManagerStatic).isRTL = false;
   });
 
   it('merges user-provided style with computed styles', () => {
@@ -108,7 +120,7 @@ describe('Text component', () => {
   });
 
   it('forwards ref correctly', () => {
-    const ref = React.createRef<any>();
+    const ref = React.createRef<RNText>();
     render(
       <Text ref={ref} testID="text">
         Ref text

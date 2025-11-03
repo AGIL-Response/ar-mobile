@@ -1,52 +1,26 @@
 import React from 'react';
+import { Alert } from 'react-native';
 
-import { fireEvent, render, screen, waitFor } from '@/lib/test-utils';
+import { showError } from '@/components/utils';
+import {
+  findPressableParent,
+  fireEvent,
+  reactNativeRender as render,
+  screen,
+  waitFor,
+} from '@/lib/test-utils';
 
 import Login from './index';
+import { AuthState } from '@/stores/auth';
 
 const { __pushMock: pushMock } = require('expo-router');
 
-jest.mock('@/components', () => {
-  const React = require('react');
-  const { Text: RNText, View: RNView, Pressable } = require('react-native');
-  const Text = ({ children, ...rest }: any) => (
-    <RNText accessibilityRole="text" {...rest}>
-      {children}
-    </RNText>
-  );
-  const View = ({ children, ...rest }: any) => (
-    <RNView {...rest}>{children}</RNView>
-  );
-  const Button = ({ title, onPress, disabled }: any) => (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ disabled: !!disabled }}
-      onPress={onPress}
-      disabled={disabled}
-      testID={`btn-${title}`}
-    >
-      <RNText>{title}</RNText>
-    </Pressable>
-  );
-  const ErrorText = ({ children }: any) => (
-    <RNText accessibilityRole="text">{children}</RNText>
-  );
-  const FocusAwareStatusBar = () => null;
-  const ThemeToggle = () => null;
-  return {
-    __esModule: true,
-    Text,
-    View,
-    Button,
-    ErrorText,
-    FocusAwareStatusBar,
-    ThemeToggle,
-  };
-});
+let showErrorMock: jest.Mock;
+jest.spyOn(console, 'error').mockImplementation(() => {});
 
 const checkUsernameMock = jest.fn();
 const loginWithPasswordMock = jest.fn();
-let mockAuthState: any;
+let mockAuthState: AuthState;
 jest.mock('@/stores/auth', () => ({
   __esModule: true,
   default: () => mockAuthState,
@@ -57,6 +31,11 @@ describe('Login', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     pushMock.mockClear();
+    showErrorMock = showError as jest.Mock;
+    showErrorMock.mockClear();
+    checkUsernameMock.mockReset();
+    loginWithPasswordMock.mockReset();
+    loginWithPasswordMock.mockResolvedValue(undefined);
     mockAuthState = {
       token: { accessToken: undefined },
       tenants: [],
@@ -72,7 +51,7 @@ describe('Login', () => {
         clearUsernameError: jest.fn(),
         setSelectedTenant: jest.fn(),
       },
-    };
+    } as any;
   });
 
   test('renders username step and calls checkUsername on Continue', async () => {
@@ -82,7 +61,9 @@ describe('Login', () => {
 
     fireEvent.changeText(usernameInput, '');
 
-    const continueBtn = await screen.findByTestId('btn-Continue');
+    const continueBtn = findPressableParent(
+      await screen.findByText('Continue')
+    );
     expect(continueBtn.props.accessibilityState.disabled).toBe(true);
 
     fireEvent.changeText(usernameInput, 'testuser');
@@ -96,6 +77,7 @@ describe('Login', () => {
     await waitFor(() => {
       expect(checkUsernameMock).toHaveBeenCalledWith('testuser');
     });
+    expect(mockAuthState.actions.clearUsernameError).toHaveBeenCalled();
   });
 
   test('renders password step when tenant is selected and logs in successfully', async () => {
@@ -112,7 +94,7 @@ describe('Login', () => {
     const passwordInput = await screen.findByPlaceholderText(
       'Enter your password'
     );
-    const signInBtn = await screen.findByTestId('btn-Sign In');
+    const signInBtn = findPressableParent(await screen.findByText('Sign In'));
 
     fireEvent.changeText(passwordInput, 'secret');
     fireEvent.press(signInBtn);
@@ -127,5 +109,79 @@ describe('Login', () => {
     await waitFor(() => {
       expect(pushMock).toHaveBeenCalledWith('/');
     });
+  });
+
+  test('shows alert when password is empty and prevents login', async () => {
+    mockAuthState.selectedTenant = {
+      id: 't1',
+      name: 'acme',
+      displayName: 'Acme',
+    };
+
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+    render(<Login />);
+
+    const passwordInput = await screen.findByPlaceholderText(
+      'Enter your password'
+    );
+    fireEvent.changeText(passwordInput, '');
+
+    fireEvent(passwordInput, 'submitEditing');
+
+    expect(alertSpy).toHaveBeenCalledWith(
+      'Error',
+      'Please enter your password'
+    );
+    expect(loginWithPasswordMock).not.toHaveBeenCalled();
+
+    alertSpy.mockRestore();
+  });
+
+  test('shows error message when login fails', async () => {
+    mockAuthState.selectedTenant = {
+      id: 't1',
+      name: 'acme',
+      displayName: 'Acme',
+    };
+
+    const error = new Error('Invalid credentials');
+    loginWithPasswordMock.mockRejectedValueOnce(error);
+
+    render(<Login />);
+
+    const passwordInput = await screen.findByPlaceholderText(
+      'Enter your password'
+    );
+    const signInBtn = findPressableParent(await screen.findByText('Sign In'));
+
+    fireEvent.changeText(passwordInput, 'secret');
+    fireEvent.press(signInBtn);
+
+    await waitFor(() => {
+      expect(showErrorMock).toHaveBeenCalledWith('Invalid credentials');
+    });
+    expect(pushMock).not.toHaveBeenCalled();
+  });
+
+  test('returns to username step when back is pressed', async () => {
+    mockAuthState.selectedTenant = {
+      id: 't1',
+      name: 'acme',
+      displayName: 'Acme',
+    };
+
+    render(<Login />);
+
+    await screen.findByPlaceholderText('Enter your password');
+
+    mockAuthState.actions.clearUsernameError();
+    mockAuthState.actions.setSelectedTenant(null);
+
+    fireEvent.press(findPressableParent(screen.getByText('Back')));
+
+    expect(screen.getByPlaceholderText('Enter your username')).toBeTruthy();
+    expect(mockAuthState.actions.clearUsernameError).toHaveBeenCalled();
+    expect(mockAuthState.actions.setSelectedTenant).toHaveBeenCalledWith(null);
   });
 });

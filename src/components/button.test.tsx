@@ -1,7 +1,12 @@
 import React from 'react';
 import { Text } from 'react-native';
 
-import { fireEvent, getStyle, render, screen } from '@/lib/test-utils';
+import {
+  fireEvent,
+  getStyle,
+  reactNativeRender as render,
+  screen,
+} from '@/lib/test-utils';
 
 import { Button } from './button';
 

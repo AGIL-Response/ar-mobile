@@ -1,7 +1,11 @@
 import React from 'react';
 import { Text } from 'react-native';
 
-import { fireEvent, render, screen } from '@/lib/test-utils';
+import {
+  fireEvent,
+  reactNativeRender as render,
+  screen,
+} from '@/lib/test-utils';
 
 import { TabBar } from './tab-bar';
 

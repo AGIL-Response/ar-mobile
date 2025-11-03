@@ -13,6 +13,7 @@ export function ProfileHeader() {
 
   return (
     <View
+      testID="profile-header-container"
       style={{
         height: 56,
         backgroundColor: theme.colors.background.primary,

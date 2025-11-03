@@ -27,7 +27,11 @@ export function TaskTabSelector({
   const theme = useTheme();
 
   const tabs = [
-    { key: 'all' as TaskTab, label: 'All', count: pendingCount + completedCount },
+    {
+      key: 'all' as TaskTab,
+      label: 'All',
+      count: pendingCount + completedCount,
+    },
     { key: 'pending' as TaskTab, label: 'Pending', count: pendingCount },
     { key: 'completed' as TaskTab, label: 'Completed', count: completedCount },
   ];
@@ -44,7 +48,7 @@ export function TaskTabSelector({
     >
       {tabs.map((tab) => {
         const isActive = activeTab === tab.key;
-        
+
         return (
           <TouchableOpacity
             key={tab.key}
@@ -55,9 +59,12 @@ export function TaskTabSelector({
               alignItems: 'center',
               justifyContent: 'center',
               borderBottomWidth: isActive ? 2 : 0,
-              borderBottomColor: isActive ? theme.colors.primary : 'transparent',
+              borderBottomColor: isActive
+                ? theme.colors.primary
+                : 'transparent',
             }}
             onPress={() => onTabChange(tab.key)}
+            testID={`tab-${tab.key}`}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Text
@@ -72,7 +79,7 @@ export function TaskTabSelector({
               >
                 {tab.label}
               </Text>
-              
+
               {tab.count > 0 && tab.key !== 'all' && (
                 <Text
                   variant="bodyMedium"

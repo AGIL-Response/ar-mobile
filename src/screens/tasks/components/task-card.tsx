@@ -6,8 +6,8 @@
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
 
-import { Icon, iconNames, Text, View } from '@/components';
 import type { Task } from '@/api/tasks/types';
+import { Text, View } from '@/components';
 import { useTheme } from '@/theme';
 
 interface TaskCardProps {
@@ -17,51 +17,6 @@ interface TaskCardProps {
 
 export function TaskCard({ task, onPress }: TaskCardProps) {
   const theme = useTheme();
-
-  const getTaskTypeIcon = (type: Task['type']) => {
-    switch (type) {
-      case 'maintenance':
-        return iconNames.settings;
-      case 'emergency':
-        return iconNames.notification_badge;
-      case 'inspection':
-        return iconNames.search;
-      case 'training':
-        return iconNames.user;
-      default:
-        return iconNames.list;
-    }
-  };
-
-  const getTaskTypeColor = (type: Task['type']) => {
-    switch (type) {
-      case 'maintenance':
-        return theme.colors.primary; // Use primary instead of info
-      case 'emergency':
-        return theme.colors.semantic.error;
-      case 'inspection':
-        return theme.colors.semantic.warning;
-      case 'training':
-        return theme.colors.primary;
-      default:
-        return theme.colors.text.secondary;
-    }
-  };
-
-  const getPriorityColor = (priority: Task['priority']) => {
-    switch (priority) {
-      case 'critical':
-        return theme.colors.semantic.error;
-      case 'high':
-        return '#ff8800'; // Orange
-      case 'medium':
-        return theme.colors.semantic.warning;
-      case 'low':
-        return theme.colors.semantic.success;
-      default:
-        return theme.colors.text.secondary;
-    }
-  };
 
   const getStatusColor = (status: Task['status']) => {
     switch (status) {
@@ -150,7 +105,10 @@ export function TaskCard({ task, onPress }: TaskCardProps) {
             <Text
               variant="caption"
               style={{
-                color: (!task.status || task.status === 'pending') ? '#6a7178' : theme.colors.semantic.white,
+                color:
+                  !task.status || task.status === 'pending'
+                    ? '#6a7178'
+                    : theme.colors.semantic.white,
                 fontWeight: '600',
                 fontSize: 12,
                 lineHeight: 18,

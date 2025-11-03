@@ -13,6 +13,7 @@ export function TasksHeader() {
 
   return (
     <View
+      testID="tasks-header-container"
       style={{
         height: 56,
         backgroundColor: theme.colors.background.primary,

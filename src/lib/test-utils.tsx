@@ -51,5 +51,26 @@ export function getStyle(testId: string): Record<string, any> {
   return styleProp || {};
 }
 
+export function findPressableParent(node: any) {
+  let current: any = node;
+  while (current && !current.props?.onPress) {
+    current = current.parent;
+  }
+  return current;
+}
+
+export function flattenStyle(style: any): Record<string, any> {
+  if (Array.isArray(style)) {
+    return style.reduce<Record<string, any>>((acc, item) => {
+      if (!item) {
+        return acc;
+      }
+      return { ...acc, ...flattenStyle(item) };
+    }, {});
+  }
+
+  return style ?? {};
+}
+
 export * from '@testing-library/react-native';
-export { customRender as render };
+export { customRender as reactNativeRender };

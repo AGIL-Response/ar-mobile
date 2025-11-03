@@ -249,7 +249,8 @@ export const Input = forwardRef<TextInput, InputProps>(
 
     // Get theme for default placeholder color
     const theme = useThemedStyles((theme) => theme, {});
-    const defaultPlaceholderColor = placeholderTextColor || theme.colors.text.placeholder;
+    const defaultPlaceholderColor =
+      placeholderTextColor || theme.colors.text.placeholder;
 
     // Create accessibility props
     const accessibilityProps = createAccessibilityProps({

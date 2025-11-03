@@ -1,6 +1,10 @@
 import React from 'react';
 
-import { fireEvent, render, screen, waitFor } from '@/lib/test-utils';
+import {
+  fireEvent,
+  reactNativeRender as render,
+  screen,
+} from '@/lib/test-utils';
 
 import { Select } from './select';
 import { Text } from './text';

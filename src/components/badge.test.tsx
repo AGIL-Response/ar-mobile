@@ -1,7 +1,11 @@
 import React from 'react';
 import { Text } from 'react-native';
 
-import { getStyle, render, screen } from '@/lib/test-utils';
+import {
+  getStyle,
+  reactNativeRender as render,
+  screen,
+} from '@/lib/test-utils';
 
 import { Badge } from './badge';
 

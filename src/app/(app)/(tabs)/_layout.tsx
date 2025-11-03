@@ -36,37 +36,37 @@ function TabBarIcon({
   return <Icon name={iconName} size={24} color={color} />;
 }
 
-function TabBarBadge({ count }: { count?: number }) {
-  if (!count) return null;
+// function TabBarBadge({ count }: { count?: number }) {
+//   if (!count) return null;
 
-  return (
-    <View
-      style={{
-        position: 'absolute',
-        top: -4,
-        right: -4,
-        backgroundColor: '#c92a2a', // Red from Figma
-        borderRadius: 8,
-        minWidth: 16,
-        height: 16,
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1,
-      }}
-    >
-      <Text
-        style={{
-          color: 'white',
-          fontSize: 12,
-          fontWeight: '600',
-          textAlign: 'center',
-        }}
-      >
-        {count}
-      </Text>
-    </View>
-  );
-}
+//   return (
+//     <View
+//       style={{
+//         position: 'absolute',
+//         top: -4,
+//         right: -4,
+//         backgroundColor: '#c92a2a', // Red from Figma
+//         borderRadius: 8,
+//         minWidth: 16,
+//         height: 16,
+//         justifyContent: 'center',
+//         alignItems: 'center',
+//         zIndex: 1,
+//       }}
+//     >
+//       <Text
+//         style={{
+//           color: 'white',
+//           fontSize: 12,
+//           fontWeight: '600',
+//           textAlign: 'center',
+//         }}
+//       >
+//         {count}
+//       </Text>
+//     </View>
+//   );
+// }
 
 export default function TabLayout() {
   const theme = useTheme();
