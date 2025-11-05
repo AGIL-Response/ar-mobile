@@ -42,7 +42,7 @@ export function TabSelector({ activeTab, onTabChange }: TabSelectorProps) {
             color:
               activeTab === 'flat'
                 ? theme.colors.text.primary
-                : theme.colors.text.secondary,
+                : theme.colors.text.tertiary,
             textAlign: 'center',
           }}
         >
@@ -78,7 +78,7 @@ export function TabSelector({ activeTab, onTabChange }: TabSelectorProps) {
             color:
               activeTab === 'map'
                 ? theme.colors.text.primary
-                : theme.colors.text.secondary,
+                : theme.colors.text.tertiary,
             textAlign: 'center',
           }}
         >

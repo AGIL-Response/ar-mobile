@@ -1,6 +1,11 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+} from 'react-native';
 
 import { AppBar, Avatar, Icon, Text, View } from '@/components';
 import icons, { iconNames } from '@assets/icons';
@@ -10,8 +15,14 @@ import { useTheme } from '@/theme';
 import type { User } from '@/types';
 import { Modal, useModal } from '@/components/modal';
 import { MemberDetailModal } from './components/member-detail-modal';
+import { X } from '@/components/icons';
+import { FontFamilies } from '@/lib/fonts';
 
-export function MembersScreen(): React.JSX.Element {
+export function MembersScreen({
+  onClose,
+}: {
+  onClose: () => void;
+}): React.JSX.Element {
   const router = useRouter();
   const authState = useAuthStore();
   const usersState = useUsersStore();
@@ -84,25 +95,49 @@ export function MembersScreen(): React.JSX.Element {
           <View style={styles.userInfo}>
             <View style={styles.avatarContainer}>
               <Avatar
-                size="small"
+                size="xl"
                 fallback={getInitials(user)}
                 style={styles.avatar}
               />
               {/* Status indicator */}
-              <View
-                style={[
-                  styles.statusIndicator,
-                  {
-                    backgroundColor: user.enabled
-                      ? theme.colors.semantic.success
-                      : theme.colors.surface.disabled,
-                  },
-                ]}
-              />
+
             </View>
-            <Text variant="body" style={styles.userName}>
-              {user.fullName || user.username}
-            </Text>
+
+            <View style={styles.userNameContainer}>
+              <Text variant="h4" style={styles.userName}>
+                {user.fullName || user.username}
+              </Text>
+              <View style={styles.iconContainer}>
+                <View style={styles.iconItem}>
+                  <Icon
+                    name={iconNames.mobile_signal}
+                    size={18}
+                    color={theme.colors.text.icon}
+                  />
+                  <Icon
+                    name={iconNames.battery}
+                    size={28}
+                    color={theme.colors.text.icon}
+                  />
+                </View>
+                <View style={styles.actionsRow}>
+                  <TouchableOpacity style={styles.actionBtn}>
+                    <Icon
+                      name={iconNames.location}
+                      size={18}
+                      color={theme.colors.text.icon}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.actionBtn}>
+                    <Icon
+                      name={iconNames.message_dots_square}
+                      size={18}
+                      color={theme.colors.text.icon}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
           </View>
         </View>
       </TouchableOpacity>
@@ -114,7 +149,7 @@ export function MembersScreen(): React.JSX.Element {
 
     return (
       <View key={groupName} style={styles.groupSection}>
-        <Text variant="h4" style={styles.groupTitle}>
+        <Text variant="bodyMedium" style={styles.groupTitle}>
           {groupName}
         </Text>
         <View style={styles.cardContainer}>{users.map(renderUserCard)}</View>
@@ -126,14 +161,19 @@ export function MembersScreen(): React.JSX.Element {
 
   return (
     <View style={styles.container}>
-      <AppBar
-        title="Members"
-        titleAlign="left"
-        showBackButton={true}
-        onBackPress={() => router.back()}
-        safeArea
-        style={{ borderBottomWidth: 0 }}
-      />
+      <View style={styles.header}>
+        <Text variant="h3" style={styles.title}>
+          Members
+        </Text>
+        <Pressable
+          style={styles.closeButton}
+          onPress={onClose}
+          accessibilityLabel="Close members screen"
+          accessibilityRole="button"
+        >
+          <X width={20} height={20} color={theme.colors.text.icon} />
+        </Pressable>
+      </View>
 
       <ScrollView
         style={styles.scrollView}
@@ -185,6 +225,19 @@ const createStyles = (theme: any) =>
       flex: 1,
       backgroundColor: theme.colors.background.primary,
     },
+    header: {
+      padding: 16,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      backgroundColor: theme.colors.background.secondary,
+    },
+    title: {
+      fontFamily: FontFamilies.goldmanRegular,
+    },
+    closeButton: {
+      width: 28,
+      alignItems: 'center',
+    },
     scrollView: {
       flex: 1,
       paddingTop: 4,
@@ -219,21 +272,22 @@ const createStyles = (theme: any) =>
     },
     groupTitle: {
       color: theme.colors.text.primary,
-      marginBottom: 12,
+      marginBottom: 8,
     },
     cardContainer: {
-      gap: 16,
-      backgroundColor: theme.colors.surface.card,
-      borderWidth: 1,
-      borderColor: theme.colors.surface.border,
-      padding: 12,
-      borderRadius: 8,
+      gap: 12,
     },
     userCard: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: 4,
+      padding: 10,
+      borderRadius: 8,
+      backgroundColor: theme.colors.background.secondary,
+      borderWidth: 1,
+      borderColor: theme.colors.surface.border,
+      height: 80,
+      maxHeight: 80,
     },
     userInfo: {
       flexDirection: 'row',
@@ -243,13 +297,14 @@ const createStyles = (theme: any) =>
     },
     avatarContainer: {
       position: 'relative',
-      width: 24,
+      width: 48,
+      height: 48,
       justifyContent: 'center',
     },
     avatar: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
+      width: 48,
+      height: 48,
+      borderRadius: 24,
       backgroundColor: 'rgba(209, 209, 209, 0.05)',
       borderWidth: 1,
       borderColor: 'rgba(209, 209, 209, 0.05)',
@@ -267,7 +322,36 @@ const createStyles = (theme: any) =>
     userName: {
       color: theme.colors.text.primary,
     },
+    actionsRow: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    actionBtn: {
+      width: 28,
+      height: 28,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: theme.colors.surface.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.colors.background.primary,
+    },
     menuIcon: {
       color: theme.colors.text.secondary,
+    },
+    userNameContainer: {
+      flex: 1,
+    },
+    iconContainer: {
+      flexDirection: 'row',
+      gap: 8,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    iconItem: {
+      flexDirection: 'row',
+      gap: 8,
+      alignItems: 'center',
     },
   });

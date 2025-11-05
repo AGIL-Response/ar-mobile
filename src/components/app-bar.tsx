@@ -30,6 +30,8 @@ export interface AppBarProps extends Omit<BaseContainerProps, 'padding'> {
   variant?: 'header' | 'bottom-navigation' | 'status-bar';
   /** Title text */
   title?: string;
+  /** Title font family */
+  titleFontFamily?: string;
   /** Title alignment */
   titleAlign?: AppBarTitleAlign;
   /** Left side content (back button, logo, etc.) */
@@ -306,7 +308,9 @@ export const AppBar = React.forwardRef<any, AppBarProps & ViewProps>(
                   {getLeftContent()}
                   {title && (
                     <View style={{ marginLeft: getLeftContent() ? 16 : 0 }}>
-                      <Text variant="h3">{title}</Text>
+                      <Text variant="h3" style={{ fontFamily: props.titleFontFamily }}>
+                        {title}
+                      </Text>
                     </View>
                   )}
                 </View>
@@ -317,14 +321,20 @@ export const AppBar = React.forwardRef<any, AppBarProps & ViewProps>(
 
           <View style={contentStyles.center}>
             {titleAlign === 'center'
-              ? centerContent || <Text variant="h3">{title}</Text>
+              ? centerContent || (
+                  <Text variant="h3" style={{ fontFamily: props.titleFontFamily }}>
+                    {title}
+                  </Text>
+                )
               : centerContent}
           </View>
 
           <View style={contentStyles.right}>
             {titleAlign === 'right' ? (
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text variant="h3">{title}</Text>
+                <Text variant="h3" style={{ fontFamily: props.titleFontFamily }}>
+                  {title}
+                </Text>
                 {rightContent}
               </View>
             ) : (

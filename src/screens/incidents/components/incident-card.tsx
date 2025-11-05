@@ -86,17 +86,20 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
     if (incident.reportedBy) {
       return incident.reportedBy;
     }
-    
+
     if (incident.createdBy) {
-      const user = usersState.users.find(user => user.id === incident.createdBy);
+      const user = usersState.users.find(
+        (user) => user.id === incident.createdBy
+      );
       if (user) {
         return user.fullName || user.username || 'Unknown User';
       }
     }
-    
+
     return 'Unknown Reporter';
   };
 
+  console.log('incident', incident);
   return (
     <TouchableOpacity
       onPress={handlePress}
@@ -162,13 +165,17 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
             flexDirection: 'row',
             alignItems: 'center',
             gap: 8,
+            justifyContent: 'space-between',
           }}
         >
-          <Icon
-            name={iconNames.user_edit}
-            size={16}
-            color={theme.colors.text.muted}
-          />
+          <View style={{ flexDirection: 'row', gap: 4 }}>
+            <Icon
+              name={iconNames.user_edit}
+              size={16}
+              color={theme.colors.text.muted}
+            />
+            <Text>Reported by</Text>
+          </View>
           <Text
             variant="bodyMedium"
             style={{
@@ -186,18 +193,21 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
               flexDirection: 'row',
               alignItems: 'center',
               gap: 8,
+              justifyContent: 'space-between',
             }}
           >
-            <Icon
-              name={iconNames.location}
-              size={16}
-              color={theme.colors.text.muted}
-            />
+            <View style={{ flexDirection: 'row', gap: 4 }}>
+              <Icon
+                name={iconNames.location}
+                size={16}
+                color={theme.colors.text.muted}
+              />
+              <Text>Location</Text>
+            </View>
             <Text
               variant="bodyMedium"
               style={{
                 color: theme.colors.text.primary,
-                flex: 1,
               }}
             >
               {incident.description}
@@ -211,13 +221,17 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
             flexDirection: 'row',
             alignItems: 'center',
             gap: 8,
+            justifyContent: 'space-between',
           }}
         >
-          <Icon
-            name={iconNames.clock}
-            size={16}
-            color={theme.colors.text.muted}
-          />
+          <View style={{ flexDirection: 'row', gap: 4 }}>
+            <Icon
+              name={iconNames.clock}
+              size={16}
+              color={theme.colors.text.muted}
+            />
+            <Text>Reported at</Text>
+          </View>
           <Text
             variant="bodyMedium"
             style={{

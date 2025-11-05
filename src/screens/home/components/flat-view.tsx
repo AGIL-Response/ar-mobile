@@ -17,7 +17,7 @@ export function FlatView() {
       style={{ flex: 1 }}
       contentContainerStyle={{
         padding: 16,
-        gap: 40,
+        gap: 20,
         paddingBottom: 100, // Extra space for FAB
       }}
       showsVerticalScrollIndicator={false}

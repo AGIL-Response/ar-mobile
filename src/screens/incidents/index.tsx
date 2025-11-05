@@ -22,16 +22,16 @@ export default function IncidentsScreen() {
   const authState = useAuthStore();
   const incidentsState = useIncidentsStore();
   const usersState = useUsersStore();
-  
+
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     // Fetch incidents with default parameters
     incidentsState.actions.fetchIncidents({
       type: 'fire',
-      status: 'reported'
+      status: 'reported',
     });
-    
+
     // Fetch team members if we have a selected team
     const teamId = authState.selectedTeam?.id;
     if (teamId) {
@@ -44,19 +44,15 @@ export default function IncidentsScreen() {
     router.push(`/incidents/${incident.id}`);
   };
 
-  const handleCreateIncident = () => {
-    router.push('/incidents/create');
-  };
-
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
       // Refresh incidents data
       await incidentsState.actions.fetchIncidents({
         type: 'fire',
-        status: 'reported'
+        status: 'reported',
       });
-      
+
       // Refresh team members if we have a selected team
       const teamId = authState.selectedTeam?.id;
       if (teamId) {
@@ -104,21 +100,63 @@ export default function IncidentsScreen() {
   );
 
   return (
-    <View
+    <SafeAreaView
+      edges={['top']}
       style={{
         flex: 1,
-        backgroundColor: theme.colors.background.primary,
+        backgroundColor: theme.colors.background.secondary,
       }}
     >
-      <AppBar
-        title="Incidents"
-        showBackButton={true}
-        onBackPress={() => router.back()}
-        safeArea
-      />
+      <View
+        style={{
+          paddingHorizontal: 16,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Text
+          variant="h3"
+          style={{
+            color: theme.colors.text.primary,
+            fontFamily: theme.fonts.goldmanRegular,
+            backgroundColor: theme.colors.background.secondary,
+          }}
+        >
+          Incidents
+        </Text>
+        <View
+          style={{
+            gap: 8,
+            alignItems: 'center',
+            flexDirection: 'row',
+          }}
+        >
+          {/* Search Icon */}
+          <View
+            style={{
+              width: 32,
+              justifyContent: 'center',
+              alignItems: 'center',
+              borderRadius: 100,
+              height: 32,
+              overflow: 'hidden',
+              backgroundColor: theme.colors.background.overlay,
+            }}
+          >
+            <Icon
+              name={iconNames.search}
+              size={16}
+              color={theme.colors.text.icon}
+            />
+          </View>
+        </View>
+      </View>
 
       {/* Content */}
-      <View style={{ flex: 1 }}>
+      <View
+        style={{ flex: 1, backgroundColor: theme.colors.background.primary }}
+      >
         {incidentsState.isLoading && incidentsState.incidents.length === 0 ? (
           <View
             style={{
@@ -160,33 +198,6 @@ export default function IncidentsScreen() {
           />
         )}
       </View>
-
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        onPress={handleCreateIncident}
-        style={{
-          position: 'absolute',
-          bottom: 24,
-          right: 16,
-          width: 56,
-          height: 56,
-          backgroundColor: Palette.primary,
-          borderRadius: 28,
-          justifyContent: 'center',
-          alignItems: 'center',
-          elevation: 4,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.25,
-          shadowRadius: 4,
-        }}
-      >
-        <Icon
-          name={iconNames.plus}
-          size={24}
-          color={Palette.white}
-        />
-      </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }

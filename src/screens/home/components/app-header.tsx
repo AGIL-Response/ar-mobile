@@ -56,7 +56,7 @@ export function AppHeader({ title }) {
             borderRadius: 100,
             height: 32,
             overflow: 'hidden',
-            backgroundColor: theme.colors.background.tertiary,
+            backgroundColor: theme.colors.background.overlay,
           }}
         >
           <Icon

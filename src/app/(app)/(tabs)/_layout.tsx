@@ -74,18 +74,12 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: theme.colors.background.primary, // Dark background from Figma
+          backgroundColor: theme.colors.background.tertiary, // Dark background from Figma
           borderTopWidth: 0,
-          paddingTop: 8,
-          paddingBottom: 24, // Extra padding for safe area
-          height: 80,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontFamily: 'Manrope-Medium',
-          fontWeight: '500',
-          marginTop: 4,
+          paddingTop: 20,
+          height: 85,
         },
         tabBarActiveTintColor: '#1068eb', // Blue from Figma
         tabBarInactiveTintColor: theme.colors.text.primary, // White from Figma

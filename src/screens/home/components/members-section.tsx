@@ -1,13 +1,15 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { Avatar, Text, View } from '@/components';
+import { Modal, useModal } from '@/components/modal';
 import { useAuthStore } from '@/stores/auth';
 import { useUsersStore } from '@/stores/users';
 import { useTheme } from '@/theme';
 import type { User } from '@/types';
 import { FontFamilies } from '@/lib/fonts';
+import { MembersScreen } from '@/screens/members';
 
 export function MembersSection(): React.JSX.Element {
   const router = useRouter();
@@ -15,6 +17,11 @@ export function MembersSection(): React.JSX.Element {
   const authState = useAuthStore();
   const usersState = useUsersStore();
   const styles = createStyles(theme);
+  const {
+    ref: membersModalRef,
+    present: presentMembers,
+    dismiss: dismissMembers,
+  } = useModal();
 
   const teamId = authState.selectedTeam?.id;
 
@@ -25,11 +32,15 @@ export function MembersSection(): React.JSX.Element {
   }, [teamId]);
 
   const displayUsers = usersState.users.slice(0, 4);
-  const hasMore = usersState.users.length > 4;
-  const moreCount = usersState.users.length - 4;
+  const hasMore = usersState.users.length > 1;
+  const moreCount = usersState.users.length - 1;
 
   const handleViewAll = () => {
-    router.push('/members');
+    presentMembers();
+  };
+
+  const handleCloseModal = () => {
+    dismissMembers();
   };
 
   const getInitials = (user: User) => {
@@ -58,24 +69,12 @@ export function MembersSection(): React.JSX.Element {
   }
 
   if (usersState.users.length === 0) {
-    return (
-      <View style={styles.container}>
-        <Text variant="h3" style={styles.title}>
-          Members
-        </Text>
-        <Text variant="body" style={styles.loadingText}>
-          No members found
-        </Text>
-      </View>
-    );
+    return <></>;
   }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text variant="body" style={styles.title}>
-          Members
-        </Text>
         <TouchableOpacity onPress={handleViewAll}>
           <Text variant="caption" style={styles.viewAllText}>
             View All
@@ -92,7 +91,6 @@ export function MembersSection(): React.JSX.Element {
                 fallback={getInitials(user)}
                 style={styles.avatar}
               />
-              <View style={styles.statusIndicator} />
             </View>
           </View>
         ))}
@@ -101,11 +99,7 @@ export function MembersSection(): React.JSX.Element {
           <TouchableOpacity onPress={handleViewAll}>
             <View style={styles.moreContainer}>
               <View style={styles.moreCircle}>
-                <Text
-                  variant="body"
-                  font={FontFamilies.interBold}
-                  style={styles.moreText}
-                >
+                <Text variant="bodyMedium" style={styles.moreText}>
                   +{moreCount}
                 </Text>
               </View>
@@ -113,20 +107,22 @@ export function MembersSection(): React.JSX.Element {
           </TouchableOpacity>
         )}
       </View>
+
+      {/* Members popup modal */}
+      <Modal ref={membersModalRef}>
+        <MembersScreen onClose={handleCloseModal} />
+      </Modal>
     </View>
   );
 }
 
 const createStyles = (theme: any) =>
   StyleSheet.create({
-    container: {
-      // padding: 16,
-    },
+    container: {},
     header: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginBottom: 16,
     },
     title: {
       color: theme.colors.text.primary,
@@ -177,12 +173,14 @@ const createStyles = (theme: any) =>
       width: 48,
       height: 48,
       borderRadius: 24,
-      backgroundColor: theme.colors.text.primary,
+      borderWidth: 1,
+      borderColor: theme.colors.surface.border,
+      backgroundColor: theme.colors.background.input,
       justifyContent: 'center',
       alignItems: 'center',
     },
     moreText: {
-      color: theme.colors.background.primary,
+      color: theme.colors.text.primary,
       textAlign: 'center',
     },
   });

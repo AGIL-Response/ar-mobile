@@ -47,7 +47,7 @@ export function TasksSection() {
           }}
         >
           <Text
-            variant="h4"
+            variant="h3"
             style={{
               color: theme.colors.text.primary,
             }}
@@ -65,7 +65,7 @@ export function TasksSection() {
             </Text>
           </TouchableOpacity>
         </View>
-        <Text variant="body" style={{ color: theme.colors.text.muted }}>
+        <Text variant="body" style={{ color: theme.colors.text.primary }}>
           Loading tasks...
         </Text>
       </View>
@@ -83,7 +83,7 @@ export function TasksSection() {
         }}
       >
         <Text
-          variant="h4"
+          variant="h3"
           style={{
             color: theme.colors.text.primary,
           }}
@@ -105,7 +105,7 @@ export function TasksSection() {
       {/* Task Cards */}
       <View style={{ gap: 12 }}>
         {tasksState.pendingTasks.length === 0 ? (
-          <Text variant="body" style={{ color: theme.colors.text.muted }}>
+          <Text variant="body" style={{ color: theme.colors.text.secondary }}>
             No on-going tasks found
           </Text>
         ) : (

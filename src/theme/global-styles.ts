@@ -215,6 +215,8 @@ export const Palette = {
   primary800: '#0e4970',
   primary900: '#0b3756',
   primary1000: '#111827',
+  primary1100: '#121c2e',
+  primary1200: '#0B355666',
 
   secondary50: '#eaeaea',
   secondary100: '#bfbfbf',
@@ -239,6 +241,8 @@ export const Palette = {
   blue700: '#0063b5',
   blue800: '#004d8c',
   blue900: '#003b6b',
+  blue1000: '#5DA9DC66',
+  blue1100: '#1778BA66',
 
   // Yellow color palette
   yellow50: '#fdf6e6',
@@ -275,6 +279,11 @@ export const Palette = {
   red700: '#b52b2b',
   red800: '#8c2121',
   red900: '#6b1919',
+
+  primary90030: '#0B35564D',
+  toastStatusBg: '#0B355666',
+  toastStatusBorder: '#1778BA66',
+  buttonGhostDef: '#125E9166',
 } as const;
 
 /* ================================
@@ -289,8 +298,9 @@ const createColors = (isDark: boolean) => ({
   background: {
     primary: isDark ? Palette.primary1000 : Palette.white,
     secondary: isDark ? Palette.secondary1000 : Palette.gray50,
-    tertiary: isDark ? Palette.primary900 : Palette.gray100,
-    overlay: isDark ? 'rgba(163, 163, 163, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+    tertiary: isDark ? Palette.primary1100 : Palette.gray100,
+    overlay: isDark ? Palette.primary900 : 'rgba(0, 0, 0, 0.05)',
+    input: isDark ? Palette.primary1200 : Palette.gray400,
   },
 
   // Text colors
@@ -299,8 +309,8 @@ const createColors = (isDark: boolean) => ({
     secondary: isDark ? Palette.primary500 : Palette.gray700,
     tertiary: isDark ? Palette.primary400 : Palette.gray900,
     muted: isDark ? Palette.primary800 : Palette.gray600,
-    disabled: isDark ? Palette.mediumGray : Palette.gray400,
-    placeholder: isDark ? Palette.dimGray : Palette.gray500,
+    disabled: isDark ? Palette.blue1000 : Palette.gray400,
+    placeholder: isDark ? Palette.blue1000 : Palette.gray500,
     inverse: isDark ? Palette.primary1000 : Palette.white,
     icon: isDark ? Palette.primary400 : Palette.gray100, // For dark/light backgrounds
     accent: Palette.primary, // For highlighted text
@@ -338,8 +348,8 @@ const createColors = (isDark: boolean) => ({
   // Surface colors
   surface: {
     card: isDark ? Palette.primary1000 : Palette.white,
-    input: isDark ? Palette.primary1000 : Palette.white,
-    border: isDark ? '#272b30' : Palette.gray300,
+    input: isDark ? Palette.primary1200 : Palette.white,
+    border: isDark ? Palette.blue1100 : Palette.gray300,
     divider: isDark ? Palette.dimGray : Palette.gray300,
     disabled: isDark ? Palette.charcoal800 : Palette.gray100,
   },
