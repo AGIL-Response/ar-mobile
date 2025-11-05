@@ -13,6 +13,26 @@ export interface FileUploadResponse {
   message?: string;
 }
 
+export interface FileViewOptions {
+  fileId: string;
+  assigneeId?: string;
+  teamId?: string;
+  offset?: number;
+  limit?: number;
+}
+
+/**
+ * Convert blob to data URI for displaying in React Native
+ */
+export const blobToDataUri = (blob: Blob): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
+
 export const filesApi = {
   /**
    * Upload a file attachment to an incident
@@ -50,6 +70,48 @@ export const filesApi = {
       return response.data;
     } catch (error) {
       console.error('❌ File Upload Error:', error);
+      throw handleApiError(error);
+    }
+  },
+
+  /**
+   * View/download a file by ID
+   * Returns the raw file content as blob
+   */
+  viewFile: async (options: FileViewOptions): Promise<Blob> => {
+    try {
+      const { fileId, assigneeId, teamId, offset = 0, limit = 100 } = options;
+      
+      console.log('🚀 File View Request:', {
+        fileId,
+        assigneeId,
+        teamId,
+        offset,
+        limit
+      });
+
+      // Build query parameters
+      const queryParams = new URLSearchParams();
+      if (assigneeId) queryParams.append('assigneeId', assigneeId);
+      if (teamId) queryParams.append('teamId', teamId);
+      queryParams.append('offset', offset.toString());
+      queryParams.append('limit', limit.toString());
+
+      const queryString = queryParams.toString();
+      const url = `/files/view/${fileId}${queryString ? `?${queryString}` : ''}`;
+
+      const response = await apiClient.get(url, {
+        responseType: 'blob', // Important: Get raw binary data
+      });
+
+      console.log('✅ File View Response:', {
+        size: response.data.size,
+        type: response.data.type
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('❌ File View Error:', error);
       throw handleApiError(error);
     }
   },

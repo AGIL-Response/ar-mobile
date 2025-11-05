@@ -22,6 +22,7 @@ export * from './button';
 export * from './card';
 export * from './checkbox';
 export * from './file-upload';
+export * from './FileViewer';
 export * from './floating-action-button';
 export * from './icon';
 export * from './input';

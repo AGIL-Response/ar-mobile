@@ -5,7 +5,7 @@
 
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect } from 'react';
-import { ScrollView, TouchableOpacity } from 'react-native';
+import { ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import type { Incident } from '@/api/incidents/types';
@@ -13,6 +13,7 @@ import {
   AppBar,
   Button,
   Center,
+  FileViewer,
   Icon,
   iconNames,
   Text,
@@ -33,6 +34,7 @@ export default function IncidentDetailScreen() {
   const incidentId = id as string;
 
   const { actions } = incidentsState;
+
 
   useEffect(() => {
     if (incidentId) {
@@ -342,6 +344,30 @@ export default function IncidentDetailScreen() {
             value={formatDate(incident.createdAt)}
           />
         </View>
+
+        {/* Attachments Section */}
+        {incident.fileIds && incident.fileIds.length > 0 && (
+          <View style={{ padding: 16 }}>
+            <Text
+              variant="h3"
+              style={{
+                color: theme.colors.text.primary,
+                marginBottom: 12,
+              }}
+            >
+              Attachments ({incident.fileIds.length})
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+              {incident.fileIds.map((fileId) => (
+                <FileViewer
+                  key={fileId}
+                  fileId={fileId}
+                  size={100}
+                />
+              ))}
+            </View>
+          </View>
+        )}
 
         {/* Action Buttons */}
         <View style={{ padding: 16, gap: 12 }}>
