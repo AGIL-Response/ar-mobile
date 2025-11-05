@@ -58,10 +58,10 @@ describe('TabLayout', () => {
     const props = tabsCall[0];
     const children = props.children;
 
-    const tabNames = ['index', 'tasks', 'incidents', 'chat', 'profile'];
-    const tabTitles = ['Home', 'Tasks', 'Incidents', 'Chat', 'Profile'];
+    const tabNames = ['index', 'tasks', 'incidents', 'notifications', 'chat', 'profile'];
+    const tabTitles = ['Home', 'Tasks', 'Incidents', 'Notifications', 'Chat', 'Profile'];
 
-    expect(children).toHaveLength(5);
+    expect(children).toHaveLength(6);
 
     children.forEach((child: React.ReactElement, index: number) => {
       expect(child.props.name).toBe(tabNames[index]);

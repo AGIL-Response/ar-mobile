@@ -25,13 +25,12 @@ function TabBarIcon({
     index: iconNames.home,
     tasks: iconNames.list,
     incidents: iconNames.incident,
+    notifications: iconNames.notification_badge,
     chat: iconNames.message_square,
     profile: iconNames.user,
   };
   
   const iconName = iconMap[name];
-  
-  if (!iconName) return null;
   
   return <Icon name={iconName} size={24} color={color} />;
 }
@@ -119,6 +118,18 @@ export default function TabLayout() {
           title: 'Incidents',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name="incidents" color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          title: 'Notifications',
+          tabBarIcon: ({ color, focused }) => (
+            <View>
+              <TabBarIcon name="notifications" color={color} focused={focused} />
+              {/*<TabBarBadge count={3} />*/}
+            </View>
           ),
         }}
       />
