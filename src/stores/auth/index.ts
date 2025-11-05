@@ -69,7 +69,7 @@ export interface AuthState extends IBaseState {
   user: IUser | undefined;
   tenants: ITenant[];
   selectedTenant: ITenant | null;
-  teams: ITeam[];
+  selectedTeam: ITeam | null;
   isLoading: boolean;
   isCheckingUsername: boolean;
   usernameError: string | null;
@@ -84,7 +84,7 @@ export interface AuthState extends IBaseState {
     setUser: (user: IUser) => void;
     setTenants: (tenants: ITenant[]) => void;
     setSelectedTenant: (tenant: ITenant | null) => void;
-    setTeams: (teams: ITeam[]) => void;
+    setSelectedTeam: (team: ITeam | null) => void;
     setGeoEntity: (geoEntity: GeoEntity) => void;
     clearUsernameError: () => void;
     createGeoEntityIfNeeded: () => Promise<void>;
@@ -102,7 +102,7 @@ const initialState: InitStateType<AuthState> = {
   user: undefined,
   tenants: [],
   selectedTenant: null,
-  teams: [],
+  selectedTeam: null,
   isLoading: false,
   isCheckingUsername: false,
   usernameError: null,
@@ -134,7 +134,7 @@ const authStore = (set: any, get: any) => ({
         state.user = undefined;
         state.tenants = [];
         state.selectedTenant = null;
-        state.teams = [];
+        state.selectedTeam = null;
         state.geoEntity = undefined;
         state.usernameError = null;
         state.isCheckingUsername = false;
@@ -164,9 +164,9 @@ const authStore = (set: any, get: any) => ({
         state.selectedTenant = tenant;
       });
     },
-    setTeams: (teams: ITeam[]) => {
+    setSelectedTeam: (team: ITeam | null) => {
       set((state: AuthState) => {
-        state.teams = teams;
+        state.selectedTeam = team;
       });
     },
     setGeoEntity: (geoEntity: GeoEntity) => {

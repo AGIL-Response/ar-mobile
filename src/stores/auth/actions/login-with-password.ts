@@ -126,9 +126,13 @@ const loginWithPassword =
       try {
         console.log('Fetching user teams...');
         const teamsResponse = await authApi.getUserTeams(userId);
-        if (teamsResponse?.data && Array.isArray(teamsResponse.data)) {
-          get().actions.setTeams(teamsResponse.data);
-          console.log('User teams fetched successfully:', teamsResponse.data.length, 'teams');
+        if (teamsResponse?.data && Array.isArray(teamsResponse.data) && teamsResponse.data.length > 0) {
+          // Store only the first team since user only has one team
+          get().actions.setSelectedTeam(teamsResponse.data[0]);
+          console.log('User team fetched successfully:', teamsResponse.data[0].name);
+        } else {
+          get().actions.setSelectedTeam(null);
+          console.log('No teams found for user');
         }
       } catch (teamsError) {
         console.warn(
@@ -136,6 +140,7 @@ const loginWithPassword =
           teamsError
         );
         // Don't block login if teams fetch fails
+        get().actions.setSelectedTeam(null);
       }
 
       // Note: Tenants are already fetched and stored during username check
