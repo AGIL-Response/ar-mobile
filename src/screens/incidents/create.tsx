@@ -3,16 +3,13 @@
  * Form for creating new incidents
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  ScrollView,
-  Alert,
-  Image,
-  TouchableOpacity,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Alert, Image, ScrollView, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { filesApi } from '@/api';
+import type { CreateIncidentRequest } from '@/api/incidents/types';
 import {
   AppBar,
   Button,
@@ -25,12 +22,12 @@ import {
 } from '@/components';
 import { Select } from '@/components/select';
 import { TextArea } from '@/components/textarea';
-import { LocationPermissionScreen } from './components';
+import { useLocation } from '@/lib/hooks/use-location';
 import { useAuthStore } from '@/stores/auth';
 import { useIncidentsStore } from '@/stores/incidents';
-import { useLocation } from '@/lib/hooks/use-location';
 import { Palette, useTheme } from '@/theme';
-import type { CreateIncidentRequest } from '@/api/incidents/types';
+
+import { LocationPermissionScreen } from './components';
 import { IncidentUploadModel } from './components/incident-upload-model';
 
 interface CreateIncidentForm {
@@ -113,6 +110,7 @@ export default function CreateIncidentScreen() {
     setIsSubmitting(true);
 
     try {
+      // Step 1: Create the incident
       const incidentData: CreateIncidentRequest = {
         name: form.name.trim(),
         description: form.description.trim(),
@@ -122,9 +120,40 @@ export default function CreateIncidentScreen() {
         },
       };
 
-      await incidentsState.actions.createIncident(incidentData);
+      const createdIncident =
+        await incidentsState.actions.createIncident(incidentData);
 
-      Alert.alert('Success', 'Incident created successfully', [
+      // Step 2: Upload image if selected
+      let imageUploadSuccess = false;
+      if (form.images && createdIncident) {
+        try {
+          await filesApi.uploadIncidentAttachment({
+            incidentId: createdIncident.id,
+            fileUri: form.images,
+            fileName: `incident_${createdIncident.id}_${Date.now()}.jpg`,
+            mimeType: 'image/jpeg',
+          });
+          console.log(
+            'Image uploaded successfully for incident:',
+            createdIncident.id
+          );
+          imageUploadSuccess = true;
+        } catch (uploadError) {
+          console.warn(
+            'Failed to upload image, but incident was created:',
+            uploadError
+          );
+          // Don't fail the entire process if image upload fails
+        }
+      }
+
+      const successMessage = form.images
+        ? imageUploadSuccess
+          ? 'Incident created and image uploaded successfully'
+          : 'Incident created successfully, but image upload failed'
+        : 'Incident created successfully';
+
+      Alert.alert('Success', successMessage, [
         { text: 'OK', onPress: () => router.replace('/incidents') },
       ]);
     } catch (error) {
