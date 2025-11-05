@@ -19,7 +19,7 @@ import { TabSelector } from './components/tab-selector';
 
 export default function HomeScreen() {
   const theme = useTheme();
-  const selectedTenant = useAuthStore(state => state.selectedTenant);
+  const selectedTenant = useAuthStore((state) => state.selectedTenant);
   const [activeTab, setActiveTab] = useState<'flat' | 'map'>('flat');
 
   const handleTabChange = (tab: 'flat' | 'map') => {
@@ -28,11 +28,13 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: theme.colors.background.primary }}
+      style={{ flex: 1, backgroundColor: theme.colors.background.secondary }}
     >
       <Screen>
         {/* App Bar */}
-        <AppHeader title={selectedTenant?.displayName || selectedTenant?.name || ''} />
+        <AppHeader
+          title={selectedTenant?.displayName || selectedTenant?.name || ''}
+        />
 
         {/* Tab Selector */}
         <TabSelector activeTab={activeTab} onTabChange={handleTabChange} />

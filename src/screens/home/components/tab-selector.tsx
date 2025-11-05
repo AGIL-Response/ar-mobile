@@ -24,7 +24,6 @@ export function TabSelector({ activeTab, onTabChange }: TabSelectorProps) {
         backgroundColor: theme.colors.background.primary,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 16,
       }}
     >
       <TouchableOpacity
@@ -40,25 +39,29 @@ export function TabSelector({ activeTab, onTabChange }: TabSelectorProps) {
         <Text
           variant="label"
           style={{
-            color: activeTab === 'flat' ? theme.colors.text.primary : theme.colors.text.muted,
+            color:
+              activeTab === 'flat'
+                ? theme.colors.text.primary
+                : theme.colors.text.secondary,
             textAlign: 'center',
           }}
         >
           Flat View
         </Text>
-        {activeTab === 'flat' && (
-          <View
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              height: 3,
-              width: '100%',
-              backgroundColor: Palette.primary,
-            }}
-          />
-        )}
+        <View
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            height: 2,
+            width: '100%',
+            backgroundColor:
+              activeTab === 'flat'
+                ? theme.colors.text.primary
+                : theme.colors.text.muted,
+          }}
+        />
       </TouchableOpacity>
-      
+
       <TouchableOpacity
         style={{
           flex: 1,
@@ -72,23 +75,28 @@ export function TabSelector({ activeTab, onTabChange }: TabSelectorProps) {
         <Text
           variant="label"
           style={{
-            color: activeTab === 'map' ? theme.colors.text.primary : theme.colors.text.muted,
+            color:
+              activeTab === 'map'
+                ? theme.colors.text.primary
+                : theme.colors.text.secondary,
             textAlign: 'center',
           }}
         >
           Map View
         </Text>
-        {activeTab === 'map' && (
-          <View
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              height: 3,
-              width: '100%',
-              backgroundColor: Palette.primary,
-            }}
-          />
-        )}
+
+        <View
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            height: 2,
+            width: '100%',
+            backgroundColor:
+              activeTab === 'map'
+                ? theme.colors.text.primary
+                : theme.colors.text.muted,
+          }}
+        />
       </TouchableOpacity>
     </View>
   );

@@ -7,7 +7,7 @@ import images from '@assets/images';
 import React from 'react';
 import { Image, ImageBackground } from 'react-native';
 
-import { Icon, iconNames,Text, View } from '@/components';
+import { Icon, iconNames, Text, View } from '@/components';
 import { Palette, useTheme } from '@/theme';
 
 export function AppHeader({ title }) {
@@ -23,6 +23,7 @@ export function AppHeader({ title }) {
         gap: 8,
         alignItems: 'center',
         flexDirection: 'row',
+        backgroundColor: theme.colors.background.secondary,
       }}
     >
       {/* Title Section */}
@@ -31,6 +32,7 @@ export function AppHeader({ title }) {
           variant="h3"
           style={{
             color: theme.colors.text.primary,
+            fontFamily: theme.fonts.goldmanRegular,
           }}
         >
           {title}
@@ -54,89 +56,13 @@ export function AppHeader({ title }) {
             borderRadius: 100,
             height: 32,
             overflow: 'hidden',
-          }}
-        >
-          <Icon name={iconNames.search} size={16} color={theme.colors.text.primary} />
-        </View>
-
-        {/* Notification Badge */}
-        <View
-          style={{
-            width: 32,
-            justifyContent: 'center',
-            alignItems: 'center',
-            borderRadius: 100,
-            height: 32,
-            overflow: 'hidden',
+            backgroundColor: theme.colors.background.tertiary,
           }}
         >
           <Icon
-            name={iconNames.notification_badge}
+            name={iconNames.search}
             size={16}
-            color={theme.colors.text.primary}
-          />
-        </View>
-
-        {/* Avatar with Status */}
-        <View
-          style={{
-            flexDirection: 'row',
-            width: 32,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: Palette.lightGrayOpacity,
-              borderColor: Palette.lightGrayOpacity,
-              borderWidth: 1,
-              zIndex: 0,
-              borderStyle: 'solid',
-              borderRadius: 64,
-              overflow: 'hidden',
-              justifyContent: 'center',
-              alignItems: 'center',
-              flexDirection: 'row',
-              flex: 1,
-            }}
-          >
-            <ImageBackground
-              style={{ flex: 1 }}
-              resizeMode="cover"
-              source={images.avatar_image}
-            >
-              <View
-                style={{
-                  opacity: 0,
-                  alignSelf: 'stretch',
-                  height: 16,
-                }}
-              />
-              <View
-                style={{
-                  opacity: 0,
-                  alignSelf: 'stretch',
-                  height: 16,
-                }}
-              />
-            </ImageBackground>
-          </View>
-          {/* Status Indicator */}
-          <View
-            style={{
-              width: 11,
-              right: -1,
-              bottom: -1,
-              backgroundColor: Palette.mediumSpringGreen,
-              borderColor: theme.colors.background.primary,
-              borderWidth: 1.3,
-              height: 11,
-              zIndex: 1,
-              position: 'absolute',
-              borderStyle: 'solid',
-              borderRadius: 64,
-            }}
+            color={theme.colors.text.icon}
           />
         </View>
       </View>

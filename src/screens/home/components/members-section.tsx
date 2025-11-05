@@ -101,7 +101,13 @@ export function MembersSection(): React.JSX.Element {
           <TouchableOpacity onPress={handleViewAll}>
             <View style={styles.moreContainer}>
               <View style={styles.moreCircle}>
-                <Text variant="body" font={FontFamilies.interBold} style={styles.moreText}>+{moreCount}</Text>
+                <Text
+                  variant="body"
+                  font={FontFamilies.interBold}
+                  style={styles.moreText}
+                >
+                  +{moreCount}
+                </Text>
               </View>
             </View>
           </TouchableOpacity>

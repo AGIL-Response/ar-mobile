@@ -21,6 +21,13 @@ export const FontFamily = {
 
   // Accent fonts
   russoOneRegular: 'RussoOne_400Regular',
+
+  // Goldman (accent/branding)
+  goldmanRegular: 'Goldman_400Regular',
+  goldmanBold: 'Goldman_700Bold',
+
+  // KdamThmorPro (accent/branding)
+  kdamThmorProRegular: 'KdamThmorPro_400Regular',
 } as const;
 
 /* ================================
@@ -43,11 +50,13 @@ export const FontSize = {
    ================================ */
 export const LineHeight = {
   tight: 12, // 10px font
+  small: 14, // 14px font
   normal: 16, // 12px font
   relaxed: 18, // 14px font
   loose: 20, // 16px font
   heading: 22, // 18-20px font
   large: 24, // 22px+ font
+  extraLarge: 28, // 28px font
   brand: 36, // 28px font
 } as const;
 
@@ -59,80 +68,80 @@ export const Typography = {
   h1: {
     fontSize: FontSize.size_28,
     lineHeight: LineHeight.brand,
-    fontFamily: FontFamily.manropeBold,
-    fontWeight: '700' as const,
+    fontFamily: FontFamily.kdamThmorProRegular,
+    fontWeight: '400' as const,
   },
   h2: {
     fontSize: FontSize.size_22,
-    lineHeight: LineHeight.large,
-    fontFamily: FontFamily.manropeBold,
-    fontWeight: '700' as const,
+    lineHeight: LineHeight.brand,
+    fontFamily: FontFamily.kdamThmorProRegular,
+    fontWeight: '400' as const,
   },
   h3: {
     fontSize: FontSize.size_20,
-    lineHeight: LineHeight.heading,
-    fontFamily: FontFamily.manropeSemiBold,
-    fontWeight: '600' as const,
+    lineHeight: LineHeight.extraLarge,
+    fontFamily: FontFamily.kdamThmorProRegular,
+    fontWeight: '400' as const,
   },
   h4: {
     fontSize: FontSize.size_18,
-    lineHeight: LineHeight.relaxed,
-    fontFamily: FontFamily.manropeSemiBold,
-    fontWeight: '600' as const,
+    lineHeight: LineHeight.large,
+    fontFamily: FontFamily.kdamThmorProRegular,
+    fontWeight: '400' as const,
   },
 
   // Body text
   body: {
     fontSize: FontSize.size_16,
-    lineHeight: LineHeight.loose,
-    fontFamily: FontFamily.manropeRegular,
+    lineHeight: LineHeight.heading,
+    fontFamily: FontFamily.kdamThmorProRegular,
     fontWeight: '400' as const,
   },
   bodyMedium: {
     fontSize: FontSize.size_14,
-    lineHeight: LineHeight.relaxed,
-    fontFamily: FontFamily.manropeRegular,
+    lineHeight: LineHeight.loose,
+    fontFamily: FontFamily.kdamThmorProRegular,
     fontWeight: '400' as const,
   },
   bodySmall: {
     fontSize: FontSize.size_12,
-    lineHeight: LineHeight.normal,
-    fontFamily: FontFamily.manropeRegular,
+    lineHeight: LineHeight.small,
+    fontFamily: FontFamily.kdamThmorProRegular,
     fontWeight: '400' as const,
   },
 
   // Labels and UI text
   label: {
     fontSize: FontSize.size_14,
-    lineHeight: LineHeight.relaxed,
-    fontFamily: FontFamily.manropeMedium,
-    fontWeight: '500' as const,
+    lineHeight: LineHeight.loose,
+    fontFamily: FontFamily.kdamThmorProRegular,
+    fontWeight: '400' as const,
   },
   caption: {
     fontSize: FontSize.size_12,
-    lineHeight: LineHeight.normal,
-    fontFamily: FontFamily.manropeRegular,
+    lineHeight: LineHeight.small,
+    fontFamily: FontFamily.kdamThmorProRegular,
     fontWeight: '400' as const,
   },
   overline: {
     fontSize: FontSize.size_10,
     lineHeight: LineHeight.tight,
-    fontFamily: FontFamily.manropeMedium,
-    fontWeight: '500' as const,
+    fontFamily: FontFamily.kdamThmorProRegular,
+    fontWeight: '400' as const,
   },
 
   // Interactive elements
   button: {
     fontSize: FontSize.size_16,
-    lineHeight: LineHeight.loose,
-    fontFamily: FontFamily.manropeSemiBold,
-    fontWeight: '600' as const,
+    lineHeight: LineHeight.heading,
+    fontFamily: FontFamily.kdamThmorProRegular,
+    fontWeight: '400' as const,
   },
   link: {
     fontSize: FontSize.size_14,
-    lineHeight: LineHeight.relaxed,
-    fontFamily: FontFamily.manropeMedium,
-    fontWeight: '500' as const,
+    lineHeight: LineHeight.loose,
+    fontFamily: FontFamily.kdamThmorProRegular,
+    fontWeight: '400' as const,
   },
 } as const;
 
@@ -174,10 +183,10 @@ export const Palette = {
   success: '#37b24d',
   successAlt: '#1ce783',
   mediumSpringGreen: '#1ce783', // Figma design status indicator
-  warning: '#f59f00',
-  warningAlt: '#f76707',
-  error: '#c92a2a',
-  errorAlt: '#dc2020',
+  warning: '#FA8C16',
+  warningAlt: '##FA8C161A',
+  error: '#FF3C3C',
+  errorAlt: '#D52B2B33',
 
   // Semantic
   white: '#ffffff',
@@ -186,7 +195,7 @@ export const Palette = {
 
   // Additional colors from designs
   gainsboro: '#dee2e6',
-  lightGray: '#ced4da', 
+  lightGray: '#ced4da',
   lightGrayOpacity: 'rgba(209, 209, 209, 0.05)', // Figma design avatar background
   darkGray: '#adb5bd',
   mediumGray: '#6a7178',
@@ -194,6 +203,78 @@ export const Palette = {
   darkSlateGray: '#49454f',
   whiteSmoke: '#f8f9fa',
   aliceBlue: '#e8f0fd',
+
+  primary50: '#e8f3fa',
+  primary100: '#b8d9ef',
+  primary200: '#95c6e8',
+  primary300: '#65addd',
+  primary400: '#479dd6',
+  primary500: '#1984cc',
+  primary600: '#1778ba ',
+  primary700: '#125e91',
+  primary800: '#0e4970',
+  primary900: '#0b3756',
+  primary1000: '#111827',
+
+  secondary50: '#eaeaea',
+  secondary100: '#bfbfbf',
+  secondary200: '#a0a0a0',
+  secondary300: '#747474',
+  secondary400: '#595959',
+  secondary500: '#303030',
+  secondary600: '#2c2c2c',
+  secondary700: '#222222',
+  secondary800: '#1a1a1a',
+  secondary900: '#141414',
+  secondary1000: '#091b32',
+
+  // Blue color palette
+  blue50: '#e6f4ff',
+  blue100: '#b0dbff',
+  blue200: '#8acaff',
+  blue300: '#54b2ff',
+  blue400: '#33a3ff',
+  blue500: '#008cff',
+  blue600: '#007fe8',
+  blue700: '#0063b5',
+  blue800: '#004d8c',
+  blue900: '#003b6b',
+
+  // Yellow color palette
+  yellow50: '#fdf6e6',
+  yellow100: '#f8e2b0',
+  yellow200: '#f5d48a',
+  yellow300: '#f0c054',
+  yellow400: '#edb433',
+  yellow500: '#e9a100',
+  yellow600: '#d49300',
+  yellow700: '#a57200',
+  yellow800: '#805900',
+  yellow900: '#624400',
+
+  // Green color palette
+  green50: '#eaf6ea',
+  green100: '#bfe3be',
+  green200: '#9fd69e',
+  green300: '#74c372',
+  green400: '#59b757',
+  green500: '#2fa52d',
+  green600: '#2b9629',
+  green700: '#217520',
+  green800: '#1a5b19',
+  green900: '#144513',
+
+  // Red color palette
+  red50: '#ffecec',
+  red100: '#ffc3c3',
+  red200: '#ffa5a5',
+  red300: '#ff7c7c',
+  red400: '#ff6363',
+  red500: '#ff3c3c',
+  red600: '#e83737',
+  red700: '#b52b2b',
+  red800: '#8c2121',
+  red900: '#6b1919',
 } as const;
 
 /* ================================
@@ -201,25 +282,27 @@ export const Palette = {
    ================================ */
 const createColors = (isDark: boolean) => ({
   // Primary brand color
-  primary: Palette.primary,
+  primary: Palette.primary1000,
   primaryLight: Palette.primaryLight,
 
   // Background colors
   background: {
-    primary: isDark ? Palette.charcoal950 : Palette.white,
-    secondary: isDark ? Palette.charcoal900 : Palette.gray50,
-    tertiary: isDark ? '#272b30' : Palette.gray100,
+    primary: isDark ? Palette.primary1000 : Palette.white,
+    secondary: isDark ? Palette.secondary1000 : Palette.gray50,
+    tertiary: isDark ? Palette.primary900 : Palette.gray100,
     overlay: isDark ? 'rgba(163, 163, 163, 0.05)' : 'rgba(0, 0, 0, 0.05)',
   },
 
   // Text colors
   text: {
-    primary: isDark ? Palette.white : Palette.charcoal950,
-    secondary: isDark ? Palette.gainsboro : Palette.gray700,
-    muted: isDark ? Palette.darkGray : Palette.gray600,
+    primary: isDark ? Palette.primary200 : Palette.charcoal950,
+    secondary: isDark ? Palette.primary500 : Palette.gray700,
+    tertiary: isDark ? Palette.primary400 : Palette.gray900,
+    muted: isDark ? Palette.primary800 : Palette.gray600,
     disabled: isDark ? Palette.mediumGray : Palette.gray400,
     placeholder: isDark ? Palette.dimGray : Palette.gray500,
-    inverse: isDark ? Palette.charcoal950 : Palette.white, // For dark/light backgrounds
+    inverse: isDark ? Palette.primary1000 : Palette.white,
+    icon: isDark ? Palette.primary400 : Palette.gray100, // For dark/light backgrounds
     accent: Palette.primary, // For highlighted text
   },
 
@@ -254,8 +337,8 @@ const createColors = (isDark: boolean) => ({
 
   // Surface colors
   surface: {
-    card: isDark ? Palette.charcoal900 : Palette.white,
-    input: isDark ? Palette.charcoal950 : Palette.white,
+    card: isDark ? Palette.primary1000 : Palette.white,
+    input: isDark ? Palette.primary1000 : Palette.white,
     border: isDark ? '#272b30' : Palette.gray300,
     divider: isDark ? Palette.dimGray : Palette.gray300,
     disabled: isDark ? Palette.charcoal800 : Palette.gray100,

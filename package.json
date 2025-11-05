@@ -44,7 +44,9 @@
     "e2e-test": "maestro test .maestro/ -e APP_ID=com.obytes.development"
   },
   "dependencies": {
+    "@expo-google-fonts/goldman": "^0.4.2",
     "@expo-google-fonts/inter": "^0.4.1",
+    "@expo-google-fonts/kdam-thmor-pro": "^0.4.1",
     "@expo-google-fonts/manrope": "^0.4.1",
     "@expo-google-fonts/roboto": "^0.4.0",
     "@expo-google-fonts/russo-one": "^0.4.0",

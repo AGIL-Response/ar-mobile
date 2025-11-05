@@ -3,7 +3,12 @@
  * Loads Manrope font family using Expo Google Fonts
  */
 
+import {
+  Goldman_400Regular,
+  Goldman_700Bold,
+} from '@expo-google-fonts/goldman';
 import { Inter_700Bold } from '@expo-google-fonts/inter';
+import { KdamThmorPro_400Regular } from '@expo-google-fonts/kdam-thmor-pro';
 import {
   Manrope_400Regular,
   Manrope_500Medium,
@@ -32,6 +37,13 @@ export function useAppFonts() {
     // Additional fonts for Figma screens
     Roboto_500Medium,
     Inter_700Bold,
+
+    // Goldman (accent/branding)
+    Goldman_400Regular,
+    Goldman_700Bold,
+
+    // KdamThmorPro (accent/branding)
+    KdamThmorPro_400Regular,
   });
 
   return fontsLoaded;
@@ -56,4 +68,11 @@ export const FontFamilies = {
 
   // System fonts (fallbacks)
   sFProText: 'SF Pro Text', // iOS system font
+
+  // Goldman (accent/branding)
+  goldmanRegular: 'Goldman_400Regular',
+  goldmanBold: 'Goldman_700Bold',
+
+  // KdamThmorPro (accent/branding)
+  kdamThmorProRegular: 'KdamThmorPro_400Regular',
 } as const;

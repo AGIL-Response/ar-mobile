@@ -8,7 +8,13 @@ importers:
 
   .:
     dependencies:
+      '@expo-google-fonts/goldman':
+        specifier: ^0.4.2
+        version: 0.4.2
       '@expo-google-fonts/inter':
+        specifier: ^0.4.1
+        version: 0.4.1
+      '@expo-google-fonts/kdam-thmor-pro':
         specifier: ^0.4.1
         version: 0.4.1
       '@expo-google-fonts/manrope':
@@ -1133,8 +1139,14 @@ packages:
     resolution: {integrity: sha512-Ys+3g2TaW7gADOJzPt83SJtCDhMjndcDMFVQ/Tj9iA1BfJzFKD9mAUXT3OenpuPHbI6P/myECxRJrofUsDx/5g==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
 
+  '@expo-google-fonts/goldman@0.4.2':
+    resolution: {integrity: sha512-OXfzGnQ3cMZv76XVsXKHWELlRhw5V3c6H2OLzDPDqSJvdkrz7eYE3IrH2v1iqb2StIHSta5GGvj65SCAQsLjAA==}
+
   '@expo-google-fonts/inter@0.4.1':
     resolution: {integrity: sha512-ypL+XokTHEG+ie/nxNj/mS38afMrY4Li4oKvTJf9k9XvH7I21qfTGCsDtlZ6nIUWEAy1odoUZISdXT1nfMh4kA==}
+
+  '@expo-google-fonts/kdam-thmor-pro@0.4.1':
+    resolution: {integrity: sha512-JumiwfAhXKXHv7DbMAYpnGG1IR9rgnI8sRmTOtsxfwyOZTJmkKFDM9wyKSJZBlVHa6r6bSW3fg7Sh0WJ1p7G5g==}
 
   '@expo-google-fonts/manrope@0.4.1':
     resolution: {integrity: sha512-3Ydkj5dS4M6/xgjk7UT/+9wq1xnqo2LO9E5K/EIaynY2phJOGwFzvtAE9EEImqXj96TEg2jzZ095Mmac5w8nvQ==}
@@ -8711,7 +8723,11 @@ snapshots:
 
   '@eslint/js@8.57.0': {}
 
+  '@expo-google-fonts/goldman@0.4.2': {}
+
   '@expo-google-fonts/inter@0.4.1': {}
+
+  '@expo-google-fonts/kdam-thmor-pro@0.4.1': {}
 
   '@expo-google-fonts/manrope@0.4.1': {}
 
