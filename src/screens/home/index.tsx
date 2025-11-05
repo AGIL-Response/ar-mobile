@@ -20,6 +20,7 @@ import { TabSelector } from './components/tab-selector';
 export default function HomeScreen() {
   const theme = useTheme();
   const selectedTenant = useAuthStore((state) => state.selectedTenant);
+  const teams = useAuthStore((state) => state.teams);
   const [activeTab, setActiveTab] = useState<'flat' | 'map'>('flat');
 
   const handleTabChange = (tab: 'flat' | 'map') => {
@@ -33,7 +34,7 @@ export default function HomeScreen() {
       <Screen>
         {/* App Bar */}
         <AppHeader
-          title={selectedTenant?.displayName || selectedTenant?.name || ''}
+          title={teams.length > 0 ? teams[0].name : ''}
         />
 
         {/* Tab Selector */}

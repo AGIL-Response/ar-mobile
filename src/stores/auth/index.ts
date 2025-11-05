@@ -26,6 +26,26 @@ export interface ITenant {
   displayName: string;
 }
 
+export interface ITeam {
+  tenantId: string;
+  id: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string | null;
+  deletedAt: string | null;
+  createdBy: string;
+  updatedBy: string | null;
+  deletedBy: string | null;
+  settings: {
+    isLocationTracked: boolean;
+  };
+  location: {
+    type: string;
+    coordinates: number[][][];
+  };
+}
+
 export interface IUser {
   id: string;
   username: string;
@@ -49,6 +69,7 @@ export interface AuthState extends IBaseState {
   user: IUser | undefined;
   tenants: ITenant[];
   selectedTenant: ITenant | null;
+  teams: ITeam[];
   isLoading: boolean;
   isCheckingUsername: boolean;
   usernameError: string | null;
@@ -63,6 +84,7 @@ export interface AuthState extends IBaseState {
     setUser: (user: IUser) => void;
     setTenants: (tenants: ITenant[]) => void;
     setSelectedTenant: (tenant: ITenant | null) => void;
+    setTeams: (teams: ITeam[]) => void;
     setGeoEntity: (geoEntity: GeoEntity) => void;
     clearUsernameError: () => void;
     createGeoEntityIfNeeded: () => Promise<void>;
@@ -80,6 +102,7 @@ const initialState: InitStateType<AuthState> = {
   user: undefined,
   tenants: [],
   selectedTenant: null,
+  teams: [],
   isLoading: false,
   isCheckingUsername: false,
   usernameError: null,
@@ -111,6 +134,7 @@ const authStore = (set: any, get: any) => ({
         state.user = undefined;
         state.tenants = [];
         state.selectedTenant = null;
+        state.teams = [];
         state.geoEntity = undefined;
         state.usernameError = null;
         state.isCheckingUsername = false;
@@ -138,6 +162,11 @@ const authStore = (set: any, get: any) => ({
     setSelectedTenant: (tenant: ITenant | null) => {
       set((state: AuthState) => {
         state.selectedTenant = tenant;
+      });
+    },
+    setTeams: (teams: ITeam[]) => {
+      set((state: AuthState) => {
+        state.teams = teams;
       });
     },
     setGeoEntity: (geoEntity: GeoEntity) => {

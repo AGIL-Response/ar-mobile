@@ -122,6 +122,22 @@ const loginWithPassword =
       // Set user data
       get().actions.setUser(enhancedUserProfile);
 
+      // Fetch user teams (non-blocking)
+      try {
+        console.log('Fetching user teams...');
+        const teamsResponse = await authApi.getUserTeams(userId);
+        if (teamsResponse?.data && Array.isArray(teamsResponse.data)) {
+          get().actions.setTeams(teamsResponse.data);
+          console.log('User teams fetched successfully:', teamsResponse.data.length, 'teams');
+        }
+      } catch (teamsError) {
+        console.warn(
+          'Failed to fetch user teams, continuing with login:',
+          teamsError
+        );
+        // Don't block login if teams fetch fails
+      }
+
       // Note: Tenants are already fetched and stored during username check
       // No need to fetch them again here
 

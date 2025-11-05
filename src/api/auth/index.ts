@@ -113,6 +113,20 @@ export const authApi = {
   },
 
   /**
+   * Get user teams by userId
+   */
+  getUserTeams: async (userId: string): Promise<any> => {
+    try {
+      const response = await apiClient.get(
+        `/teams?userId=${encodeURIComponent(userId)}&isLocationTracked=true&sort={}&count=false`
+      );
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  /**
    * Legacy login user (kept for backwards compatibility)
    */
   login: async (data: LoginRequest): Promise<LoginResponse> => {
