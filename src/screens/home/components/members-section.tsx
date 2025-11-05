@@ -16,13 +16,13 @@ export function MembersSection(): React.JSX.Element {
   const usersState = useUsersStore();
   const styles = createStyles(theme);
 
-  const tenantId = authState.selectedTenant?.id;
+  const teamId = authState.selectedTeam?.id;
 
   useEffect(() => {
-    if (tenantId) {
-      usersState.actions.fetchUsers(tenantId);
+    if (teamId) {
+      usersState.actions.fetchTeamMembers(teamId);
     }
-  }, [tenantId]);
+  }, [teamId]);
 
   const displayUsers = usersState.users.slice(0, 4);
   const hasMore = usersState.users.length > 4;

@@ -62,6 +62,43 @@ export async function getUsersByTenant(
 }
 
 /**
+ * Get team members by team ID
+ */
+export async function getTeamMembers(teamId: string): Promise<User[]> {
+  try {
+    const url = `/teams/${teamId}/users?sort={}&count=false`;
+    const response = await apiClient.get<{ data: any[] }>(url);
+    
+    // Transform team member response to User[] format
+    const users: User[] = response.data.data.map((memberResponse: any) => ({
+      id: memberResponse.id || memberResponse.userId,
+      fullName: memberResponse.fullName,
+      email: memberResponse.email,
+      username: memberResponse.username,
+      emailVerified: true, // Not provided in team members API, default to true
+      createdAt: new Date(memberResponse.createdAt).getTime(), // Convert to timestamp
+      enabled: true, // Not provided in team members API, default to true
+      avatarId: memberResponse.avatarId,
+      description: memberResponse.description || '',
+      location: memberResponse.location,
+      roles: memberResponse.roles ? memberResponse.roles.map((role: any) => ({
+        id: role.id,
+        name: role.name,
+        displayName: role.displayName,
+        description: role.description || '',
+        composite: false,
+        clientRole: false,
+        containerId: '',
+      })) : [],
+    }));
+
+    return users;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+}
+
+/**
  * Get user roles by user ID and tenant ID
  */
 export async function getUserRoles(

@@ -7,6 +7,12 @@ export type User = {
   createdAt: number;
   enabled: boolean;
   roles: Role[];
+  avatarId?: string;
+  description?: string;
+  location?: {
+    type: string;
+    coordinates: number[];
+  };
 };
 
 export type Role = {

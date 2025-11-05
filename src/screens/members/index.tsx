@@ -19,13 +19,13 @@ export function MembersScreen(): React.JSX.Element {
   const { ref, present } = useModal();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  const tenantId = authState.selectedTenant?.id;
+  const teamId = authState.selectedTeam?.id;
 
   useEffect(() => {
-    if (tenantId) {
-      usersState.actions.fetchUsers(tenantId);
+    if (teamId) {
+      usersState.actions.fetchTeamMembers(teamId);
     }
-  }, [tenantId]);
+  }, [teamId]);
 
   const getInitials = (user: User) => {
     if (user.fullName) {
