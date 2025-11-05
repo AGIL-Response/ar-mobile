@@ -22,18 +22,13 @@ export function IncidentsSection() {
   const incidentsState = useIncidentsStore();
   const usersState = useUsersStore();
 
-  const tenantId = authState.selectedTenant?.id;
-
   useEffect(() => {
-    if (tenantId) {
-      incidentsState.actions.fetchIncidents(tenantId);
-      // Note: Users are already fetched by the MembersSection on the same screen
-      // but we ensure they're available here as well
-      if (usersState.users.length === 0) {
-        usersState.actions.fetchUsers(tenantId);
-      }
-    }
-  }, [tenantId]);
+    // Fetch incidents with default parameters (fire type, reported status)
+    incidentsState.actions.fetchIncidents({
+      type: 'fire',
+      status: 'reported'
+    });
+  }, []);
 
   const handleViewAll = () => {
     router.push('/incidents');

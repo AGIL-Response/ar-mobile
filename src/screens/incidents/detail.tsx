@@ -35,15 +35,15 @@ export default function IncidentDetailScreen() {
   const { actions } = incidentsState;
 
   useEffect(() => {
-    if (selectedTenant?.id && incidentId) {
-      actions.fetchIncident(selectedTenant.id, incidentId);
+    if (incidentId) {
+      actions.fetchIncident(incidentId);
     }
 
     // Clear selected incident when component unmounts
     return () => {
       actions.setSelectedIncident(null);
     };
-  }, [selectedTenant?.id, incidentId, actions]);
+  }, [incidentId, actions]);
 
   const handleBackPress = () => {
     router.back();

@@ -19,11 +19,11 @@ export interface IncidentsState extends IBaseState {
 
   // Actions namespace
   actions: {
-    fetchIncidents: (tenantId: string, params?: IncidentsQueryParams) => Promise<void>;
-    fetchIncident: (tenantId: string, incidentId: string) => Promise<void>;
-    createIncident: (tenantId: string, data: any) => Promise<Incident>;
-    updateIncident: (tenantId: string, data: any) => Promise<Incident>;
-    deleteIncident: (tenantId: string, incidentId: string) => Promise<void>;
+    fetchIncidents: (params?: IncidentsQueryParams) => Promise<void>;
+    fetchIncident: (incidentId: string) => Promise<void>;
+    createIncident: (data: any) => Promise<Incident>;
+    updateIncident: (data: any) => Promise<Incident>;
+    deleteIncident: (incidentId: string) => Promise<void>;
     setSelectedIncident: (incident: Incident | null) => void;
     setSearchQuery: (query: string) => void;
     setFilters: (filters: Partial<IncidentsState['filters']>) => void;
@@ -45,14 +45,14 @@ const initialState: InitStateType<IncidentsState> = {
 const incidentsStore = (set: any, get: any) => ({
   ...initialState,
   actions: {
-    fetchIncidents: async (tenantId: string, params?: IncidentsQueryParams) => {
+    fetchIncidents: async (params?: IncidentsQueryParams) => {
       set((state: IncidentsState) => {
         state.isLoading = true;
         state.error = null;
       });
 
       try {
-        const incidents = await incidentsApi.getIncidents(tenantId, params);
+        const incidents = await incidentsApi.getIncidents(params);
         
         set((state: IncidentsState) => {
           state.incidents = incidents;
@@ -66,14 +66,14 @@ const incidentsStore = (set: any, get: any) => ({
       }
     },
 
-    fetchIncident: async (tenantId: string, incidentId: string) => {
+    fetchIncident: async (incidentId: string) => {
       set((state: IncidentsState) => {
         state.isLoadingDetails = true;
         state.error = null;
       });
 
       try {
-        const incident = await incidentsApi.getIncident(tenantId, incidentId);
+        const incident = await incidentsApi.getIncident(incidentId);
         
         set((state: IncidentsState) => {
           state.selectedIncident = incident;
@@ -93,14 +93,14 @@ const incidentsStore = (set: any, get: any) => ({
       }
     },
 
-    createIncident: async (tenantId: string, data: any) => {
+    createIncident: async (data: any) => {
       set((state: IncidentsState) => {
         state.isLoading = true;
         state.error = null;
       });
 
       try {
-        const newIncident = await incidentsApi.createIncident(tenantId, data);
+        const newIncident = await incidentsApi.createIncident(data);
         
         set((state: IncidentsState) => {
           state.incidents = [newIncident, ...state.incidents];
@@ -117,14 +117,14 @@ const incidentsStore = (set: any, get: any) => ({
       }
     },
 
-    updateIncident: async (tenantId: string, data: any) => {
+    updateIncident: async (data: any) => {
       set((state: IncidentsState) => {
         state.isLoading = true;
         state.error = null;
       });
 
       try {
-        const updatedIncident = await incidentsApi.updateIncident(tenantId, data);
+        const updatedIncident = await incidentsApi.updateIncident(data);
         
         set((state: IncidentsState) => {
           const index = state.incidents.findIndex(i => i.id === data.id);
@@ -149,14 +149,14 @@ const incidentsStore = (set: any, get: any) => ({
       }
     },
 
-    deleteIncident: async (tenantId: string, incidentId: string) => {
+    deleteIncident: async (incidentId: string) => {
       set((state: IncidentsState) => {
         state.isLoading = true;
         state.error = null;
       });
 
       try {
-        await incidentsApi.deleteIncident(tenantId, incidentId);
+        await incidentsApi.deleteIncident(incidentId);
         
         set((state: IncidentsState) => {
           state.incidents = state.incidents.filter(i => i.id !== incidentId);

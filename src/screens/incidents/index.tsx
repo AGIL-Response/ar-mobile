@@ -3,8 +3,8 @@
  * Displays all incidents with proper navigation and floating action button
  */
 
-import React, { useEffect } from 'react';
-import { FlatList, TouchableOpacity } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { FlatList, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
@@ -22,15 +22,22 @@ export default function IncidentsScreen() {
   const authState = useAuthStore();
   const incidentsState = useIncidentsStore();
   const usersState = useUsersStore();
-
-  const tenantId = authState.selectedTenant?.id;
+  
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
-    if (tenantId) {
-      incidentsState.actions.fetchIncidents(tenantId);
-      usersState.actions.fetchUsers(tenantId);
+    // Fetch incidents with default parameters
+    incidentsState.actions.fetchIncidents({
+      type: 'fire',
+      status: 'reported'
+    });
+    
+    // Fetch team members if we have a selected team
+    const teamId = authState.selectedTeam?.id;
+    if (teamId) {
+      usersState.actions.fetchTeamMembers(teamId);
     }
-  }, [tenantId]);
+  }, [authState.selectedTeam?.id]);
 
   const handleIncidentPress = (incident: Incident) => {
     incidentsState.actions.setSelectedIncident(incident);
@@ -40,6 +47,27 @@ export default function IncidentsScreen() {
   const handleCreateIncident = () => {
     router.push('/incidents/create');
   };
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      // Refresh incidents data
+      await incidentsState.actions.fetchIncidents({
+        type: 'fire',
+        status: 'reported'
+      });
+      
+      // Refresh team members if we have a selected team
+      const teamId = authState.selectedTeam?.id;
+      if (teamId) {
+        await usersState.actions.fetchTeamMembers(teamId);
+      }
+    } catch (error) {
+      console.error('Failed to refresh incidents:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [incidentsState.actions, usersState.actions, authState.selectedTeam?.id]);
 
   const renderIncident = ({ item }: { item: Incident }) => (
     <IncidentListCard incident={item} onPress={handleIncidentPress} />
@@ -120,6 +148,15 @@ export default function IncidentsScreen() {
             }}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={renderEmpty}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                tintColor={theme.colors.text.primary}
+                colors={[theme.colors.text.primary]}
+                progressBackgroundColor={theme.colors.background.secondary}
+              />
+            }
           />
         )}
       </View>

@@ -140,27 +140,7 @@ describe('CreateIncidentScreen', () => {
     expect(alertSpy).toHaveBeenCalledWith('Error', 'Incident type is required');
   });
 
-  it('alerts when tenant is missing', async () => {
-    mockAuthState.selectedTenant = null;
-    setupForm();
-
-    fireEvent.changeText(
-      screen.getByPlaceholderText('Enter incident name'),
-      'Fire in lab'
-    );
-
-    // Open select and choose an option
-    fireEvent.press(
-      findPressableParent(screen.getByText('Select incident type'))
-    );
-    fireEvent.press(screen.getByText('Emergency'));
-
-    fireEvent.press(findPressableParent(screen.getByText('Create Incident')));
-
-    await waitFor(() => {
-      expect(alertSpy).toHaveBeenCalledWith('Error', 'No tenant selected');
-    });
-  });
+  // Note: Tenant validation removed as API now handles tenant assignment automatically
 
   it('creates an incident successfully and navigates back', async () => {
     setupForm();

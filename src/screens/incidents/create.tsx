@@ -110,12 +110,6 @@ export default function CreateIncidentScreen() {
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
-    const tenantId = authState.selectedTenant?.id;
-    if (!tenantId) {
-      Alert.alert('Error', 'No tenant selected');
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -123,13 +117,12 @@ export default function CreateIncidentScreen() {
         name: form.name.trim(),
         description: form.description.trim(),
         type: form.type as any,
-        status: 'NEW',
         location: {
           coordinates: location.coordinates || [103.8198, 1.3521, 0], // Use device location or fallback
         },
       };
 
-      await incidentsState.actions.createIncident(tenantId, incidentData);
+      await incidentsState.actions.createIncident(incidentData);
 
       Alert.alert('Success', 'Incident created successfully', [
         { text: 'OK', onPress: () => router.replace('/incidents') },

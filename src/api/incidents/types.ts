@@ -1,7 +1,7 @@
 import type { BaseApiResponse } from '@/types/api';
 
-export type IncidentType = 'emergency' | 'maintenance' | 'security' | 'health' | 'environmental';
-export type IncidentStatus = 'NEW' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+export type IncidentType = 'fire' | 'emergency' | 'maintenance' | 'security' | 'health' | 'environmental';
+export type IncidentStatus = 'reported' | 'NEW' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
 export type IncidentSeverity = 'high' | 'medium' | 'low';
 
 export interface IncidentAssignee {
@@ -36,25 +36,34 @@ export interface Incident {
   deletedAt?: string | null;
   createdBy: string;
   updatedBy?: string | null;
-  deletedBy?: string;
-  incidentAssignees: IncidentAssignee[];
-  incidentTasks: IncidentTask[];
+  deletedBy?: string | null;
+  assigneeId?: string | null;
+  teamId?: string | null;
+  location?: {
+    type: string;
+    coordinates: number[];
+  };
+  taskIds: string[];
+  fileIds: string[];
+  
+  // Legacy fields for backward compatibility
+  incidentAssignees?: IncidentAssignee[];
+  incidentTasks?: IncidentTask[];
   
   // Additional computed fields for UI
   severity?: IncidentSeverity;
-  location?: {
-    coordinates: number[];
-  };
   reportedBy?: string;
 }
 
 export interface IncidentsQueryParams {
-  page?: number;
+  offset?: number;
   limit?: number;
   status?: IncidentStatus;
   type?: IncidentType;
   severity?: IncidentSeverity;
   search?: string;
+  sort?: string;
+  count?: boolean;
 }
 
 export type IncidentsResponse = BaseApiResponse<Incident[]>;
@@ -64,11 +73,9 @@ export interface CreateIncidentRequest {
   name: string;
   description: string;
   type: IncidentType;
-  status: IncidentStatus;
   location?: {
     coordinates: number[]; // [longitude, latitude, altitude]
   };
-  severity?: IncidentSeverity;
 }
 
 export interface UpdateIncidentRequest extends Partial<CreateIncidentRequest> {
