@@ -8,7 +8,6 @@ import { Alert, Image, TouchableOpacity } from 'react-native';
 
 import { blobToDataUri, filesApi } from '@/api/files';
 import { Icon, iconNames, Text, View } from '@/components';
-import { useAuthStore } from '@/stores/auth';
 import { useTheme } from '@/theme';
 
 interface FileViewerProps {
@@ -19,7 +18,6 @@ interface FileViewerProps {
 
 export function FileViewer({ fileId, size = 100, onPress }: FileViewerProps) {
   const theme = useTheme();
-  const authState = useAuthStore();
 
   const [fileDataUri, setFileDataUri] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,26 +29,13 @@ export function FileViewer({ fileId, size = 100, onPress }: FileViewerProps) {
       return; // Already loaded or loading
     }
 
-    const userId = authState.user?.id;
-    const teamId = authState.selectedTeam?.id;
-
-    if (!userId || !teamId) {
-      console.warn('Missing userId or teamId for file loading');
-      setError('Authentication required');
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
 
     try {
       console.log('🚀 Loading file:', fileId);
       
-      const blob = await filesApi.viewFile({
-        fileId,
-        assigneeId: userId,
-        teamId,
-      });
+      const blob = await filesApi.viewFile({ fileId });
 
       const dataUri = await blobToDataUri(blob);
       setFileDataUri(dataUri);
@@ -63,7 +48,7 @@ export function FileViewer({ fileId, size = 100, onPress }: FileViewerProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [fileId, authState.user?.id, authState.selectedTeam?.id, fileDataUri, isLoading]);
+  }, [fileId, fileDataUri, isLoading]);
 
   // Auto-load file when component mounts
   useEffect(() => {

@@ -15,10 +15,6 @@ export interface FileUploadResponse {
 
 export interface FileViewOptions {
   fileId: string;
-  assigneeId?: string;
-  teamId?: string;
-  offset?: number;
-  limit?: number;
 }
 
 /**
@@ -80,25 +76,11 @@ export const filesApi = {
    */
   viewFile: async (options: FileViewOptions): Promise<Blob> => {
     try {
-      const { fileId, assigneeId, teamId, offset = 0, limit = 100 } = options;
+      const { fileId } = options;
       
-      console.log('🚀 File View Request:', {
-        fileId,
-        assigneeId,
-        teamId,
-        offset,
-        limit
-      });
+      console.log('🚀 File View Request:', { fileId });
 
-      // Build query parameters
-      const queryParams = new URLSearchParams();
-      if (assigneeId) queryParams.append('assigneeId', assigneeId);
-      if (teamId) queryParams.append('teamId', teamId);
-      queryParams.append('offset', offset.toString());
-      queryParams.append('limit', limit.toString());
-
-      const queryString = queryParams.toString();
-      const url = `/files/view/${fileId}${queryString ? `?${queryString}` : ''}`;
+      const url = `/files/view/${fileId}`;
 
       const response = await apiClient.get(url, {
         responseType: 'blob', // Important: Get raw binary data
