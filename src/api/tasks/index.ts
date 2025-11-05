@@ -9,18 +9,37 @@ import type {
   CreateTaskResponse,
   GetTaskResponse,
   GetTasksResponse,
+  TasksQueryParams,
   UpdateTaskRequest,
   UpdateTaskResponse,
 } from './types';
 
 /**
- * Get all tasks for a tenant
+ * Get all tasks with query parameters
  */
-export const getTasks = async (tenantId: string): Promise<GetTasksResponse> => {
+export const getTasks = async (params: TasksQueryParams = {}): Promise<GetTasksResponse> => {
   try {
-    console.log(`🚀 Request: GET /tasks`);
-    const response = await apiClient.get(`/tasks`);
-    console.log(`✅ Response: GET /tasks`, response.data);
+    const queryParams = new URLSearchParams();
+    
+    // Set default parameters
+    const defaultParams = {
+      offset: 0,
+      limit: 100,
+      ...params
+    };
+    
+    Object.entries(defaultParams).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        queryParams.append(key, String(value));
+      }
+    });
+
+    const queryString = queryParams.toString();
+    const url = `/tasks${queryString ? `?${queryString}` : ''}`;
+    
+    console.log(`🚀 Request: GET ${url}`);
+    const response = await apiClient.get(url);
+    console.log(`✅ Response: GET ${url}`, response.data);
     return response.data;
   } catch (error) {
     console.error(`❌ Error: GET /tasks`, error);
@@ -31,10 +50,7 @@ export const getTasks = async (tenantId: string): Promise<GetTasksResponse> => {
 /**
  * Get a specific task by ID
  */
-export const getTask = async (
-  tenantId: string,
-  taskId: string
-): Promise<GetTaskResponse> => {
+export const getTask = async (taskId: string): Promise<GetTaskResponse> => {
   try {
     console.log(`🚀 Request: GET /tasks/${taskId}`);
     const response = await apiClient.get(`/tasks/${taskId}`);
@@ -49,10 +65,7 @@ export const getTask = async (
 /**
  * Create a new task
  */
-export const createTask = async (
-  tenantId: string,
-  data: CreateTaskRequest
-): Promise<CreateTaskResponse> => {
+export const createTask = async (data: CreateTaskRequest): Promise<CreateTaskResponse> => {
   try {
     console.log(`🚀 Request: POST /tasks`);
     console.log(`📦 Request Body:`, data);
@@ -69,7 +82,6 @@ export const createTask = async (
  * Update a task
  */
 export const updateTask = async (
-  tenantId: string,
   taskId: string,
   data: UpdateTaskRequest
 ): Promise<UpdateTaskResponse> => {
@@ -88,7 +100,7 @@ export const updateTask = async (
 /**
  * Delete a task
  */
-export const deleteTask = async (tenantId: string, taskId: string): Promise<void> => {
+export const deleteTask = async (taskId: string): Promise<void> => {
   try {
     console.log(`🚀 Request: DELETE /tasks/${taskId}`);
     await apiClient.delete(`/tasks/${taskId}`);

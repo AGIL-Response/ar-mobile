@@ -3,8 +3,10 @@
  * Zustand store for task management
  */
 
+import type { StateCreator } from 'zustand';
+
 import { taskApi } from '@/api';
-import type { Task } from '@/api/tasks/types';
+import type { Task, TasksQueryParams } from '@/api/tasks/types';
 import { TaskTab } from '@/screens/tasks/components/task-tab-selector';
 import type { IBaseState, InitStateType } from '@/stores/interfaces/IBaseState';
 import { createStore, resetStore } from '@/stores/utils';
@@ -24,13 +26,9 @@ export interface TasksState extends IBaseState {
 
   // Actions namespace
   actions: {
-    fetchTasks: (tenantId: string) => Promise<void>;
-    fetchTask: (tenantId: string, taskId: string) => Promise<void>;
-    updateTaskStatus: (
-      tenantId: string,
-      taskId: string,
-      status: Task['status']
-    ) => Promise<void>;
+    fetchTasks: (params?: TasksQueryParams) => Promise<void>;
+    fetchTask: (taskId: string) => Promise<void>;
+    updateTaskStatus: (taskId: string, status: Task['status']) => Promise<void>;
     setActiveTab: (tab: TaskTab) => void;
     clearSelectedTask: () => void;
     clearError: () => void;
@@ -49,7 +47,7 @@ const initialState: InitStateType<TasksState> = {
   activeTab: 'all',
 };
 
-const tasksStore = (set: any, get: any) => ({
+const tasksStore: StateCreator<TasksState> = (set, get) => ({
   ...initialState,
 
   // Helper function to update computed properties
@@ -67,55 +65,58 @@ const tasksStore = (set: any, get: any) => ({
   },
 
   actions: {
-    fetchTasks: async (tenantId: string) => {
+    fetchTasks: async (params?: TasksQueryParams) => {
+      console.log('Tasks store - fetchTasks called with params:', params);
+      
       set((state: TasksState) => {
         state.isLoading = true;
         state.error = null;
       });
 
       try {
-        const response = await taskApi.getTasks(tenantId);
+        const response = await taskApi.getTasks(params);
+        console.log('Tasks store - API response:', response);
+        
         set((state: TasksState) => {
           state.tasks = response.data;
           state.isLoading = false;
         });
         // Update computed properties
         get()._updateComputedProperties();
-      } catch (error: any) {
+        
+        console.log('Tasks store - tasks updated, count:', response.data.length);
+      } catch (error: unknown) {
+        console.error('Tasks store - fetch error:', error);
         set((state: TasksState) => {
-          state.error = error.message || 'Failed to fetch tasks';
+          state.error = error instanceof Error ? error.message : 'Failed to fetch tasks';
           state.isLoading = false;
         });
       }
     },
 
-    fetchTask: async (tenantId: string, taskId: string) => {
+    fetchTask: async (taskId: string) => {
       set((state: TasksState) => {
         state.isLoadingDetail = true;
         state.error = null;
       });
 
       try {
-        const response = await taskApi.getTask(tenantId, taskId);
+        const response = await taskApi.getTask(taskId);
         set((state: TasksState) => {
           state.selectedTask = response.data;
           state.isLoadingDetail = false;
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         set((state: TasksState) => {
-          state.error = error.message || 'Failed to fetch task';
+          state.error = error instanceof Error ? error.message : 'Failed to fetch task';
           state.isLoadingDetail = false;
         });
       }
     },
 
-    updateTaskStatus: async (
-      tenantId: string,
-      taskId: string,
-      status: Task['status']
-    ) => {
+    updateTaskStatus: async (taskId: string, status: Task['status']) => {
       try {
-        await taskApi.updateTask(tenantId, taskId, { status });
+        await taskApi.updateTask(taskId, { status });
         
         set((state: TasksState) => {
           // Update task in list
@@ -132,9 +133,9 @@ const tasksStore = (set: any, get: any) => ({
         
         // Update computed properties
         get()._updateComputedProperties();
-      } catch (error: any) {
+      } catch (error: unknown) {
         set((state: TasksState) => {
-          state.error = error.message || 'Failed to update task status';
+          state.error = error instanceof Error ? error.message : 'Failed to update task status';
         });
       }
     },

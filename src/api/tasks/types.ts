@@ -3,9 +3,50 @@
  * Type definitions for task-related API requests and responses
  */
 
-export type TaskType = 'maintenance' | 'emergency' | 'inspection' | 'training' | 'other';
-export type TaskPriority = 'low' | 'medium' | 'high' | 'critical';
-export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled' | null;
+export type TaskType = 'Test' | 'maintenance' | 'emergency' | 'inspection' | 'training' | 'other';
+export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
+
+export interface ChecklistItem {
+  id: string;
+  description: string;
+  isCompleted: boolean;
+  updatedAt: string | null;
+}
+
+export interface TaskIncident {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface TaskAssignee {
+  tenantId: string;
+  id: string;
+  idpUserId: string;
+  createdAt: string;
+  updatedAt: string | null;
+  deletedAt: string | null;
+  createdBy: string;
+  updatedBy: string | null;
+  deletedBy: string | null;
+  username: string;
+  email: string;
+  fullName: string;
+  avatarId?: string;
+  description?: string;
+  roles: Array<{
+    id: string;
+    name: string;
+    displayName: string;
+  }>;
+  location?: {
+    type: string;
+    coordinates: number[];
+  };
+}
 
 export interface Task {
   tenantId: string;
@@ -13,36 +54,42 @@ export interface Task {
   type: TaskType;
   name: string;
   description: string;
-  startTime: string | null;
-  deadline: string | null;
+  startTime: string;
+  deadline: string;
   priority: TaskPriority;
   status: TaskStatus;
   createdAt: string;
   updatedAt: string | null;
   deletedAt: string | null;
-  createdBy: string | null;
+  createdBy: string;
   updatedBy: string | null;
   deletedBy: string | null;
-  assignees?: TaskAssignee[];
+  assigneeId: string;
+  teamId: string;
+  checklist: ChecklistItem[];
+  assignee: TaskAssignee;
+  fileIds: string[];
+  incident: TaskIncident | null;
 }
 
-export interface TaskAssignee {
-  id: string;
-  userId: string;
-  taskId: string;
-  assignedAt: string;
-  assignedBy: string;
-  user?: {
-    id: string;
-    username: string;
-    firstName?: string;
-    lastName?: string;
-  };
+
+export interface TasksQueryParams {
+  assigneeId?: string;
+  teamId?: string;
+  offset?: number;
+  limit?: number;
+  status?: TaskStatus;
+  priority?: TaskPriority;
 }
 
 export interface GetTasksResponse {
   code: string;
   data: Task[];
+  message: string;
+  pagination: {
+    total: number;
+    hasNextPage: boolean;
+  };
 }
 
 export interface GetTaskResponse {

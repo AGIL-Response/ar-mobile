@@ -1,5 +1,12 @@
+import type { StateCreator } from 'zustand';
+
 import { incidentsApi } from '@/api/incidents';
-import type { Incident, IncidentsQueryParams } from '@/api/incidents/types';
+import type {
+  CreateIncidentRequest,
+  Incident,
+  IncidentsQueryParams,
+  UpdateIncidentRequest,
+} from '@/api/incidents/types';
 import type { IBaseState, InitStateType } from '@/stores/interfaces/IBaseState';
 import { createStore, resetStore } from '@/stores/utils';
 
@@ -21,8 +28,8 @@ export interface IncidentsState extends IBaseState {
   actions: {
     fetchIncidents: (params?: IncidentsQueryParams) => Promise<void>;
     fetchIncident: (incidentId: string) => Promise<void>;
-    createIncident: (data: any) => Promise<Incident>;
-    updateIncident: (data: any) => Promise<Incident>;
+    createIncident: (data: CreateIncidentRequest) => Promise<Incident>;
+    updateIncident: (data: UpdateIncidentRequest) => Promise<Incident>;
     deleteIncident: (incidentId: string) => Promise<void>;
     setSelectedIncident: (incident: Incident | null) => void;
     setSearchQuery: (query: string) => void;
@@ -42,7 +49,7 @@ const initialState: InitStateType<IncidentsState> = {
   filters: {},
 };
 
-const incidentsStore = (set: any, get: any) => ({
+const incidentsStore: StateCreator<IncidentsState> = (set, get) => ({
   ...initialState,
   actions: {
     fetchIncidents: async (params?: IncidentsQueryParams) => {
@@ -93,7 +100,7 @@ const incidentsStore = (set: any, get: any) => ({
       }
     },
 
-    createIncident: async (data: any) => {
+    createIncident: async (data: CreateIncidentRequest) => {
       set((state: IncidentsState) => {
         state.isLoading = true;
         state.error = null;
@@ -117,7 +124,7 @@ const incidentsStore = (set: any, get: any) => ({
       }
     },
 
-    updateIncident: async (data: any) => {
+    updateIncident: async (data: UpdateIncidentRequest) => {
       set((state: IncidentsState) => {
         state.isLoading = true;
         state.error = null;

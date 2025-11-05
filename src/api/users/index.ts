@@ -1,7 +1,9 @@
 import { apiClient, handleApiError } from '../api-client';
 
 import type {
+  ApiResponse,
   Role,
+  TeamMemberResponse,
   User,
   UserResponse,
   UsersQueryParams,
@@ -33,10 +35,10 @@ export async function getUsersByTenant(
 
     const url = `/users${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     
-    const response = await apiClient.get<{ data: any[] }>(url);
+    const response = await apiClient.get<ApiResponse<UserResponse[]>>(url);
     
     // Transform UserResponse[] to User[] by mapping the response data directly
-    const users: User[] = response.data.data.map((userResponse: any) => ({
+    const users: User[] = response.data.data.map((userResponse: UserResponse) => ({
       id: userResponse.id,
       fullName: userResponse.fullName,
       email: userResponse.email,
@@ -67,10 +69,10 @@ export async function getUsersByTenant(
 export async function getTeamMembers(teamId: string): Promise<User[]> {
   try {
     const url = `/teams/${teamId}/users?sort={}&count=false`;
-    const response = await apiClient.get<{ data: any[] }>(url);
+    const response = await apiClient.get<ApiResponse<TeamMemberResponse[]>>(url);
     
     // Transform team member response to User[] format
-    const users: User[] = response.data.data.map((memberResponse: any) => ({
+    const users: User[] = response.data.data.map((memberResponse: TeamMemberResponse) => ({
       id: memberResponse.id || memberResponse.userId,
       fullName: memberResponse.fullName,
       email: memberResponse.email,

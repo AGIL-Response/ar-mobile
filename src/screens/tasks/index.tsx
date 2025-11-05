@@ -34,14 +34,31 @@ export default function TasksScreen() {
 
   // Fetch tasks on mount
   useEffect(() => {
-    if (selectedTenant?.id) {
-      tasksState.actions.fetchTasks(selectedTenant.id);
+    const userId = authState.user?.id;
+    const teamId = authState.selectedTeam?.id;
+    
+    console.log('Tasks screen - userId:', userId, 'teamId:', teamId);
+    
+    if (userId && teamId) {
+      console.log('Fetching tasks with params:', { assigneeId: userId, teamId });
+      tasksState.actions.fetchTasks({
+        assigneeId: userId,
+        teamId: teamId
+      });
+    } else {
+      console.log('Missing userId or teamId, not fetching tasks');
     }
-  }, [selectedTenant?.id]);
+  }, [authState.user?.id, authState.selectedTeam?.id]);
 
   const handleRefresh = () => {
-    if (selectedTenant?.id) {
-      tasksState.actions.fetchTasks(selectedTenant.id);
+    const userId = authState.user?.id;
+    const teamId = authState.selectedTeam?.id;
+    
+    if (userId && teamId) {
+      tasksState.actions.fetchTasks({
+        assigneeId: userId,
+        teamId: teamId
+      });
     }
   };
 

@@ -53,3 +53,35 @@ export type UsersResponse = {
   last: boolean;
   numberOfElements: number;
 };
+
+export interface TeamMemberResponse {
+  tenantId: string;
+  teamId: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string | null;
+  deletedAt: string | null;
+  createdBy: string;
+  updatedBy: string | null;
+  deletedBy: string | null;
+  id: string;
+  idpUserId: string;
+  username: string;
+  email: string;
+  fullName: string;
+  avatarId?: string;
+  description?: string;
+  roles: Array<{
+    id: string;
+    name: string;
+    displayName: string;
+  }>;
+  location?: {
+    type: string;
+    coordinates: number[];
+  };
+}
+
+export interface ApiResponse<T> {
+  data: T;
+}

@@ -33,27 +33,23 @@ export default function TaskDetailScreen() {
   const taskId = id as string;
 
   useEffect(() => {
-    if (selectedTenant?.id && taskId) {
-      tasksState.actions.fetchTask(selectedTenant.id, taskId);
+    if (taskId) {
+      tasksState.actions.fetchTask(taskId);
     }
 
     // Clear selected task when component unmounts
     return () => {
       tasksState.actions.clearSelectedTask();
     };
-  }, [selectedTenant?.id, taskId]);
+  }, [taskId]);
 
   const handleBackPress = () => {
     router.back();
   };
 
   const handleStatusUpdate = async (status: Task['status']) => {
-    if (selectedTenant?.id && taskId) {
-      await tasksState.actions.updateTaskStatus(
-        selectedTenant.id,
-        taskId as string,
-        status
-      );
+    if (taskId) {
+      await tasksState.actions.updateTaskStatus(taskId as string, status);
     }
   };
 

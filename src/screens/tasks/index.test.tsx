@@ -65,16 +65,23 @@ describe('TasksScreen', () => {
     useTasksStoreSpy.mockRestore();
   });
 
-  test('fetches tasks on mount when tenant id is available', async () => {
+  test('fetches tasks on mount when user and team are available', async () => {
+    mockAuthState.user = { id: 'user-1', fullName: 'Test User' };
+    mockAuthState.selectedTeam = { id: 'team-1', name: 'Test Team' };
+
     render(<TasksScreen />);
 
     await waitFor(() => {
-      expect(fetchTasksMock).toHaveBeenCalledWith('tenant-1');
+      expect(fetchTasksMock).toHaveBeenCalledWith({
+        assigneeId: 'user-1',
+        teamId: 'team-1'
+      });
     });
   });
 
-  test('does not fetch tasks when no tenant is selected', async () => {
-    mockAuthState.selectedTenant = null;
+  test('does not fetch tasks when user or team is missing', async () => {
+    mockAuthState.user = null;
+    mockAuthState.selectedTeam = null;
 
     render(<TasksScreen />);
 
@@ -195,7 +202,10 @@ describe('TasksScreen', () => {
       refreshControl.props.onRefresh();
     });
 
-    expect(fetchTasksMock).toHaveBeenCalledWith('tenant-1');
+    expect(fetchTasksMock).toHaveBeenCalledWith({
+      assigneeId: 'user-1',
+      teamId: 'team-1'
+    });
   });
 
   test('changes active tab when a tab is pressed', () => {
