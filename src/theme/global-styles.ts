@@ -210,7 +210,7 @@ export const Palette = {
   primary300: '#65addd',
   primary400: '#479dd6',
   primary500: '#1984cc',
-  primary600: '#1778ba ',
+  primary600: '#1778ba',
   primary700: '#125e91',
   primary800: '#0e4970',
   primary900: '#0b3756',
@@ -306,7 +306,8 @@ const createColors = (isDark: boolean) => ({
     tertiary: isDark ? Palette.primary1100 : Palette.gray100,
     overlay: isDark ? Palette.primary900 : 'rgba(0, 0, 0, 0.05)',
     input: isDark ? Palette.primary1200 : Palette.gray400,
-  },
+    qua: isDark ? `${Palette.primary50}0D` : `${Palette.primary1100}0D`, //alpha 5%
+},
 
   // Text colors
   text: {
@@ -329,7 +330,7 @@ const createColors = (isDark: boolean) => ({
   },
 
   border: {
-    primary: isDark ? Palette.brown100 : Palette.gray300,
+    primary: isDark ? `${Palette.primary600}66` : `${Palette.primary400}66`, //alpha 40%
   },
   // Status colors (same for both themes)
   status: {
