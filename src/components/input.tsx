@@ -136,11 +136,20 @@ const createInputTextStyles = createStyleCreator<InputProps>((theme, props) => {
   const { size = 'medium', disabled = false } = props;
   const { colors, typography } = theme;
 
-  // Size-based typography
+  // Size-based typography with adjusted line heights for inputs
   const typographyVariants = {
-    small: typography.caption,
-    medium: typography.body,
-    large: typography.h4,
+    small: {
+      ...typography.caption,
+      lineHeight: 20, // Adjusted for better fit in 40px height
+    },
+    medium: {
+      ...typography.body,
+      lineHeight: 26, // Adjusted for better fit
+    },
+    large: {
+      ...typography.h4,
+      lineHeight: 30, // Keep original
+    },
   };
 
   return {

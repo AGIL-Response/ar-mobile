@@ -92,6 +92,7 @@ const createButtonStyles = (
     justifyContent: 'center' as const,
     width: fullWidth ? ('100%' as any) : undefined,
     opacity: disabled ? 0.6 : 1,
+    paddingBottom: 5,
   };
 
   // Variant-specific styles

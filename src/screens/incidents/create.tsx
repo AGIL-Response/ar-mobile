@@ -438,7 +438,7 @@ export default function CreateIncidentScreen() {
         }}
       >
         <Button
-          variant="solid"
+          variant="outline"
           size="medium"
           title="Cancel"
           onPress={() => router.back()}
@@ -451,7 +451,7 @@ export default function CreateIncidentScreen() {
           colorVariant="disabled"
         />
         <Button
-          variant="solid"
+          variant="outline"
           size="medium"
           title={isSubmitting ? 'Creating...' : 'Create Incident'}
           onPress={handleSubmit}

@@ -362,8 +362,9 @@ export default function IncidentDetailScreen() {
         <View style={{ padding: 16, gap: 12 }}>
           <Button
             title="Resolve Incident"
-            variant="solid"
+            variant="outline"
             size="medium"
+            colorVariant="secondary"
             onPress={handleAction}
           />
         </View>

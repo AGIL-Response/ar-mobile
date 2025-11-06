@@ -49,6 +49,9 @@ export function UsernameStep({
         loading={isLoading}
         disabled={isLoading || !username.trim()}
         fullWidth
+        variant="outline"
+        size="medium"
+        colorVariant="secondary"
       />
 
       {error && (

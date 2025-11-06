@@ -214,6 +214,16 @@ export default function TaskDetailScreen() {
           {value}
         </Text>
       </View>
+
+      {label === 'Status' && (
+        <Button
+          title="Change Status"
+          variant="outline"
+          size="small"
+          onPress={handleOpenStatusModal}
+          colorVariant="secondary"
+        />
+      )}
     </View>
   );
 
@@ -447,17 +457,6 @@ export default function TaskDetailScreen() {
         )}
 
         {/* Action Buttons */}
-        <View style={{ padding: 16, gap: 12 }}>
-          <Button
-            title="Change Status"
-            variant="solid"
-            size="medium"
-            onPress={handleOpenStatusModal}
-            style={{
-              backgroundColor: theme.colors.primary,
-            }}
-          />
-        </View>
       </ScrollView>
 
       {/* Status Change Modal */}

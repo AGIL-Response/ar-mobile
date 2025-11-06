@@ -79,11 +79,21 @@ export function PasswordStep({
         loading={isLoading}
         disabled={isLoading || !password.trim()}
         fullWidth
+        variant="outline"
+        size="medium"
+        colorVariant="secondary"
       />
 
       {/* Back button */}
       <View style={styles.buttonSpacing}>
-        <Button title="Back" onPress={onBack} variant="outline" fullWidth />
+        <Button
+          title="Back"
+          onPress={onBack}
+          variant="outline"
+          fullWidth
+          size="medium"
+          colorVariant="disabled"
+        />
       </View>
     </>
   );
