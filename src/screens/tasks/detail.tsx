@@ -6,11 +6,11 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect } from 'react';
 import { ScrollView, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import type { Task } from '@/api/tasks/types';
 import {
   AppBar,
+  Background,
   Button,
   Center,
   Checkbox,
@@ -190,9 +190,7 @@ export default function TaskDetailScreen() {
 
   if (tasksState.isLoadingDetail) {
     return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: theme.colors.background.primary }}
-      >
+      <Background>
         <AppBar
           title="Task Details"
           showBackButton
@@ -208,15 +206,13 @@ export default function TaskDetailScreen() {
             Loading task details...
           </Text>
         </Center>
-      </SafeAreaView>
+      </Background>
     );
   }
 
   if (tasksState.error) {
     return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: theme.colors.background.primary }}
-      >
+      <Background>
         <AppBar
           title="Task Details"
           showBackButton
@@ -247,15 +243,13 @@ export default function TaskDetailScreen() {
             style={{ marginTop: 16 }}
           />
         </Center>
-      </SafeAreaView>
+      </Background>
     );
   }
 
   if (!task) {
     return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: theme.colors.background.primary }}
-      >
+      <Background>
         <AppBar
           title="Task Details"
           showBackButton
@@ -272,7 +266,7 @@ export default function TaskDetailScreen() {
             Task not found
           </Text>
         </Center>
-      </SafeAreaView>
+      </Background>
     );
   }
 
@@ -280,9 +274,7 @@ export default function TaskDetailScreen() {
   const canMarkPending = task.status === 'completed';
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: theme.colors.background.primary }}
-    >
+    <Background>
       <AppBar
         title="Task Details"
         showBackButton
@@ -485,6 +477,6 @@ export default function TaskDetailScreen() {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </Background>
   );
 }

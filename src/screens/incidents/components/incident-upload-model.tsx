@@ -79,7 +79,7 @@ export const IncidentUploadModel = React.forwardRef<any, Props>(
     };
 
     return (
-      <Modal ref={ref}>
+      <Modal ref={ref} snapPoints={['15%']}>
         <View style={{ flex: 1, padding: 20 }}>
           <TouchableOpacity
             onPress={handleTakePhoto}

@@ -320,6 +320,7 @@ const createColors = (isDark: boolean) => ({
     inverse: isDark ? Palette.primary1000 : Palette.white,
     icon: isDark ? Palette.primary400 : Palette.gray100, // For dark/light backgrounds
     accent: Palette.primary, // For highlighted text
+    inactive: isDark ? Palette.blue1000 : Palette.gray400,
   },
 
   button: {
@@ -558,7 +559,7 @@ export const ComponentTokens = {
   // Input specifications
   input: {
     height: 48,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.md,
     borderWidth: 1,
     padding: {
       horizontal: Padding.xxl,

@@ -4,12 +4,20 @@
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, RefreshControl, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  Alert,
+  FlatList,
+  RefreshControl,
+  TouchableOpacity,
+} from 'react-native';
 
-import type { NotificationType, UserNotification } from '@/api/notifications/types';
+import type {
+  NotificationType,
+  UserNotification,
+} from '@/api/notifications/types';
 import {
   AppBar,
+  Background,
   Center,
   Icon,
   iconNames,
@@ -32,8 +40,10 @@ export default function NotificationsScreen() {
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
+    const diffInHours = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+    );
+
     if (diffInHours < 1) {
       return 'Just now';
     } else if (diffInHours < 24) {
@@ -93,29 +103,35 @@ export default function NotificationsScreen() {
   };
 
   // Handle notification press
-  const handleNotificationPress = useCallback(async (notification: UserNotification) => {
-    try {
-      // Mark as read if it's unread
-      if (notification.status === 'unread') {
-        await actions.markNotificationRead(notification.notificationId, 'read');
+  const handleNotificationPress = useCallback(
+    async (notification: UserNotification) => {
+      try {
+        // Mark as read if it's unread
+        if (notification.status === 'unread') {
+          await actions.markNotificationRead(
+            notification.notificationId,
+            'read'
+          );
+        }
+
+        // Handle navigation based on notification type and metadata
+        const { type, metadata } = notification;
+        console.log('Notification pressed:', type, metadata);
+
+        // TODO: Add navigation logic based on notification type
+        // Example:
+        // if (type === 'task_assigned' && metadata.entityType === 'task') {
+        //   router.push(`/task/${metadata.id}`);
+        // } else if (type === 'incident_assigned' && metadata.entityType === 'incident') {
+        //   router.push(`/incidents/${metadata.id}`);
+        // }
+      } catch (error) {
+        console.error('Failed to handle notification press:', error);
+        Alert.alert('Error', 'Failed to update notification');
       }
-
-      // Handle navigation based on notification type and metadata
-      const { type, metadata } = notification;
-      console.log('Notification pressed:', type, metadata);
-
-      // TODO: Add navigation logic based on notification type
-      // Example:
-      // if (type === 'task_assigned' && metadata.entityType === 'task') {
-      //   router.push(`/task/${metadata.id}`);
-      // } else if (type === 'incident_assigned' && metadata.entityType === 'incident') {
-      //   router.push(`/incidents/${metadata.id}`);
-      // }
-    } catch (error) {
-      console.error('Failed to handle notification press:', error);
-      Alert.alert('Error', 'Failed to update notification');
-    }
-  }, [actions]);
+    },
+    [actions]
+  );
 
   // Handle refresh
   const handleRefresh = useCallback(async () => {
@@ -150,13 +166,13 @@ export default function NotificationsScreen() {
   // Render notification item
   const renderNotificationItem = ({ item }: { item: UserNotification }) => {
     const isRead = item.status === 'read';
-    
+
     return (
       <TouchableOpacity
         onPress={() => handleNotificationPress(item)}
         style={{
-          backgroundColor: isRead 
-            ? theme.colors.background.primary 
+          backgroundColor: isRead
+            ? theme.colors.background.primary
             : theme.colors.background.secondary,
           borderBottomWidth: 1,
           borderBottomColor: theme.colors.text.tertiary,
@@ -184,7 +200,13 @@ export default function NotificationsScreen() {
 
           {/* Notification Content */}
           <View style={{ flex: 1, gap: 4 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+              }}
+            >
               <Text
                 variant="body"
                 style={{
@@ -205,7 +227,7 @@ export default function NotificationsScreen() {
                 {formatTimestamp(item.createdAt)}
               </Text>
             </View>
-            
+
             <Text
               variant="caption"
               style={{
@@ -250,12 +272,12 @@ export default function NotificationsScreen() {
   };
 
   // Get unread count
-  const unreadCount = notifications.filter(n => n.status === 'unread').length;
+  const unreadCount = notifications.filter((n) => n.status === 'unread').length;
 
   // Show loading state
   if (isLoading && notifications.length === 0) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
+      <Background>
         <AppBar title="Notifications" />
         <Center style={{ flex: 1 }}>
           <Text
@@ -267,14 +289,14 @@ export default function NotificationsScreen() {
             Loading notifications...
           </Text>
         </Center>
-      </SafeAreaView>
+      </Background>
     );
   }
 
   // Show error state
   if (error) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
+      <Background>
         <AppBar title="Notifications" />
         <Center style={{ flex: 1 }}>
           <Text
@@ -287,12 +309,12 @@ export default function NotificationsScreen() {
             {error}
           </Text>
         </Center>
-      </SafeAreaView>
+      </Background>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
+    <Background>
       {/* Header */}
       <AppBar
         title="Notifications"
@@ -390,6 +412,6 @@ export default function NotificationsScreen() {
           </Text>
         </View>
       )}
-    </SafeAreaView>
+    </Background>
   );
 }

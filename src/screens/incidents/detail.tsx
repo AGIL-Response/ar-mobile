@@ -6,7 +6,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect } from 'react';
 import { ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import type { Incident } from '@/api/incidents/types';
 import {
@@ -18,6 +17,7 @@ import {
   iconNames,
   Text,
   View,
+  Background,
 } from '@/components';
 import { useAuthStore } from '@/stores/auth';
 import { useIncidentsStore } from '@/stores/incidents';
@@ -34,7 +34,6 @@ export default function IncidentDetailScreen() {
   const incidentId = id as string;
 
   const { actions } = incidentsState;
-
 
   useEffect(() => {
     if (incidentId) {
@@ -170,7 +169,7 @@ export default function IncidentDetailScreen() {
 
   if (incidentsState.isLoadingDetails) {
     return (
-      <SafeAreaView
+      <Background
         style={{ flex: 1, backgroundColor: theme.colors.background.primary }}
       >
         <AppBar
@@ -188,15 +187,13 @@ export default function IncidentDetailScreen() {
             Loading incident details...
           </Text>
         </Center>
-      </SafeAreaView>
+      </Background>
     );
   }
 
   if (incidentsState.error) {
     return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: theme.colors.background.primary }}
-      >
+      <Background>
         <AppBar
           title="Incident Details"
           showBackButton
@@ -213,15 +210,13 @@ export default function IncidentDetailScreen() {
             {incidentsState.error}
           </Text>
         </Center>
-      </SafeAreaView>
+      </Background>
     );
   }
 
   if (!incident) {
     return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: theme.colors.background.primary }}
-      >
+      <Background>
         <AppBar
           title="Incident Details"
           showBackButton
@@ -238,14 +233,12 @@ export default function IncidentDetailScreen() {
             Incident not found
           </Text>
         </Center>
-      </SafeAreaView>
+      </Background>
     );
   }
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: theme.colors.background.primary }}
-    >
+    <Background>
       <AppBar
         title="Incident Details"
         showBackButton
@@ -359,11 +352,7 @@ export default function IncidentDetailScreen() {
             </Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
               {incident.fileIds.map((fileId) => (
-                <IncidentAttachment
-                  key={fileId}
-                  fileId={fileId}
-                  size={100}
-                />
+                <IncidentAttachment key={fileId} fileId={fileId} size={100} />
               ))}
             </View>
           </View>
@@ -379,6 +368,6 @@ export default function IncidentDetailScreen() {
           />
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </Background>
   );
 }

@@ -71,8 +71,8 @@ export function TaskTabSelector({
                 variant="bodyMedium"
                 style={{
                   color: isActive
-                    ? theme.colors.primary
-                    : theme.colors.text.secondary,
+                    ? theme.colors.text.tertiary
+                    : theme.colors.text.inactive,
                   fontWeight: isActive ? '600' : '500',
                   fontSize: 14,
                 }}
@@ -85,8 +85,8 @@ export function TaskTabSelector({
                   variant="bodyMedium"
                   style={{
                     color: isActive
-                      ? theme.colors.primary
-                      : theme.colors.text.secondary,
+                      ? theme.colors.text.tertiary
+                      : theme.colors.text.inactive,
                     fontWeight: isActive ? '600' : '500',
                     fontSize: 14,
                     marginLeft: 4,

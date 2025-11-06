@@ -5,9 +5,17 @@
 
 import React from 'react';
 import { ScrollView, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppBar, Avatar, Icon, iconNames, Text, ThemeToggle, View } from '@/components';
+import {
+  AppBar,
+  Avatar,
+  Background,
+  Icon,
+  iconNames,
+  Text,
+  ThemeToggle,
+  View,
+} from '@/components';
 import { useAuthStore } from '@/stores/auth';
 import { useTheme } from '@/theme';
 import images from '@assets/images';
@@ -34,7 +42,8 @@ export default function ProfileScreen() {
   const getUserRole = () => {
     if (user?.roles && user.roles.length > 0) {
       const role = user.roles[0];
-      const teamName = selectedTenant?.displayName || selectedTenant?.name || 'Team';
+      const teamName =
+        selectedTenant?.displayName || selectedTenant?.name || 'Team';
       return `${role}, ${teamName}`;
     }
     return selectedTenant?.displayName || selectedTenant?.name || 'Team Member';
@@ -76,12 +85,8 @@ export default function ProfileScreen() {
   ];
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: theme.colors.background.primary }}
-    >
-      <AppBar
-        title="Profile"
-      />
+    <Background>
+      <AppBar title="Profile" />
 
       <ScrollView
         style={{ flex: 1 }}
@@ -221,6 +226,6 @@ export default function ProfileScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </Background>
   );
 }

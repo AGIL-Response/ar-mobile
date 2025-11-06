@@ -83,8 +83,8 @@ export default function TabLayout() {
           paddingTop: 20,
           height: 85,
         },
-        tabBarActiveTintColor: '#1068eb', // Blue from Figma
-        tabBarInactiveTintColor: theme.colors.text.primary, // White from Figma
+        tabBarActiveTintColor: theme.colors.text.tertiary, // Blue from Figma
+        tabBarInactiveTintColor: theme.colors.text.inactive, // White from Figma
       }}
     >
       <Tabs.Screen
@@ -137,7 +137,11 @@ export default function TabLayout() {
                 justifyContent: 'center',
               }}
             >
-              <TabBarIcon name="create" color={color} focused={focused} />
+              <Icon
+                name={iconNames.plus}
+                size={24}
+                color={theme.colors.semantic.white}
+              />
             </TouchableOpacity>
           ),
         }}

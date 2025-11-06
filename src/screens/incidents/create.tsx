@@ -5,13 +5,19 @@
 
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, Image, ScrollView, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  Alert,
+  Dimensions,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
 
 import { filesApi } from '@/api';
 import type { CreateIncidentRequest } from '@/api/incidents/types';
 import {
   AppBar,
+  Background,
   Button,
   Icon,
   iconNames,
@@ -29,6 +35,7 @@ import { Palette, useTheme } from '@/theme';
 
 import { LocationPermissionScreen } from './components';
 import { IncidentUploadModel } from './components/incident-upload-model';
+import images from '@assets/images';
 
 interface CreateIncidentForm {
   name: string;
@@ -60,6 +67,50 @@ export default function CreateIncidentScreen() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Reusable Take Photo button component
+  const TakePhotoButton = ({ isOverlay = false }: { isOverlay?: boolean }) => (
+    <TouchableOpacity
+      onPress={handleOpenModal}
+      activeOpacity={0.8}
+      style={
+        isOverlay
+          ? {
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }
+          : undefined
+      }
+    >
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 8,
+          paddingHorizontal: 14,
+          paddingVertical: 8,
+          borderRadius: 6,
+          borderWidth: 1,
+          borderColor: Palette.blue1100,
+          backgroundColor: Palette.buttonGhostDef,
+        }}
+      >
+        <Icon
+          name={iconNames.camera}
+          size={18}
+          color={theme.colors.semantic.white}
+        />
+        <Text variant="body" style={{ color: theme.colors.semantic.white }}>
+          Take a Photo
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
 
   // Check location permission on mount
   useEffect(() => {
@@ -180,37 +231,31 @@ export default function CreateIncidentScreen() {
   // Show loading while checking permissions
   if (location.hasPermission === null) {
     return (
-      <SafeAreaView
-        edges={['top']}
-        style={{
-          flex: 1,
-          backgroundColor: theme.colors.background.primary,
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
-        <Text
-          variant="body"
+      <Background>
+        <View
           style={{
-            color: theme.colors.text.secondary,
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
           }}
         >
-          Checking location permissions...
-        </Text>
-      </SafeAreaView>
+          <Text
+            variant="body"
+            style={{
+              color: theme.colors.text.secondary,
+            }}
+          >
+            Checking location permissions...
+          </Text>
+        </View>
+      </Background>
     );
   }
 
   // Show permission screen if permission is not granted
   if (!location.hasPermission) {
     return (
-      <SafeAreaView
-        edges={['top']}
-        style={{
-          flex: 1,
-          backgroundColor: theme.colors.background.secondary,
-        }}
-      >
+      <Background>
         <AppBar
           title="New Incident"
           showBackButton={true}
@@ -225,40 +270,61 @@ export default function CreateIncidentScreen() {
           isLoading={location.isLoading}
           error={location.error}
         />
-      </SafeAreaView>
+      </Background>
     );
   }
 
   // Show main create incident form
   return (
-    <SafeAreaView
-      edges={['top']}
-      style={{
-        flex: 1,
-        backgroundColor: theme.colors.background.secondary,
-      }}
-    >
-      <AppBar
+    <Background>
+      <View
+        style={{
+          paddingHorizontal: 16,
+          paddingTop: 8,
+          paddingBottom: 12,
+          width: '100%',
+          gap: 8,
+          alignItems: 'center',
+          flexDirection: 'row',
+          backgroundColor: theme.colors.background.secondary,
+          marginTop: 60,
+        }}
+      >
+        <TouchableOpacity onPress={() => router.back()}>
+          <Icon
+            name={iconNames.arrow_left}
+            size={24}
+            color={theme.colors.text.primary}
+          />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text
+            variant="h3"
+            style={{
+              color: theme.colors.text.primary,
+              fontFamily: theme.fonts.goldmanRegular,
+            }}
+          >
+            Incidents
+          </Text>
+        </View>
+      </View>
+      {/* <AppBar
         title="Incidents"
         titleFontFamily={theme.fonts.goldmanRegular}
         showBackButton={true}
         onBackPress={() => router.back()}
         safeArea={false}
         titleAlign="left"
-        style={{
-          backgroundColor: theme.colors.background.secondary,
-        }}
-      />
+        style={{ marginTop: 60 }} */}
+      {/* /> */}
 
       <ScrollView
         style={{
           flex: 1,
-          maxHeight: '100%',
-          backgroundColor: theme.colors.background.primary,
         }}
         contentContainerStyle={{
           padding: 16,
-          backgroundColor: theme.colors.background.primary,
         }}
         showsVerticalScrollIndicator={false}
       >
@@ -309,7 +375,7 @@ export default function CreateIncidentScreen() {
               marginBottom: 4,
             }}
           >
-            Incident Type *
+            Incident Name
           </Text>
           <Select
             placeholder="Select"
@@ -323,88 +389,57 @@ export default function CreateIncidentScreen() {
         <View style={{ marginBottom: 16 }}>
           <View
             style={{
-              padding: 12,
-              width: '100%',
+              flex: 1,
+              // width: '100%',
               height: 250,
-              borderRadius: 8,
-              borderWidth: 1,
-              borderColor: theme.colors.surface.border,
+              // borderRadius: 8,
             }}
           >
             <View style={{ flex: 1 }}>
               <View
                 style={{
                   flex: 1,
-                  borderRadius: 8,
+                  borderRadius: 4,
                   borderWidth: 1,
                   borderColor: theme.colors.surface.border,
                   backgroundColor: theme.colors.background.primary,
-                  justifyContent: 'center',
-                  alignItems: 'center',
                 }}
               >
                 {form.images ? (
-                  <Image
-                    source={{ uri: form.images }}
-                    style={{ width: '100%', height: '100%', borderRadius: 8 }}
-                    resizeMode="cover"
-                  />
-                ) : (
                   <View
                     style={{
-                      position: 'absolute',
-                      alignItems: 'center',
-                      justifyContent: 'center',
+                      position: 'relative',
+                      width: '100%',
+                      height: '100%',
                     }}
                   >
-                    <TouchableOpacity onPress={handleOpenModal}>
-                      <View
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          gap: 8,
-                          paddingHorizontal: 14,
-                          paddingVertical: 8,
-                          borderRadius: 6,
-                          borderWidth: 1,
-                          // borderColor: theme.colors.surface.border,
-                          backgroundColor: theme.colors.button.ghost,
-                        }}
-                      >
-                        <Icon
-                          name={iconNames.camera}
-                          size={18}
-                          color={theme.colors.text.primary}
-                        />
-                        <Text variant="body">Take a Photo</Text>
-                      </View>
-                    </TouchableOpacity>
+                    <Image
+                      source={{ uri: form.images }}
+                      style={{ width: '100%', height: '100%' }}
+                      resizeMode="cover"
+                    />
+                    <TakePhotoButton isOverlay={true} />
                   </View>
+                ) : (
+                  <>
+                    {/* Placeholder Icon Background */}
+                    <View
+                      style={{
+                        position: 'absolute',
+                        width: '100%',
+                        height: '100%',
+                      }}
+                    >
+                      <Image
+                        source={images.file_upload_placeholder}
+                        style={{ width: '100%', height: '100%' }}
+                        resizeMode="cover"
+                      />
+                    </View>
+                    <TakePhotoButton isOverlay={true} />
+                  </>
                 )}
               </View>
-
-              <TouchableOpacity onPress={handleOpenModal}>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    gap: 4,
-                    marginTop: 12,
-                  }}
-                >
-                  <Icon
-                    name={iconNames.change}
-                    size={18}
-                    color={Palette.primary}
-                  />
-                  <Text
-                    style={{
-                      color: Palette.primary,
-                    }}
-                  >
-                    Change
-                  </Text>
-                </View>
-              </TouchableOpacity>
             </View>
           </View>
 
@@ -446,6 +481,6 @@ export default function CreateIncidentScreen() {
           colorVariant="secondary"
         />
       </View>
-    </SafeAreaView>
+    </Background>
   );
 }

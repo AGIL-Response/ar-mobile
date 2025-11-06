@@ -36,14 +36,17 @@ export default function TasksScreen() {
   useEffect(() => {
     const userId = authState.user?.id;
     const teamId = authState.selectedTeam?.id;
-    
+
     console.log('Tasks screen - userId:', userId, 'teamId:', teamId);
-    
+
     if (userId && teamId) {
-      console.log('Fetching tasks with params:', { assigneeId: userId, teamId });
+      console.log('Fetching tasks with params:', {
+        assigneeId: userId,
+        teamId,
+      });
       tasksState.actions.fetchTasks({
         assigneeId: userId,
-        teamId: teamId
+        teamId: teamId,
       });
     } else {
       console.log('Missing userId or teamId, not fetching tasks');
@@ -53,11 +56,11 @@ export default function TasksScreen() {
   const handleRefresh = () => {
     const userId = authState.user?.id;
     const teamId = authState.selectedTeam?.id;
-    
+
     if (userId && teamId) {
       tasksState.actions.fetchTasks({
         assigneeId: userId,
-        teamId: teamId
+        teamId: teamId,
       });
     }
   };
@@ -261,7 +264,13 @@ export default function TasksScreen() {
       <AppBar
         title="Tasks"
         rightContent={
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginRight: 16,
+            }}
+          >
             {/* Search Icon */}
             <TouchableOpacity
               style={{
@@ -270,6 +279,9 @@ export default function TasksScreen() {
                 borderRadius: 16,
                 justifyContent: 'center',
                 alignItems: 'center',
+                backgroundColor: theme.colors.background.overlay,
+                borderWidth: 1,
+                borderColor: theme.colors.surface.border,
               }}
             >
               <Icon
@@ -278,43 +290,6 @@ export default function TasksScreen() {
                 color={theme.colors.text.primary}
               />
             </TouchableOpacity>
-
-            {/* Notification Badge */}
-            <TouchableOpacity
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 16,
-                justifyContent: 'center',
-                alignItems: 'center',
-                position: 'relative',
-              }}
-            >
-              <Icon
-                name={iconNames.notification_badge}
-                size={16}
-                color={theme.colors.text.primary}
-              />
-              {/* Badge indicator */}
-              <View
-                style={{
-                  position: 'absolute',
-                  top: 2,
-                  right: 2,
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: theme.colors.semantic.error,
-                }}
-              />
-            </TouchableOpacity>
-
-            {/* User Avatar */}
-            <Avatar
-              source={images.avatar_image}
-              size="small"
-              style={{ width: 32, height: 32 }}
-            />
           </View>
         }
       />
