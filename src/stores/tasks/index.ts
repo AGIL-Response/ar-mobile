@@ -28,7 +28,7 @@ export interface TasksState extends IBaseState {
   // Actions namespace
   actions: {
     fetchTasks: (params?: TasksQueryParams) => Promise<void>;
-    fetchTask: (taskId: string) => Promise<void>;
+    fetchTask: (taskId: string, silent?: boolean) => Promise<void>;
     updateTaskStatus: (taskId: string, status: Task['status']) => Promise<void>;
     updateChecklistItem: (checklistId: string, isCompleted: boolean, description: string) => Promise<void>;
     setActiveTab: (tab: TaskTab) => void;
@@ -96,23 +96,32 @@ const tasksStore: StateCreator<TasksState> = (set, get) => ({
       }
     },
 
-    fetchTask: async (taskId: string) => {
-      set((state: TasksState) => {
-        state.isLoadingDetail = true;
-        state.error = null;
-      });
+    fetchTask: async (taskId: string, silent = false) => {
+      if (!silent) {
+        set((state: TasksState) => {
+          state.isLoadingDetail = true;
+          state.error = null;
+        });
+      }
 
       try {
         const response = await taskApi.getTask(taskId);
         set((state: TasksState) => {
           state.selectedTask = response.data;
-          state.isLoadingDetail = false;
+          if (!silent) {
+            state.isLoadingDetail = false;
+          }
         });
       } catch (error: unknown) {
-        set((state: TasksState) => {
-          state.error = error instanceof Error ? error.message : 'Failed to fetch task';
-          state.isLoadingDetail = false;
-        });
+        if (!silent) {
+          set((state: TasksState) => {
+            state.error = error instanceof Error ? error.message : 'Failed to fetch task';
+            state.isLoadingDetail = false;
+          });
+        } else {
+          // Silent fetch failed, just log it without showing error
+          console.error('Silent fetch task failed:', error);
+        }
       }
     },
 
@@ -251,10 +260,10 @@ const tasksStore: StateCreator<TasksState> = (set, get) => ({
           isCompleted,
         });
 
-        // Refetch task to ensure data is in sync with server
+        // Refetch task to ensure data is in sync with server (silently)
         const currentTask = get().selectedTask;
         if (currentTask?.id) {
-          await get().actions.fetchTask(currentTask.id);
+          await get().actions.fetchTask(currentTask.id, true);
         }
       } catch (error: unknown) {
         // Rollback to previous state
