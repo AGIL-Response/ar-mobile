@@ -107,17 +107,18 @@ export default function NotificationsScreen() {
   const handleNotificationPress = useCallback(
     async (notification: UserNotification) => {
       try {
-        // Mark as read if it's unread
-        if (notification.status === 'unread') {
+        // Mark as read if it's unread (case-insensitive check)
+        if (notification.status?.toLowerCase() === 'unread') {
           await actions.markNotificationRead(
             notification.notificationId,
             'read'
           );
+        } else {
         }
 
         // Handle navigation based on notification type and metadata
         const { type, metadata } = notification;
-        console.log('Notification pressed:', type, metadata);
+        console.log('📬 Notification metadata:', type, metadata);
 
         // TODO: Add navigation logic based on notification type
         // Example:
@@ -127,7 +128,7 @@ export default function NotificationsScreen() {
         //   router.push(`/incidents/${metadata.id}`);
         // }
       } catch (error) {
-        console.error('Failed to handle notification press:', error);
+        console.error('❌ Failed to handle notification press:', error);
         Alert.alert('Error', 'Failed to update notification');
       }
     },
@@ -166,7 +167,7 @@ export default function NotificationsScreen() {
 
   // Render notification item
   const renderNotificationItem = ({ item }: { item: UserNotification }) => {
-    const isRead = item.status === 'read';
+    const isRead = item.status?.toLowerCase() === 'read';
 
     return (
       <TouchableOpacity
@@ -273,7 +274,7 @@ export default function NotificationsScreen() {
   };
 
   // Get unread count
-  const unreadCount = notifications.filter((n) => n.status === 'unread').length;
+  const unreadCount = notifications.filter((n) => n.status?.toLowerCase() === 'unread').length;
 
   // Show loading state
   if (isLoading && notifications.length === 0) {
