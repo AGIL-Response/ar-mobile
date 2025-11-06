@@ -176,8 +176,8 @@ export default function NotificationsScreen() {
           backgroundColor: isRead
             ? theme.colors.background.primary
             : theme.colors.background.secondary,
-          borderBottomWidth: 1,
-          borderBottomColor: theme.colors.text.tertiary,
+          borderBottomWidth: 2,
+          borderBottomColor: theme.colors.surface.border,
           padding: 16,
         }}
       >

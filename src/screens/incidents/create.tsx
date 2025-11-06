@@ -446,7 +446,7 @@ export default function CreateIncidentScreen() {
           style={{
             flex: 1,
             borderWidth: 2,
-            borderColor: theme.colors.border.primary,
+            borderColor: theme.colors.surface.border,
           }}
           colorVariant="disabled"
         />

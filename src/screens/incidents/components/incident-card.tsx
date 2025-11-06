@@ -117,12 +117,11 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
     <TouchableOpacity
       onPress={handlePress}
       style={{
-        backgroundColor: theme.colors.background.qua,
         borderRadius: 4,
         paddingHorizontal: 16,
         paddingVertical: 12,
         borderWidth: 2,
-        borderColor: theme.colors.border.primary,
+        borderColor: theme.colors.surface.border,
       }}
     >
       {/* Header Row */}

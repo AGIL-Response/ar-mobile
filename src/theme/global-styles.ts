@@ -282,7 +282,6 @@ export const Palette = {
 
   primary90030: '#0B3556',
   toastStatusBg: '#0B355666',
-  toastStatusBorder: '#1778BA66',
   buttonGhostDef: '#125E9166',
   input: '#5DA9DC66',
   buttonDisabled: '#4B556333',
@@ -319,7 +318,7 @@ const createColors = (isDark: boolean) => ({
     disabled: isDark ? Palette.blue1000 : Palette.gray400,
     placeholder: isDark ? Palette.blue1000 : Palette.gray500,
     inverse: isDark ? Palette.primary1000 : Palette.white,
-    icon: isDark ? Palette.primary400 : Palette.gray100, // For dark/light backgrounds
+    icon: isDark ? Palette.primary400 : Palette.primary500, // For dark/light backgrounds
     accent: Palette.primary, // For highlighted text
     inactive: isDark ? Palette.blue1000 : Palette.gray400,
   },
@@ -331,9 +330,6 @@ const createColors = (isDark: boolean) => ({
     disabled: isDark ? Palette.buttonDisabled : Palette.gray100,
   },
 
-  border: {
-    primary: isDark ? `${Palette.primary600}66` : `${Palette.primary400}66`, //alpha 40%
-  },
   // Status colors (same for both themes)
   status: {
     success: Palette.success,
@@ -368,7 +364,7 @@ const createColors = (isDark: boolean) => ({
   surface: {
     card: isDark ? Palette.primary1000 : Palette.white,
     input: isDark ? Palette.primary1200 : Palette.white,
-    border: isDark ? Palette.blue1100 : Palette.primary600,
+    border: isDark ? `${Palette.primary600}66` : `${Palette.primary500}66`,
     divider: isDark ? Palette.dimGray : Palette.gray300,
     disabled: isDark ? Palette.charcoal800 : Palette.gray100,
   },

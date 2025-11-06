@@ -48,7 +48,7 @@ export function AppHeader({ title }) {
         }}
       >
         {/* Search Icon */}
-        <View
+        {/* <View
           style={{
             width: 32,
             justifyContent: 'center',
@@ -64,7 +64,7 @@ export function AppHeader({ title }) {
             size={16}
             color={theme.colors.text.icon}
           />
-        </View>
+        </View> */}
       </View>
     </View>
   );
