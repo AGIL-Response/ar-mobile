@@ -22,6 +22,7 @@ import {
   Icon,
   iconNames,
   Input,
+  SafeAreaView,
   Text,
   useModal,
   View,
@@ -95,7 +96,7 @@ export default function CreateIncidentScreen() {
           paddingHorizontal: 14,
           paddingVertical: 8,
           borderRadius: 6,
-          borderWidth: 1,
+          borderWidth: 2,
           borderColor: Palette.blue1100,
           backgroundColor: Palette.buttonGhostDef,
         }}
@@ -276,176 +277,154 @@ export default function CreateIncidentScreen() {
 
   // Show main create incident form
   return (
-    <Background>
-      <View
-        style={{
-          paddingHorizontal: 16,
-          paddingTop: 8,
-          paddingBottom: 12,
-          width: '100%',
-          gap: 8,
-          alignItems: 'center',
-          flexDirection: 'row',
-          backgroundColor: theme.colors.background.secondary,
-          marginTop: 60,
-        }}
-      >
-        <TouchableOpacity onPress={() => router.back()}>
-          <Icon
-            name={iconNames.arrow_left}
-            size={24}
-            color={theme.colors.text.primary}
-          />
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text
-            variant="h3"
-            style={{
-              color: theme.colors.text.primary,
-              fontFamily: theme.fonts.goldmanRegular,
-            }}
-          >
-            Incidents
-          </Text>
-        </View>
-      </View>
-      {/* <AppBar
+    <SafeAreaView
+      edges={['top']}
+      style={{
+        flex: 1,
+        backgroundColor: theme.colors.background.secondary,
+      }}
+    >
+      <AppBar
         title="Incidents"
         titleFontFamily={theme.fonts.goldmanRegular}
         showBackButton={true}
         onBackPress={() => router.back()}
-        safeArea={false}
+        safeArea={true}
         titleAlign="left"
-        style={{ marginTop: 60 }} */}
-      {/* /> */}
+        style={{ borderBottomWidth: 0 }}
+      />
 
-      <ScrollView
-        style={{
-          flex: 1,
-        }}
-        contentContainerStyle={{
-          padding: 16,
-        }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Incident Name */}
-        <View style={{ marginBottom: 16 }}>
-          <Text
-            variant="bodySmall"
-            style={{
-              color: theme.colors.text.muted,
-              marginBottom: 4,
-            }}
-          >
-            Incident Name
-          </Text>
-          <Input
-            placeholder="Enter incident"
-            value={form.name}
-            onChangeText={(text) => handleInputChange('name', text)}
-            autoCapitalize="sentences"
-          />
-        </View>
+      <Background>
+        <ScrollView
+          style={{
+            flex: 1,
+          }}
+          contentContainerStyle={{
+            padding: 16,
+          }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Incident Name */}
+          <View style={{ marginBottom: 16 }}>
+            <Text
+              variant="bodySmall"
+              style={{
+                color: theme.colors.text.muted,
+                marginBottom: 4,
+              }}
+            >
+              Incident Name
+            </Text>
+            <Input
+              placeholder="Enter incident"
+              value={form.name}
+              onChangeText={(text) => handleInputChange('name', text)}
+              autoCapitalize="sentences"
+            />
+          </View>
 
-        {/* Description */}
-        <View style={{ marginBottom: 16 }}>
-          <Text
-            variant="bodySmall"
-            style={{
-              color: theme.colors.text.muted,
-              marginBottom: 4,
-            }}
-          >
-            Label
-          </Text>
-          <TextArea
-            placeholder="Placeholder"
-            value={form.description}
-            onChangeText={(text) => handleInputChange('description', text)}
-            autoCapitalize="sentences"
-          />
-        </View>
+          {/* Description */}
+          <View style={{ marginBottom: 16 }}>
+            <Text
+              variant="bodySmall"
+              style={{
+                color: theme.colors.text.muted,
+                marginBottom: 4,
+              }}
+            >
+              Label
+            </Text>
+            <TextArea
+              placeholder="Placeholder"
+              value={form.description}
+              onChangeText={(text) => handleInputChange('description', text)}
+              autoCapitalize="sentences"
+            />
+          </View>
 
-        {/* Incident Type */}
-        <View style={{ marginBottom: 16 }}>
-          <Text
-            variant="bodySmall"
-            style={{
-              color: theme.colors.text.muted,
-              marginBottom: 4,
-            }}
-          >
-            Incident Name
-          </Text>
-          <Select
-            placeholder="Select"
-            value={form.type}
-            onValueChange={(value) => handleInputChange('type', String(value))}
-            options={incidentTypes}
-          />
-        </View>
+          {/* Incident Type */}
+          <View style={{ marginBottom: 16 }}>
+            <Text
+              variant="bodySmall"
+              style={{
+                color: theme.colors.text.muted,
+                marginBottom: 4,
+              }}
+            >
+              Incident Name
+            </Text>
+            <Select
+              placeholder="Select"
+              value={form.type}
+              onValueChange={(value) =>
+                handleInputChange('type', String(value))
+              }
+              options={incidentTypes}
+            />
+          </View>
 
-        {/* Image Upload */}
-        <View style={{ marginBottom: 16 }}>
-          <View
-            style={{
-              flex: 1,
-              // width: '100%',
-              height: 250,
-              // borderRadius: 8,
-            }}
-          >
-            <View style={{ flex: 1 }}>
-              <View
-                style={{
-                  flex: 1,
-                  borderRadius: 4,
-                  borderWidth: 1,
-                  borderColor: theme.colors.surface.border,
-                  backgroundColor: theme.colors.background.primary,
-                }}
-              >
-                {form.images ? (
-                  <View
-                    style={{
-                      position: 'relative',
-                      width: '100%',
-                      height: '100%',
-                    }}
-                  >
-                    <Image
-                      source={{ uri: form.images }}
-                      style={{ width: '100%', height: '100%' }}
-                      resizeMode="cover"
-                    />
-                    <TakePhotoButton isOverlay={true} />
-                  </View>
-                ) : (
-                  <>
-                    {/* Placeholder Icon Background */}
+          {/* Image Upload */}
+          <View style={{ marginBottom: 16 }}>
+            <View
+              style={{
+                flex: 1,
+                // width: '100%',
+                height: 250,
+                // borderRadius: 8,
+              }}
+            >
+              <View style={{ flex: 1 }}>
+                <View
+                  style={{
+                    flex: 1,
+                    borderRadius: 4,
+                    borderWidth: 2,
+                    borderColor: theme.colors.surface.border,
+                    backgroundColor: theme.colors.background.primary,
+                  }}
+                >
+                  {form.images ? (
                     <View
                       style={{
-                        position: 'absolute',
+                        position: 'relative',
                         width: '100%',
                         height: '100%',
                       }}
                     >
                       <Image
-                        source={images.file_upload_placeholder}
+                        source={{ uri: form.images }}
                         style={{ width: '100%', height: '100%' }}
                         resizeMode="cover"
                       />
+                      <TakePhotoButton isOverlay={true} />
                     </View>
-                    <TakePhotoButton isOverlay={true} />
-                  </>
-                )}
+                  ) : (
+                    <>
+                      {/* Placeholder Icon Background */}
+                      <View
+                        style={{
+                          position: 'absolute',
+                          width: '100%',
+                          height: '100%',
+                        }}
+                      >
+                        <Image
+                          source={images.file_upload_placeholder}
+                          style={{ width: '100%', height: '100%' }}
+                          resizeMode="cover"
+                        />
+                      </View>
+                      <TakePhotoButton isOverlay={true} />
+                    </>
+                  )}
+                </View>
               </View>
             </View>
-          </View>
 
-          <IncidentUploadModel ref={ref} onImagePicked={handleImagePicked} />
-        </View>
-      </ScrollView>
+            <IncidentUploadModel ref={ref} onImagePicked={handleImagePicked} />
+          </View>
+        </ScrollView>
+      </Background>
 
       {/* Submit Button */}
       <View
@@ -466,7 +445,7 @@ export default function CreateIncidentScreen() {
           disabled={isSubmitting}
           style={{
             flex: 1,
-            borderWidth: 1,
+            borderWidth: 2,
             borderColor: theme.colors.border.primary,
           }}
           colorVariant="disabled"
@@ -481,6 +460,6 @@ export default function CreateIncidentScreen() {
           colorVariant="secondary"
         />
       </View>
-    </Background>
+    </SafeAreaView>
   );
 }

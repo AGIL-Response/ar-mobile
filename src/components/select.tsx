@@ -109,7 +109,7 @@ const createSelectTriggerStyles = createStyleCreator<SelectProps>(
       },
       outlined: {
         backgroundColor: 'transparent',
-        borderWidth: 1,
+        borderWidth: 2,
         borderColor: colors.surface.border,
       },
       filled: {
@@ -123,11 +123,11 @@ const createSelectTriggerStyles = createStyleCreator<SelectProps>(
       default: {},
       error: {
         borderColor: colors.semantic.error,
-        borderWidth: 1,
+        borderWidth: 2,
       },
       success: {
         borderColor: colors.semantic.success,
-        borderWidth: 1,
+        borderWidth: 2,
       },
       disabled: {
         backgroundColor: colors.surface.disabled || colors.utility.lightGray,

@@ -259,10 +259,10 @@ export default function NotificationsScreen() {
                   width: 8,
                   height: 8,
                   borderRadius: 4,
-                  backgroundColor: theme.colors.primary,
+                  backgroundColor: theme.colors.semantic.error,
                   position: 'absolute',
-                  top: 0,
-                  right: -4,
+                  top: 16,
+                  right: -8,
                 }}
               />
             )}

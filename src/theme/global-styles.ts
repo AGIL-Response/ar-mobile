@@ -184,7 +184,7 @@ export const Palette = {
   successAlt: '#1ce783',
   mediumSpringGreen: '#1ce783', // Figma design status indicator
   warning: '#FA8C16',
-  warningAlt: '##FA8C161A',
+  warningAlt: '#FA8C161A',
   error: '#FF3C3C',
   errorAlt: '#D52B2B33',
 
@@ -286,6 +286,7 @@ export const Palette = {
   buttonGhostDef: '#125E9166',
   input: '#5DA9DC66',
   buttonDisabled: '#4B556333',
+  backgroundSecondary: '#1984CC66',
 
   brown50: '#374151',
   brown100: '#6B7280',
