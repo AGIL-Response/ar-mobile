@@ -18,16 +18,29 @@ interface IncidentCardProps {
   onPress?: (incident: Incident) => void;
 }
 
+const getBackgroundColor = (severity: IncidentSeverity): string => {
+  switch (severity) {
+    case 'high':
+      return Palette.errorAlt;
+    case 'medium':
+      return Palette.warningAlt;
+    case 'low':
+      return Palette.backgroundSecondary;
+    default:
+      return Palette.backgroundSecondary;
+  }
+};
+
 const getSeverityColor = (severity?: IncidentSeverity): string => {
   switch (severity) {
     case 'high':
-      return '#dc2626'; // Red
+      return Palette.error; // Red
     case 'medium':
-      return '#f59e0b'; // Orange
+      return Palette.warning; // Orange
     case 'low':
-      return '#f97316'; // Orange-red
+      return Palette.primary500; // Orange-red
     default:
-      return '#f59e0b'; // Default to medium/orange for unknown
+      return Palette.warning; // Default to medium/orange for unknown
   }
 };
 
@@ -132,17 +145,16 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
         </Text>
         <View
           style={{
-            backgroundColor: getSeverityColor(displaySeverity),
+            backgroundColor: getBackgroundColor(displaySeverity),
             paddingHorizontal: 6,
-            paddingVertical: 2,
-            borderRadius: 12,
+            paddingTop: 8,
+            paddingBottom: 4,
+            borderRadius: 4,
           }}
         >
           <Text
             variant="bodySmall"
-            style={{
-              color: Palette.white,
-            }}
+            style={{ color: getSeverityColor(displaySeverity)}}
           >
             {getSeverityLabel(displaySeverity)}
           </Text>

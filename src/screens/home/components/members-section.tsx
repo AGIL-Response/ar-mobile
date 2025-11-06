@@ -140,7 +140,7 @@ const createStyles = (theme: any) =>
       height: 48,
       borderRadius: 24,
       backgroundColor: theme.colors.surface.card,
-      borderWidth: 1,
+      borderWidth: 2,
       borderColor: theme.colors.surface.border,
     },
     statusIndicator: {
@@ -163,7 +163,7 @@ const createStyles = (theme: any) =>
       width: 48,
       height: 48,
       borderRadius: 24,
-      borderWidth: 1,
+      borderWidth: 2,
       borderColor: theme.colors.surface.border,
       backgroundColor: theme.colors.background.input,
       justifyContent: 'center',
