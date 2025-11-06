@@ -414,6 +414,9 @@ export const Select = forwardRef<RNView, SelectProps>(
 
     const textContainerStyles = useThemedStyles(createTextContainerStyles, {});
 
+    // Get theme for icon color
+    const theme = useThemedStyles((theme) => theme, {});
+
     // Create accessibility props
     const accessibilityProps = createAccessibilityProps({
       testID,
@@ -468,6 +471,7 @@ export const Select = forwardRef<RNView, SelectProps>(
           <CaretDown
             width={16}
             height={16}
+            stroke={theme.colors.text.muted}
             style={{
               marginLeft: 8,
               opacity: disabled ? 0.5 : 1,

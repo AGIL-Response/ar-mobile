@@ -3,9 +3,9 @@
  * Expo Router tabs configuration matching Figma design
  */
 
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 
 // Import the new Icon component and constants
 import { Icon, type IconName, iconNames } from '@/components';
@@ -25,13 +25,14 @@ function TabBarIcon({
     index: iconNames.home,
     tasks: iconNames.list,
     incidents: iconNames.incident,
+    create: iconNames.plus,
     notifications: iconNames.notification_badge,
     chat: iconNames.message_square,
     profile: iconNames.user,
   };
-  
+
   const iconName = iconMap[name];
-  
+
   return <Icon name={iconName} size={24} color={color} />;
 }
 
@@ -69,6 +70,7 @@ function TabBarIcon({
 
 export default function TabLayout() {
   const theme = useTheme();
+  const router = useRouter();
 
   return (
     <Tabs
@@ -115,13 +117,42 @@ export default function TabLayout() {
           ),
         }}
       />
+      {/* Create Incident */}
+      <Tabs.Screen
+        name="create"
+        options={{
+          title: 'Create',
+          tabBarIcon: ({ color, focused }) => (
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => router.push('/incidents/create' as any)}
+              accessibilityRole="button"
+              accessibilityLabel="Create Incident"
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                backgroundColor: theme.colors.semantic.error,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <TabBarIcon name="create" color={color} focused={focused} />
+            </TouchableOpacity>
+          ),
+        }}
+      />
       <Tabs.Screen
         name="notifications"
         options={{
           title: 'Notifications',
           tabBarIcon: ({ color, focused }) => (
             <View>
-              <TabBarIcon name="notifications" color={color} focused={focused} />
+              <TabBarIcon
+                name="notifications"
+                color={color}
+                focused={focused}
+              />
               {/*<TabBarBadge count={3} />*/}
             </View>
           ),

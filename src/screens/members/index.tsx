@@ -18,11 +18,7 @@ import { MemberDetailModal } from './components/member-detail-modal';
 import { X } from '@/components/icons';
 import { FontFamilies } from '@/lib/fonts';
 
-export function MembersScreen({
-  onClose,
-}: {
-  onClose: () => void;
-}): React.JSX.Element {
+export function MembersScreen(): React.JSX.Element {
   const router = useRouter();
   const authState = useAuthStore();
   const usersState = useUsersStore();
@@ -161,19 +157,6 @@ export function MembersScreen({
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text variant="h3" style={styles.title}>
-          Members
-        </Text>
-        <Pressable
-          style={styles.closeButton}
-          onPress={onClose}
-          accessibilityLabel="Close members screen"
-          accessibilityRole="button"
-        >
-          <X width={20} height={20} color={theme.colors.text.icon} />
-        </Pressable>
-      </View>
 
       <ScrollView
         style={styles.scrollView}
@@ -201,7 +184,7 @@ export function MembersScreen({
             {Object.entries(groupedUsers)
               .filter(([groupName]) => groupName !== 'Commander')
               .map(([groupName, users]) =>
-                renderGroupSection(groupName, users)
+                renderGroupSection('Members', users)
               )}
           </>
         )}
@@ -321,6 +304,7 @@ const createStyles = (theme: any) =>
     },
     userName: {
       color: theme.colors.text.primary,
+      fontFamily: FontFamilies.goldmanRegular,
     },
     actionsRow: {
       flexDirection: 'row',
@@ -334,7 +318,7 @@ const createStyles = (theme: any) =>
       borderColor: theme.colors.surface.border,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: theme.colors.background.primary,
+      backgroundColor: theme.colors.background.overlay,
     },
     menuIcon: {
       color: theme.colors.text.secondary,

@@ -18,6 +18,8 @@ import ChangeIcon from './change.svg';
 import BatteryIcon from './battery.svg';
 import MobileSignalIcon from './mobile-signal.svg';
 import MessageDotsSquareIcon from './message-dots-square.svg';
+import ChevronLeftIcon from './chevron-left.svg';
+import CameraIcon from './camera.svg';
 
 // Icon component type
 type IconComponent = React.ComponentType<SvgProps>;
@@ -42,6 +44,8 @@ export const iconNames = {
   battery: 'battery',
   mobile_signal: 'mobileSignal',
   message_dots_square: 'messageDotsSquare',
+  chevron_left: 'chevronLeft',
+  camera: 'camera',
 } as const;
 
 // Icons object with proper typing
@@ -69,6 +73,8 @@ const icons: Record<string, IconComponent> = {
   [iconNames.battery]: BatteryIcon,
   [iconNames.mobile_signal]: MobileSignalIcon,
   [iconNames.message_dots_square]: MessageDotsSquareIcon,
+  [iconNames.chevron_left]: ChevronLeftIcon,
+  [iconNames.camera]: CameraIcon,
 } as const;
 
 // Export icon names as type for better TypeScript support

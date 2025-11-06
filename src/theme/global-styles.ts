@@ -280,10 +280,15 @@ export const Palette = {
   red800: '#8c2121',
   red900: '#6b1919',
 
-  primary90030: '#0B35564D',
+  primary90030: '#0B3556',
   toastStatusBg: '#0B355666',
   toastStatusBorder: '#1778BA66',
   buttonGhostDef: '#125E9166',
+  input: '#5DA9DC66',
+  buttonDisabled: '#4B556333',
+
+  brown50: '#374151',
+  brown100: '#6B7280',
 } as const;
 
 /* ================================
@@ -316,6 +321,16 @@ const createColors = (isDark: boolean) => ({
     accent: Palette.primary, // For highlighted text
   },
 
+  button: {
+    primary: isDark ? Palette.primary400 : Palette.gray100,
+    secondary: isDark ? Palette.primary500 : Palette.gray700,
+    ghost: isDark ? Palette.buttonGhostDef : Palette.gray100,
+    disabled: isDark ? Palette.buttonDisabled : Palette.gray100,
+  },
+
+  border: {
+    primary: isDark ? Palette.brown100 : Palette.gray300,
+  },
   // Status colors (same for both themes)
   status: {
     success: Palette.success,

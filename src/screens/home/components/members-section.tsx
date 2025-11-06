@@ -17,11 +17,7 @@ export function MembersSection(): React.JSX.Element {
   const authState = useAuthStore();
   const usersState = useUsersStore();
   const styles = createStyles(theme);
-  const {
-    ref: membersModalRef,
-    present: presentMembers,
-    dismiss: dismissMembers,
-  } = useModal();
+  const { ref: membersModalRef, present: presentMembers } = useModal();
 
   const teamId = authState.selectedTeam?.id;
 
@@ -39,10 +35,6 @@ export function MembersSection(): React.JSX.Element {
     presentMembers();
   };
 
-  const handleCloseModal = () => {
-    dismissMembers();
-  };
-
   const getInitials = (user: User) => {
     if (user.fullName) {
       return user.fullName
@@ -58,10 +50,7 @@ export function MembersSection(): React.JSX.Element {
   if (usersState.isLoading && usersState.users.length === 0) {
     return (
       <View style={styles.container}>
-        <Text variant="h3" style={styles.title}>
-          Members
-        </Text>
-        <Text variant="body" style={styles.loadingText}>
+        <Text variant="caption" style={styles.loadingText}>
           Loading members...
         </Text>
       </View>
@@ -109,8 +98,8 @@ export function MembersSection(): React.JSX.Element {
       </View>
 
       {/* Members popup modal */}
-      <Modal ref={membersModalRef}>
-        <MembersScreen onClose={handleCloseModal} />
+      <Modal ref={membersModalRef} snapPoints={['88%']} title="Members">
+        <MembersScreen />
       </Modal>
     </View>
   );

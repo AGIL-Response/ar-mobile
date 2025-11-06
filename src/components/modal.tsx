@@ -38,16 +38,20 @@ import { Pressable, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { Path, Svg } from 'react-native-svg';
 
-import { type Theme } from '@/theme';
+import { Palette, type Theme } from '@/theme';
 
 import { createStyleCreator, useThemedStyles } from './base-component';
 import { Text } from './text';
+import { X } from './icons';
+import { FontFamilies } from '@/lib/fonts';
 
 type ModalProps = BottomSheetModalProps & {
   title?: string;
   overlayColor?: string;
   contentColor?: string;
   titleColor?: string;
+  /** Show a stylized pull handle at the top of the sheet */
+  showPullHandle?: boolean;
 };
 
 type ModalRef = React.ForwardedRef<BottomSheetModal>;
@@ -55,22 +59,36 @@ type ModalRef = React.ForwardedRef<BottomSheetModal>;
 type ModalHeaderProps = {
   title?: string;
   dismiss: () => void;
-  overlayColor?: string;
-  contentColor?: string;
-  titleColor?: string;
+  styles: ReturnType<typeof createModalStyles>;
+  showPullHandle?: boolean;
 };
 
 const createModalStyles = createStyleCreator<ModalProps>(
   (theme: Theme, props) => {
     return {
       modal: {
-        backgroundColor: props.overlayColor || theme.colors.background.tertiary,
+        backgroundColor: props.overlayColor || theme.colors.background.secondary,
       },
       content: {
-        backgroundColor: props.contentColor || theme.colors.background.tertiary,
+        backgroundColor: props.contentColor || theme.colors.background.secondary,
       },
       title: {
         color: props.titleColor || theme.colors.text.primary,
+        fontFamily: FontFamilies.goldmanRegular,
+      },
+      iconColor: {
+        color: theme.colors.text.icon,
+      },
+      pullHandleOuter: {
+        alignSelf: 'center' as const,
+        justifyContent: 'center' as const,
+        alignItems: 'center' as const,
+      },
+      pullHandleInner: {
+        width: 48,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: Palette.brown50,
       },
     };
   }
@@ -96,6 +114,7 @@ export const Modal = React.forwardRef(
       overlayColor,
       contentColor,
       titleColor,
+      showPullHandle = true,
       ...props
     }: ModalProps,
     ref: ModalRef
@@ -120,11 +139,17 @@ export const Modal = React.forwardRef(
     const renderHandleComponent = React.useCallback(
       () => (
         <>
-          <View className="mb-8 mt-2 h-1 w-12 self-center rounded-lg bg-gray-400 dark:bg-gray-700" />
-          <ModalHeader title={title} dismiss={modal.dismiss} />
+          {title ? (
+            <ModalHeader
+              title={title}
+              dismiss={modal.dismiss}
+              styles={styles}
+              showPullHandle={showPullHandle}
+            />
+          ) : null}
         </>
       ),
-      [title, modal.dismiss]
+      [title, modal.dismiss, styles, showPullHandle]
     );
 
     return (
@@ -137,6 +162,7 @@ export const Modal = React.forwardRef(
         backdropComponent={props.backdropComponent || renderBackdrop}
         enableDynamicSizing={false}
         handleComponent={renderHandleComponent}
+        handleStyle={{ height: title ? undefined : 0, padding: 0, margin: 0 }}
         backgroundStyle={{ backgroundColor: styles.modal.backgroundColor }}
       />
     );
@@ -189,23 +215,36 @@ const getDetachedProps = (detached: boolean) => {
  * ModalHeader
  */
 
-const ModalHeader = React.memo(({ title, dismiss }: ModalHeaderProps) => {
-  return (
-    <>
-      {title && (
-        <View className="flex-row px-2 py-4">
-          <View className="size-[24px]" />
-          <View className="flex-1">
-            <Text className="text-center text-[16px] font-bold text-[#26313D] dark:text-white">
-              {title}
-            </Text>
+const ModalHeader = React.memo(
+  ({ title, dismiss, styles, showPullHandle }: ModalHeaderProps) => {
+    if (!title) {
+      return <CloseButton close={dismiss} />;
+    }
+    return (
+      <View style={{ paddingHorizontal: 0, paddingVertical: 4 }}>
+        {showPullHandle ? (
+          <View style={styles.pullHandleOuter}>
+            <View style={styles.pullHandleInner} />
           </View>
+        ) : null}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingHorizontal: 16,
+            height: 48,
+          }}
+        >
+          <Text variant="h4" style={styles.title}>{title}</Text>
+          <Pressable onPress={dismiss}>
+            <X width={20} height={20} color={styles.iconColor.color} />
+          </Pressable>
         </View>
-      )}
-      <CloseButton close={dismiss} />
-    </>
-  );
-});
+      </View>
+    );
+  }
+);
 
 const CloseButton = ({ close }: { close: () => void }) => {
   return (

@@ -117,6 +117,7 @@ const createAppBarStyles = (theme: Theme, props: AppBarProps) => {
       gap: 16,
       borderBottomWidth: 1,
       borderBottomColor: colors.surface.border,
+      backgroundColor: colors.background.secondary,
     },
     'bottom-navigation': {
       position: 'absolute' as const,
@@ -261,7 +262,7 @@ export const AppBar = React.forwardRef<any, AppBarProps & ViewProps>(
                 width: 32,
                 height: 32,
                 borderRadius: 16,
-                backgroundColor: theme.colors.surface.card,
+                backgroundColor: theme.colors.background.overlay,
                 borderWidth: 1,
                 borderColor: theme.colors.surface.border,
                 justifyContent: 'center',
@@ -271,9 +272,9 @@ export const AppBar = React.forwardRef<any, AppBarProps & ViewProps>(
               }}
             >
               <Icon
-                name={iconNames.arrow_left}
+                name={iconNames.chevron_left}
                 size={16}
-                color={theme.colors.text.primary}
+                color={theme.colors.text.icon}
               />
             </View>
           </TouchableOpacity>

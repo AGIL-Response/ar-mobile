@@ -34,9 +34,7 @@ export default function HomeScreen() {
     >
       <Screen>
         {/* App Bar */}
-        <AppHeader
-          title={selectedTeam?.name || ''}
-        />
+        <AppHeader title={selectedTeam?.name || ''} />
 
         {/* Tab Selector */}
         <TabSelector activeTab={activeTab} onTabChange={handleTabChange} />

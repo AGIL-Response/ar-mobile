@@ -181,6 +181,7 @@ export default function CreateIncidentScreen() {
   if (location.hasPermission === null) {
     return (
       <SafeAreaView
+        edges={['top']}
         style={{
           flex: 1,
           backgroundColor: theme.colors.background.primary,
@@ -204,9 +205,10 @@ export default function CreateIncidentScreen() {
   if (!location.hasPermission) {
     return (
       <SafeAreaView
+        edges={['top']}
         style={{
           flex: 1,
-          backgroundColor: theme.colors.background.primary,
+          backgroundColor: theme.colors.background.secondary,
         }}
       >
         <AppBar
@@ -230,40 +232,49 @@ export default function CreateIncidentScreen() {
   // Show main create incident form
   return (
     <SafeAreaView
+      edges={['top']}
       style={{
         flex: 1,
-        backgroundColor: theme.colors.background.primary,
+        backgroundColor: theme.colors.background.secondary,
       }}
     >
       <AppBar
-        title="New Incident"
+        title="Incidents"
+        titleFontFamily={theme.fonts.goldmanRegular}
         showBackButton={true}
         onBackPress={() => router.back()}
         safeArea={false}
         titleAlign="left"
-        style={{ borderBottomWidth: 0 }}
+        style={{
+          backgroundColor: theme.colors.background.secondary,
+        }}
       />
 
       <ScrollView
-        style={{ flex: 1, paddingTop: 4 }}
+        style={{
+          flex: 1,
+          maxHeight: '100%',
+          backgroundColor: theme.colors.background.primary,
+        }}
         contentContainerStyle={{
           padding: 16,
+          backgroundColor: theme.colors.background.primary,
         }}
         showsVerticalScrollIndicator={false}
       >
         {/* Incident Name */}
         <View style={{ marginBottom: 16 }}>
           <Text
-            variant="h4"
+            variant="bodySmall"
             style={{
-              color: theme.colors.text.primary,
-              marginBottom: 8,
+              color: theme.colors.text.muted,
+              marginBottom: 4,
             }}
           >
             Incident Name
           </Text>
           <Input
-            placeholder="Enter incident name"
+            placeholder="Enter incident"
             value={form.name}
             onChangeText={(text) => handleInputChange('name', text)}
             autoCapitalize="sentences"
@@ -273,16 +284,16 @@ export default function CreateIncidentScreen() {
         {/* Description */}
         <View style={{ marginBottom: 16 }}>
           <Text
-            variant="h4"
+            variant="bodySmall"
             style={{
-              color: theme.colors.text.primary,
-              marginBottom: 8,
+              color: theme.colors.text.muted,
+              marginBottom: 4,
             }}
           >
-            Description
+            Label
           </Text>
           <TextArea
-            placeholder="Describe the incident details..."
+            placeholder="Placeholder"
             value={form.description}
             onChangeText={(text) => handleInputChange('description', text)}
             autoCapitalize="sentences"
@@ -292,16 +303,16 @@ export default function CreateIncidentScreen() {
         {/* Incident Type */}
         <View style={{ marginBottom: 16 }}>
           <Text
-            variant="h4"
+            variant="bodySmall"
             style={{
-              color: theme.colors.text.primary,
-              marginBottom: 8,
+              color: theme.colors.text.muted,
+              marginBottom: 4,
             }}
           >
             Incident Type *
           </Text>
           <Select
-            placeholder="Select incident type"
+            placeholder="Select"
             value={form.type}
             onValueChange={(value) => handleInputChange('type', String(value))}
             options={incidentTypes}
@@ -310,16 +321,6 @@ export default function CreateIncidentScreen() {
 
         {/* Image Upload */}
         <View style={{ marginBottom: 16 }}>
-          <Text
-            variant="h4"
-            style={{
-              color: theme.colors.text.primary,
-              marginBottom: 8,
-            }}
-          >
-            Image Upload
-          </Text>
-
           <View
             style={{
               padding: 12,
@@ -349,12 +350,36 @@ export default function CreateIncidentScreen() {
                     resizeMode="cover"
                   />
                 ) : (
-                  <Text
-                    variant="body"
-                    style={{ color: theme.colors.text.secondary }}
+                  <View
+                    style={{
+                      position: 'absolute',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
                   >
-                    No image uploaded
-                  </Text>
+                    <TouchableOpacity onPress={handleOpenModal}>
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 8,
+                          paddingHorizontal: 14,
+                          paddingVertical: 8,
+                          borderRadius: 6,
+                          borderWidth: 1,
+                          // borderColor: theme.colors.surface.border,
+                          backgroundColor: theme.colors.button.ghost,
+                        }}
+                      >
+                        <Icon
+                          name={iconNames.camera}
+                          size={18}
+                          color={theme.colors.text.primary}
+                        />
+                        <Text variant="body">Take a Photo</Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
                 )}
               </View>
 
@@ -390,17 +415,35 @@ export default function CreateIncidentScreen() {
       {/* Submit Button */}
       <View
         style={{
-          padding: 16,
-          paddingBottom: 24,
+          padding: 24,
+          flexDirection: 'row',
+          gap: 16,
+          backgroundColor: theme.colors.background.primary,
+          borderTopWidth: 1,
+          borderColor: theme.colors.surface.border,
         }}
       >
         <Button
           variant="solid"
-          size="large"
+          size="medium"
+          title="Cancel"
+          onPress={() => router.back()}
+          disabled={isSubmitting}
+          style={{
+            flex: 1,
+            borderWidth: 1,
+            borderColor: theme.colors.border.primary,
+          }}
+          colorVariant="disabled"
+        />
+        <Button
+          variant="solid"
+          size="medium"
           title={isSubmitting ? 'Creating...' : 'Create Incident'}
           onPress={handleSubmit}
           disabled={isSubmitting}
-          style={{ width: '100%' }}
+          style={{ flex: 1 }}
+          colorVariant="secondary"
         />
       </View>
     </SafeAreaView>

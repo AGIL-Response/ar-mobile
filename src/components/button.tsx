@@ -78,6 +78,7 @@ const createButtonStyles = (
     success: colors.semantic.success,
     warning: colors.semantic.warning,
     error: colors.semantic.error,
+    disabled: colors.button.disabled,
   };
 
   const buttonColor = colorSchemes[colorVariant];
@@ -179,7 +180,6 @@ const createButtonTextStyles = (theme: Theme, props: ButtonProps) => {
   return {
     color: textColors[variant],
     ...(theme.typography[typographyVariants[size]] || theme.typography.label),
-    fontWeight: '600' as const,
   };
 };
 

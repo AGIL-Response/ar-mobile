@@ -12,6 +12,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useTasksStore } from '@/stores/tasks';
 import { Palette, useTheme } from '@/theme';
 import { TaskCard } from '@/screens/tasks/components/task-card';
+import { FontFamilies } from '@/lib/fonts';
 
 export function TasksSection() {
   const theme = useTheme();
@@ -50,6 +51,7 @@ export function TasksSection() {
             variant="h3"
             style={{
               color: theme.colors.text.primary,
+              fontFamily: FontFamilies.goldmanRegular,
             }}
           >
             On-going tasks
@@ -86,6 +88,7 @@ export function TasksSection() {
           variant="h3"
           style={{
             color: theme.colors.text.primary,
+            fontFamily: FontFamilies.goldmanRegular,
           }}
         >
           On-going tasks
@@ -105,7 +108,10 @@ export function TasksSection() {
       {/* Task Cards */}
       <View style={{ gap: 12 }}>
         {tasksState.pendingTasks.length === 0 ? (
-          <Text variant="body" style={{ color: theme.colors.text.secondary }}>
+          <Text
+            variant="bodyMedium"
+            style={{ color: theme.colors.text.secondary }}
+          >
             No on-going tasks found
           </Text>
         ) : (

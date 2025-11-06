@@ -84,10 +84,7 @@ export function TaskCard({ task, onPress }: TaskCardProps) {
             variant="h4"
             style={{
               color: theme.colors.text.primary,
-              fontWeight: '600',
               flex: 1,
-              fontSize: 18,
-              lineHeight: 20,
             }}
           >
             {task.name}
@@ -109,9 +106,6 @@ export function TaskCard({ task, onPress }: TaskCardProps) {
                   !task.status || task.status === 'pending'
                     ? '#6a7178'
                     : theme.colors.semantic.white,
-                fontWeight: '600',
-                fontSize: 12,
-                lineHeight: 18,
               }}
             >
               {getStatusLabel(task.status)}
@@ -126,8 +120,6 @@ export function TaskCard({ task, onPress }: TaskCardProps) {
             style={{
               color: theme.colors.text.secondary,
               marginBottom: 8,
-              lineHeight: 21,
-              fontSize: 14,
             }}
             numberOfLines={2}
           >
@@ -140,8 +132,6 @@ export function TaskCard({ task, onPress }: TaskCardProps) {
           variant="caption"
           style={{
             color: theme.colors.text.muted,
-            fontSize: 10,
-            lineHeight: 12,
           }}
         >
           {formatDate(task.createdAt)}

@@ -153,7 +153,8 @@ export type ColorVariant =
   | 'secondary'
   | 'success'
   | 'warning'
-  | 'error';
+  | 'error'
+  | 'disabled';
 
 /**
  * Standard visual variants used across components

@@ -11,6 +11,7 @@ import type { Incident, IncidentSeverity } from '@/api/incidents/types';
 import { Icon, iconNames, Text, View } from '@/components';
 import { useUsersStore } from '@/stores/users';
 import { Palette, useTheme } from '@/theme';
+import { FontFamilies } from '@/lib/fonts';
 
 interface IncidentCardProps {
   incident: Incident;
@@ -99,7 +100,6 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
     return 'Unknown Reporter';
   };
 
-  console.log('incident', incident);
   return (
     <TouchableOpacity
       onPress={handlePress}
@@ -125,8 +125,7 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
           variant="h4"
           style={{
             color: theme.colors.text.primary,
-            flex: 1,
-            marginRight: 8,
+            fontFamily: FontFamilies.goldmanRegular,
           }}
         >
           {incident.name}
@@ -154,9 +153,7 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
       <View
         style={{
           gap: 8,
-          backgroundColor: theme.colors.utility.overlay,
           borderRadius: 12,
-          padding: 12,
         }}
       >
         {/* Reporter/Created By */}
@@ -172,14 +169,19 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
             <Icon
               name={iconNames.user_edit}
               size={16}
-              color={theme.colors.text.muted}
+              color={theme.colors.text.icon}
             />
-            <Text>Reported by</Text>
+            <Text
+              variant="bodyMedium"
+              style={{ color: theme.colors.text.secondary }}
+            >
+              Reported by
+            </Text>
           </View>
           <Text
-            variant="bodyMedium"
+            variant="bodySmall"
             style={{
-              color: theme.colors.text.primary,
+              color: theme.colors.text.secondary,
             }}
           >
             {getCreatedByName()}
@@ -200,14 +202,21 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
               <Icon
                 name={iconNames.location}
                 size={16}
-                color={theme.colors.text.muted}
+                color={theme.colors.text.icon}
               />
-              <Text>Location</Text>
+              <Text
+                variant="bodyMedium"
+                style={{ color: theme.colors.text.secondary }}
+              >
+                Location
+              </Text>
             </View>
             <Text
-              variant="bodyMedium"
+              variant="bodySmall"
               style={{
-                color: theme.colors.text.primary,
+                color: theme.colors.text.secondary,
+                flex: 1,
+                textAlign: 'right',
               }}
             >
               {incident.description}
@@ -228,14 +237,19 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
             <Icon
               name={iconNames.clock}
               size={16}
-              color={theme.colors.text.muted}
+              color={theme.colors.text.icon}
             />
-            <Text>Reported at</Text>
+            <Text
+              variant="bodyMedium"
+              style={{ color: theme.colors.text.secondary }}
+            >
+              Reported at
+            </Text>
           </View>
           <Text
-            variant="bodyMedium"
+            variant="bodySmall"
             style={{
-              color: theme.colors.text.primary,
+              color: theme.colors.text.secondary,
             }}
           >
             {formatTimeAgo(incident.createdAt)}
