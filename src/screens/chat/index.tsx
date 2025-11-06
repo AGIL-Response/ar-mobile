@@ -8,7 +8,7 @@ import React from 'react';
 import { Background, Center, Text, View } from '@/components';
 import { useTheme } from '@/theme';
 
-import { ChatHeader } from './components/chat-header';
+import { AppHeader } from '../home/components/app-header';
 
 export default function ChatScreen() {
   const theme = useTheme();
@@ -16,7 +16,7 @@ export default function ChatScreen() {
   return (
     <Background>
       {/* Header */}
-      <ChatHeader />
+      <AppHeader title={'Chat'} />
 
       {/* Content */}
       <View style={{ flex: 1 }}>

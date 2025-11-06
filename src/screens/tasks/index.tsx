@@ -7,11 +7,11 @@ import images from '@assets/images';
 import { router } from 'expo-router';
 import React, { useEffect } from 'react';
 import { RefreshControl, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   AppBar,
   Avatar,
+  Background,
   Center,
   Icon,
   iconNames,
@@ -25,6 +25,7 @@ import { useTheme } from '@/theme';
 
 import { TaskCard } from './components/task-card';
 import { type TaskTab, TaskTabSelector } from './components/task-tab-selector';
+import { AppHeader } from '../home/components/app-header';
 
 export default function TasksScreen() {
   const theme = useTheme();
@@ -258,41 +259,8 @@ export default function TasksScreen() {
   };
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: theme.colors.background.primary }}
-    >
-      <AppBar
-        title="Tasks"
-        rightContent={
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              marginRight: 16,
-            }}
-          >
-            {/* Search Icon */}
-            <TouchableOpacity
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 16,
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundColor: theme.colors.background.overlay,
-                borderWidth: 1,
-                borderColor: theme.colors.surface.border,
-              }}
-            >
-              <Icon
-                name={iconNames.search}
-                size={16}
-                color={theme.colors.text.primary}
-              />
-            </TouchableOpacity>
-          </View>
-        }
-      />
+    <Background>
+      <AppHeader title={'Tasks'} />
 
       {/* Tab Selector */}
       <TaskTabSelector
@@ -310,6 +278,6 @@ export default function TasksScreen() {
 
       {/* Content */}
       {renderContent()}
-    </SafeAreaView>
+    </Background>
   );
 }

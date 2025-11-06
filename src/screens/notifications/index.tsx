@@ -27,6 +27,7 @@ import {
 import { useAuthStore } from '@/stores/auth';
 import { useNotificationsStore } from '@/stores/notifications';
 import { useTheme } from '@/theme';
+import { AppHeader } from '../home/components/app-header';
 
 export default function NotificationsScreen() {
   const theme = useTheme();
@@ -316,24 +317,7 @@ export default function NotificationsScreen() {
   return (
     <Background>
       {/* Header */}
-      <AppBar
-        title="Notifications"
-        rightElement={
-          unreadCount > 0 ? (
-            <TouchableOpacity onPress={markAllAsRead}>
-              <Text
-                variant="caption"
-                style={{
-                  color: theme.colors.primary,
-                  fontWeight: '600',
-                }}
-              >
-                Mark all read
-              </Text>
-            </TouchableOpacity>
-          ) : undefined
-        }
-      />
+      <AppHeader title={'Notifications'} />
 
       {/* Notifications List */}
       {notifications.length > 0 ? (
