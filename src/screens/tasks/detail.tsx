@@ -71,6 +71,11 @@ export default function TaskDetailScreen() {
     isCompleted: boolean,
     description: string
   ) => {
+    // Don't allow checklist changes if task is completed or cancelled
+    if (task?.status === 'completed' || task?.status === 'cancelled') {
+      return;
+    }
+
     await tasksState.actions.updateChecklistItem(checklistId, isCompleted, description);
   };
 
@@ -429,6 +434,7 @@ export default function TaskDetailScreen() {
                 <Checkbox
                   label={item.description}
                   checked={item.isCompleted}
+                  disabled={task?.status === 'completed' || task?.status === 'cancelled'}
                   onCheckedChange={(checked) =>
                     handleChecklistToggle(item.id, checked, item.description)
                   }
