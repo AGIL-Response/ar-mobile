@@ -87,7 +87,7 @@ const createStyles = (theme: Theme) => {
       paddingVertical: spacing.padding.sm,
       backgroundColor: colors.semantic.errorBackground,
       borderRadius: borderRadius.md,
-      borderWidth: 1,
+      borderWidth: 2,
       borderColor: colors.semantic.errorBorder,
     },
   });

@@ -106,7 +106,7 @@ const createTabBarStyles = createStyleCreator<TabBarProps>(
       segment: {
         backgroundColor: colors.surface.card,
         borderRadius: borderRadius.md,
-        borderWidth: 1,
+        borderWidth: 2,
         borderColor: colors.surface.border,
         padding: 2,
       },

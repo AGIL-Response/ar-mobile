@@ -560,7 +560,7 @@ export const ComponentTokens = {
   input: {
     height: 48,
     borderRadius: BorderRadius.md,
-    borderWidth: 1,
+    borderWidth: 2,
     padding: {
       horizontal: Padding.xxl,
       vertical: Padding.xl,
@@ -570,7 +570,7 @@ export const ComponentTokens = {
   // Card specifications
   card: {
     borderRadius: BorderRadius.lg,
-    borderWidth: 1,
+    borderWidth: 2,
     padding: {
       small: Padding.xl,
       medium: Padding.xxl,
@@ -598,7 +598,7 @@ export const ComponentTokens = {
       xl: 120, // For login logo
     },
     borderRadius: BorderRadius.round,
-    borderWidth: 1,
+    borderWidth: 2,
   },
 
   // Navigation specifications

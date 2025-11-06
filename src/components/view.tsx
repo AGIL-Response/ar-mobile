@@ -94,7 +94,7 @@ const createViewStyles = (theme: Theme, props: ViewProps) => {
   const visualStyles = {
     backgroundColor: backgroundColor || baseStyles.backgroundColor,
     borderRadius: rounded ? theme.borderRadius[rounded] : undefined,
-    borderWidth: bordered ? 1 : undefined,
+    borderWidth: bordered ? 2 : undefined,
     borderColor: borderColor || theme.colors.text.secondary,
     ...((shadow && theme.shadows && (theme.shadows as any)[shadow]) || {}),
   };

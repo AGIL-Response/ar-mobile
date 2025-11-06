@@ -257,7 +257,7 @@ export default function IncidentDetailScreen() {
             marginHorizontal: 16,
             marginTop: 16,
             borderRadius: 8,
-            borderWidth: 1,
+            borderWidth: 2,
             borderColor: theme.colors.surface.border,
             overflow: 'hidden',
           }}

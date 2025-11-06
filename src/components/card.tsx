@@ -71,7 +71,7 @@ const createCardStyles = (theme: Theme, props: CardProps) => {
   const variantStyles = {
     default: {
       backgroundColor: colors.surface.card,
-      borderWidth: 1,
+      borderWidth: 2,
       borderColor: colors.surface.border,
     },
     elevated: {
@@ -84,7 +84,7 @@ const createCardStyles = (theme: Theme, props: CardProps) => {
     },
     outlined: {
       backgroundColor: 'transparent',
-      borderWidth: 1,
+      borderWidth: 2,
       borderColor: colors.surface.border,
     },
     filled: {

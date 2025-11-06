@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
-import { AppBar, Avatar, Icon, Text, View } from '@/components';
+import { AppBar, Avatar, Background, Icon, Text, View } from '@/components';
 import icons, { iconNames } from '@assets/icons';
 import { useAuthStore } from '@/stores/auth';
 import { useUsersStore } from '@/stores/users';
@@ -94,9 +94,9 @@ export function MembersScreen(): React.JSX.Element {
                 size="xl"
                 fallback={getInitials(user)}
                 style={styles.avatar}
+                fileId={user.avatarId}
               />
               {/* Status indicator */}
-
             </View>
 
             <View style={styles.userNameContainer}>
@@ -156,49 +156,50 @@ export function MembersScreen(): React.JSX.Element {
   const styles = createStyles(theme);
 
   return (
-    <View style={styles.container}>
+    <Background>
+      <View style={styles.container}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {usersState.isLoading && usersState.users.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text variant="body" style={styles.loadingText}>
+                Loading members...
+              </Text>
+            </View>
+          ) : usersState.users.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text variant="h3" style={styles.noMembersText}>
+                No members found
+              </Text>
+            </View>
+          ) : (
+            <>
+              {/* Render groups in order: Commander first, then others */}
+              {Object.keys(groupedUsers).includes('Commander') &&
+                renderGroupSection('Commander', groupedUsers['Commander'])}
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {usersState.isLoading && usersState.users.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text variant="body" style={styles.loadingText}>
-              Loading members...
-            </Text>
-          </View>
-        ) : usersState.users.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text variant="h3" style={styles.noMembersText}>
-              No members found
-            </Text>
-          </View>
-        ) : (
-          <>
-            {/* Render groups in order: Commander first, then others */}
-            {Object.keys(groupedUsers).includes('Commander') &&
-              renderGroupSection('Commander', groupedUsers['Commander'])}
+              {Object.entries(groupedUsers)
+                .filter(([groupName]) => groupName !== 'Commander')
+                .map(([groupName, users]) =>
+                  renderGroupSection('Members', users)
+                )}
+            </>
+          )}
 
-            {Object.entries(groupedUsers)
-              .filter(([groupName]) => groupName !== 'Commander')
-              .map(([groupName, users]) =>
-                renderGroupSection('Members', users)
-              )}
-          </>
-        )}
-
-        {usersState.error && (
-          <View style={styles.errorContainer}>
-            <Text variant="body" style={styles.errorText}>
-              {usersState.error}
-            </Text>
-          </View>
-        )}
-      </ScrollView>
-      <MemberDetailModal ref={ref} user={selectedUser} />
-    </View>
+          {usersState.error && (
+            <View style={styles.errorContainer}>
+              <Text variant="body" style={styles.errorText}>
+                {usersState.error}
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+        <MemberDetailModal ref={ref} user={selectedUser} />
+      </View>
+    </Background>
   );
 }
 
@@ -206,7 +207,6 @@ const createStyles = (theme: any) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.colors.background.primary,
     },
     header: {
       padding: 16,
@@ -267,7 +267,7 @@ const createStyles = (theme: any) =>
       padding: 10,
       borderRadius: 8,
       backgroundColor: theme.colors.background.secondary,
-      borderWidth: 1,
+      borderWidth: 2,
       borderColor: theme.colors.surface.border,
       height: 80,
       maxHeight: 80,
@@ -288,16 +288,15 @@ const createStyles = (theme: any) =>
       width: 48,
       height: 48,
       borderRadius: 24,
-      backgroundColor: 'rgba(209, 209, 209, 0.05)',
-      borderWidth: 1,
-      borderColor: 'rgba(209, 209, 209, 0.05)',
+      borderWidth: 2,
+      borderColor: theme.colors.surface.border,
     },
     statusIndicator: {
       position: 'absolute',
       width: 8,
       height: 8,
       borderRadius: 4,
-      borderWidth: 1,
+      borderWidth: 2,
       borderColor: theme.colors.background.primary,
       bottom: -1,
       right: -1,
@@ -314,7 +313,7 @@ const createStyles = (theme: any) =>
       width: 28,
       height: 28,
       borderRadius: 6,
-      borderWidth: 1,
+      borderWidth: 2,
       borderColor: theme.colors.surface.border,
       alignItems: 'center',
       justifyContent: 'center',

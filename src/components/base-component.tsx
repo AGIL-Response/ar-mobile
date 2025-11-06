@@ -342,6 +342,6 @@ export const createTextStyles = (theme: Theme, props: any) => ({
  */
 export const createBorderStyles = (theme: Theme, props: any) => ({
   borderRadius: props.rounded ? theme.borderRadius.md : 0,
-  borderWidth: props.bordered ? 1 : 0,
+  borderWidth: props.bordered ? 2 : 0,
   borderColor: props.borderColor || theme.colors.text.secondary,
 });

@@ -105,7 +105,7 @@ const createStyles = (theme: Theme) => {
       paddingHorizontal: spacing.padding.md,
       paddingVertical: spacing.padding.xs,
       borderRadius: borderRadius.full,
-      borderWidth: 1,
+      borderWidth: 2,
       borderColor: colors.surface.border,
     },
     inputContainer: {

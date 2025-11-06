@@ -102,7 +102,7 @@ const createButtonStyles = (
     },
     outline: {
       backgroundColor: 'transparent',
-      borderWidth: 1,
+      borderWidth: 2,
       borderColor: buttonColor,
     },
     ghost: {

@@ -50,7 +50,7 @@ const IncidentAttachmentBase = ({
         height: size,
         borderRadius: 8,
         backgroundColor: theme.colors.background.secondary,
-        borderWidth: 1,
+        borderWidth: 2,
         borderColor: theme.colors.text.tertiary,
         overflow: 'hidden',
         justifyContent: 'center',

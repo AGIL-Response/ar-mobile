@@ -41,7 +41,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
       height: iconSize + 16,
       borderRadius: (iconSize + 16) / 2,
       backgroundColor: colors.surface.card,
-      borderWidth: 1,
+      borderWidth: 2,
       borderColor: colors.surface.border,
       alignItems: 'center',
       justifyContent: 'center',

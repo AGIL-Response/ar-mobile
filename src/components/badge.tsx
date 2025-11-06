@@ -86,7 +86,7 @@ const createBadgeStyles = (theme: Theme, props: BadgeProps) => {
     },
     outline: {
       backgroundColor: 'transparent',
-      borderWidth: 1,
+      borderWidth: 2,
       borderColor: badgeColor,
     },
     soft: {

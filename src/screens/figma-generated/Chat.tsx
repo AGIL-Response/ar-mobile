@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatarBorder: {
-    borderWidth: 1,
+    borderWidth: 2,
     borderStyle: 'solid',
     overflow: 'hidden',
   },

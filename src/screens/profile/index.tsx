@@ -149,7 +149,7 @@ export default function ProfileScreen() {
             style={{
               backgroundColor: theme.colors.surface.card,
               borderRadius: 8,
-              borderWidth: 1,
+              borderWidth: 2,
               borderColor: theme.colors.surface.border,
               overflow: 'hidden',
             }}

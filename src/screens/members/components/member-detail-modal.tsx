@@ -114,7 +114,7 @@ const createStyles = (theme: Theme) =>
       marginBottom: 12,
       padding: 8,
       borderRadius: 8,
-      borderWidth: 1,
+      borderWidth: 2,
       borderColor: theme.colors.surface.border,
       backgroundColor: theme.colors.surface.card,
     },

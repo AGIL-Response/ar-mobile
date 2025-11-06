@@ -104,7 +104,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     borderRadius: 12,
     backgroundColor: theme.colors.surface.card,
     borderColor: theme.colors.surface.border,
-    borderWidth: 1,
+    borderWidth: 2,
   },
   mainContent: {
     flexDirection: 'row',
