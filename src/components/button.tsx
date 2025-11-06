@@ -158,6 +158,7 @@ const createButtonTextStyles = (theme: Theme, props: ButtonProps) => {
     success: colors.semantic.success,
     warning: colors.semantic.warning,
     error: colors.semantic.error,
+    disabled: colors.text.disabled,
   };
 
   const buttonColor = colorSchemes[colorVariant];

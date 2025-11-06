@@ -42,7 +42,7 @@ export default function HomeScreen() {
       </View>
 
       {/* Floating Action Button */}
-      <FloatingActionButton />
+      {/* <FloatingActionButton /> */}
     </Background>
   );
 }

@@ -284,11 +284,11 @@ export const Palette = {
   toastStatusBg: '#0B355666',
   buttonGhostDef: '#125E9166',
   input: '#5DA9DC66',
-  buttonDisabled: '#4B556333',
   backgroundSecondary: '#1984CC66',
 
   brown50: '#374151',
   brown100: '#6B7280',
+  brown200: '#4B5563',
 } as const;
 
 /* ================================
@@ -312,10 +312,10 @@ const createColors = (isDark: boolean) => ({
   // Text colors
   text: {
     primary: isDark ? Palette.primary200 : Palette.charcoal950,
-    secondary: isDark ? Palette.primary500 : Palette.gray700,
+    secondary: isDark ? Palette.primary500 : Palette.blue500,
     tertiary: isDark ? Palette.primary400 : Palette.gray900,
     muted: isDark ? Palette.primary800 : Palette.gray600,
-    disabled: isDark ? Palette.blue1000 : Palette.gray400,
+    disabled: isDark ? Palette.blue1000 : Palette.blue1000,
     placeholder: isDark ? Palette.blue1000 : Palette.gray500,
     inverse: isDark ? Palette.primary1000 : Palette.white,
     icon: isDark ? Palette.primary400 : Palette.primary500, // For dark/light backgrounds
@@ -327,7 +327,7 @@ const createColors = (isDark: boolean) => ({
     primary: isDark ? Palette.primary400 : Palette.gray100,
     secondary: isDark ? Palette.primary500 : Palette.gray700,
     ghost: isDark ? Palette.buttonGhostDef : Palette.gray100,
-    disabled: isDark ? Palette.buttonDisabled : Palette.gray100,
+    disabled: isDark ? `${Palette.brown200}33` : `${Palette.brown200}`,
   },
 
   // Status colors (same for both themes)
