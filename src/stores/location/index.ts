@@ -13,6 +13,7 @@ import {
   type LocationCoordinates,
   type SocketLocationUpdateEvent 
 } from '@/lib/socket';
+import { getBatteryPercentage } from '@/lib/utils/device-info';
 
 export interface LocationState extends IBaseState {
   // Location data
@@ -47,7 +48,7 @@ export interface LocationState extends IBaseState {
     // WebSocket management
     connectToWebSocket: (accessToken: string) => void;
     disconnectFromWebSocket: () => void;
-    sendLocationUpdate: () => void;
+    sendLocationUpdate: (networkMbps?: number, batteryPercentage?: number) => void;
     
     // Utility actions
     clearError: () => void;
@@ -209,7 +210,15 @@ const locationStore = (set: any, get: any) => ({
       // Start monitoring interval
       const interval = setInterval(async () => {
         await get().actions.getCurrentLocation();
-        get().actions.sendLocationUpdate();
+        
+        // Get battery percentage before sending
+        const batteryPercentage = await getBatteryPercentage();
+        
+        // Network speed will be passed from component that has access to useRnSpeedTest hook
+        // For now, we'll get it from a global reference if available
+        const networkSpeed = (global as any).__networkSpeed;
+        
+        get().actions.sendLocationUpdate(networkSpeed, batteryPercentage);
       }, 10000); // Send location every 10 seconds
 
       set((state: LocationState) => {
@@ -302,7 +311,7 @@ const locationStore = (set: any, get: any) => ({
       console.log('🔌 WebSocket disconnected');
     },
 
-    sendLocationUpdate: (): void => {
+    sendLocationUpdate: (networkMbps?: number, batteryPercentage?: number): void => {
       const state = get() as LocationState;
       
       if (!state.socket || !state.isSocketConnected) {
@@ -315,7 +324,7 @@ const locationStore = (set: any, get: any) => ({
         return;
       }
 
-      sendLocationToSocket(state.socket, state.coordinates);
+      sendLocationToSocket(state.socket, state.coordinates, networkMbps, batteryPercentage);
     },
 
     clearError: (): void => {

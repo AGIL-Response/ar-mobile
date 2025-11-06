@@ -8,6 +8,10 @@ export interface LocationCoordinates {
 
 export interface SocketLocationPayload {
   coordinates: [number, number, number]; // [longitude, latitude, altitude]
+  attributes?: {
+    networkMbps?: number;
+    batteryPercentage?: number;
+  };
 }
 
 export interface SocketLocationUpdateEvent {
@@ -116,10 +120,14 @@ export const handleListenMapSocket = (
  * Send location coordinates to WebSocket
  * @param socket - Socket.IO client instance
  * @param coordinates - Location coordinates to send
+ * @param networkMbps - Network speed in Mbps (optional)
+ * @param batteryPercentage - Battery percentage (optional)
  */
 export const sendLocationToSocket = (
   socket: Socket,
-  coordinates: LocationCoordinates
+  coordinates: LocationCoordinates,
+  networkMbps?: number,
+  batteryPercentage?: number
 ): void => {
   if (!socket.connected) {
     console.warn('⚠️ WebSocket not connected, cannot send location');
@@ -133,6 +141,17 @@ export const sendLocationToSocket = (
       coordinates.altitude || 0,
     ],
   };
+
+  // Add network speed and battery in attributes object if provided
+  if (networkMbps !== undefined || batteryPercentage !== undefined) {
+    payload.attributes = {};
+    if (networkMbps !== undefined) {
+      payload.attributes.networkMbps = networkMbps;
+    }
+    if (batteryPercentage !== undefined) {
+      payload.attributes.batteryPercentage = batteryPercentage;
+    }
+  }
 
   console.log('📤 Sending location to WebSocket:', payload);
   socket.emit('maps', payload);
