@@ -88,7 +88,7 @@ export default function NotificationsScreen() {
   const getNotificationColor = (type: NotificationType) => {
     switch (type) {
       case 'task_assigned':
-        return theme.colors.primary;
+        return theme.colors.semantic.blue;
       case 'incident_assigned':
         return theme.colors.semantic.warning;
       case 'task_completed':
@@ -96,7 +96,7 @@ export default function NotificationsScreen() {
       case 'incident_resolved':
         return theme.colors.semantic.success;
       case 'team_update':
-        return theme.colors.primary;
+        return theme.colors.semantic.success;
       case 'system_maintenance':
       default:
         return theme.colors.semantic.warning;

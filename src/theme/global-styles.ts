@@ -354,6 +354,7 @@ const createColors = (isDark: boolean) => ({
     error: '#ef4444',
     errorBackground: 'rgba(239, 68, 68, 0.1)',
     errorBorder: 'rgba(239, 68, 68, 0.2)',
+    blue: Palette.primary500,
   },
 
   // Interactive states

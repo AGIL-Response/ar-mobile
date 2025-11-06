@@ -109,15 +109,15 @@ export default function TaskDetailScreen() {
   const getTaskTypeColor = (type: Task['type']) => {
     switch (type) {
       case 'maintenance':
-        return theme.colors.primary; // Use primary instead of info
+        return theme.colors.semantic.success; // Use primary instead of info
       case 'emergency':
         return theme.colors.semantic.error;
       case 'inspection':
         return theme.colors.semantic.warning;
       case 'training':
-        return theme.colors.primary;
+        return theme.colors.semantic.blue;
       default:
-        return theme.colors.text.secondary;
+        return theme.colors.semantic.blue;
     }
   };
 
@@ -126,13 +126,13 @@ export default function TaskDetailScreen() {
       case 'critical':
         return theme.colors.semantic.error;
       case 'high':
-        return '#ff8800';
+        return theme.colors.semantic.warning;
       case 'medium':
         return theme.colors.semantic.warning;
       case 'low':
         return theme.colors.semantic.success;
       default:
-        return theme.colors.text.secondary;
+        return theme.colors.semantic.blue;
     }
   };
 
@@ -141,7 +141,7 @@ export default function TaskDetailScreen() {
       case 'completed':
         return theme.colors.semantic.success;
       case 'in_progress':
-        return theme.colors.primary; // Use primary instead of info
+        return theme.colors.semantic.blue; // Use primary instead of info
       case 'cancelled':
         return theme.colors.semantic.error;
       case 'pending':
