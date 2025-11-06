@@ -364,7 +364,7 @@ const createColors = (isDark: boolean) => ({
   surface: {
     card: isDark ? Palette.primary1000 : Palette.white,
     input: isDark ? Palette.primary1200 : Palette.white,
-    border: isDark ? Palette.blue1100 : Palette.gray300,
+    border: isDark ? Palette.blue1100 : Palette.primary600,
     divider: isDark ? Palette.dimGray : Palette.gray300,
     disabled: isDark ? Palette.charcoal800 : Palette.gray100,
   },

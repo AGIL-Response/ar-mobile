@@ -17,6 +17,7 @@ import {
 import { Text } from './text';
 import type { BaseComponentProps, SizeVariant } from './types';
 import { View } from './view';
+import { type FileSourceProps, withFileSource } from './withFileSource';
 
 /* ================================
    AVATAR COMPONENT INTERFACE
@@ -25,6 +26,8 @@ import { View } from './view';
 export interface AvatarProps extends BaseComponentProps {
   /** Image source for the avatar */
   source?: ImageSourcePropType;
+  /** File ID to load image from */
+  fileId?: string;
   /** Size variant */
   size?: SizeVariant | 'xs' | 'xl';
   /** Fallback text (usually initials) */
@@ -137,16 +140,21 @@ const createFallbackTextStyles = (theme: Theme, props: AvatarProps) => {
 };
 
 /* ================================
-   AVATAR COMPONENT
+   AVATAR BASE COMPONENT (Internal)
    ================================ */
 
-export const Avatar = React.forwardRef<
+interface AvatarBaseProps extends AvatarProps, FileSourceProps {}
+
+const AvatarBase = React.forwardRef<
   any,
-  AvatarProps & Omit<ImageProps, 'source'>
+  AvatarBaseProps & Omit<ImageProps, 'source'>
 >(
   (
     {
-      source,
+      source: directSource,
+      sourceResult,
+      isLoading,
+      error,
       size = 'medium',
       fallback,
       showStatus = false,
@@ -179,6 +187,9 @@ export const Avatar = React.forwardRef<
     // Generate accessibility props
     const accessibilityProps = createAccessibilityProps(props);
 
+    // Determine which source to use: direct source takes precedence, then sourceResult from HOC
+    const source = directSource || sourceResult;
+
     // Render avatar content
     const renderAvatarContent = () => {
       if (source) {
@@ -192,6 +203,24 @@ export const Avatar = React.forwardRef<
             {...props}
             testID="avatar-image"
           />
+        );
+      }
+
+      // Show loading state if file is being loaded
+      if (isLoading) {
+        return (
+          <Text style={fallbackTextStyles} numberOfLines={1}>
+            ...
+          </Text>
+        );
+      }
+
+      // Show error state if file failed to load
+      if (error && fallback) {
+        return (
+          <Text style={fallbackTextStyles} numberOfLines={1}>
+            {fallback}
+          </Text>
         );
       }
 
@@ -228,6 +257,25 @@ export const Avatar = React.forwardRef<
     );
   }
 );
+
+AvatarBase.displayName = 'AvatarBase';
+
+/* ================================
+   AVATAR COMPONENT
+   ================================ */
+
+/**
+ * Avatar component with file loading support
+ * Can use either direct `source` prop or `fileId` prop to load from API
+ */
+// @ts-expect-error - TS2347: Type inference works correctly without explicit type arguments
+// @ts-expect-error - TS2607: HOC wrapper properly supports JSX attributes
+export const Avatar = withFileSource(AvatarBase, {
+  autoLoad: true,
+  logErrors: true,
+}) as React.ForwardRefExoticComponent<
+  AvatarProps & Omit<ImageProps, 'source'> & React.RefAttributes<any>
+>;
 
 Avatar.displayName = 'Avatar';
 

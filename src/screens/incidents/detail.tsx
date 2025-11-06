@@ -13,7 +13,7 @@ import {
   AppBar,
   Button,
   Center,
-  FileViewer,
+  IncidentAttachment,
   Icon,
   iconNames,
   Text,
@@ -359,7 +359,7 @@ export default function IncidentDetailScreen() {
             </Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
               {incident.fileIds.map((fileId) => (
-                <FileViewer
+                <IncidentAttachment
                   key={fileId}
                   fileId={fileId}
                   size={100}

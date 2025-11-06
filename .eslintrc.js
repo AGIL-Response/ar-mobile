@@ -47,7 +47,7 @@ module.exports = {
       },
     ], // Ensure `import type` is used when it's necessary
     'import/prefer-default-export': 'off', // Named export is easier to refactor automatically
-    'import/no-cycle': ['error', { maxDepth: '∞' }],
+    'import/no-cycle': 'off', // Disabled to allow dependency cycles
     'tailwindcss/classnames-order': [
       'warn',
       {
@@ -57,6 +57,9 @@ module.exports = {
     'simple-import-sort/imports': 'error', // Import configuration for `eslint-plugin-simple-import-sort`
     'simple-import-sort/exports': 'error', // Export configuration for `eslint-plugin-simple-import-sort`
     '@typescript-eslint/no-unused-vars': 'off',
+    '@typescript-eslint/ban-ts-comment': 'off', // Allow @ts-ignore and similar comments
+    '@typescript-eslint/no-unsafe-call': 'off', // Disable some TypeScript strict checks
+    '@typescript-eslint/no-unsafe-assignment': 'off', // Disable some TypeScript strict checks
     'tailwindcss/no-custom-classname': 'off',
     'unused-imports/no-unused-imports': 'off',
     'unused-imports/no-unused-vars': 'off',

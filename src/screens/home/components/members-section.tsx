@@ -79,6 +79,7 @@ export function MembersSection(): React.JSX.Element {
                 size="medium"
                 fallback={getInitials(user)}
                 style={styles.avatar}
+                fileId={user.avatarId}
               />
             </View>
           </View>

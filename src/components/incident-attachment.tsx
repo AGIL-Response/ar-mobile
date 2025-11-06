@@ -1,65 +1,44 @@
 /**
- * FileViewer Component
- * Displays file attachments by fetching and rendering file content
+ * Incident Attachment Component
+ * Displays incident file attachments by fetching and rendering file content
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React from 'react';
 import { Alert, Image, TouchableOpacity } from 'react-native';
 
-import { blobToDataUri, filesApi } from '@/api/files';
 import { Icon, iconNames, Text, View } from '@/components';
 import { useTheme } from '@/theme';
 
-interface FileViewerProps {
+import { type FileSourceProps, withFileSource } from './withFileSource';
+
+interface IncidentAttachmentProps extends FileSourceProps {
   fileId: string;
   size?: number;
   onPress?: () => void;
 }
 
-export function FileViewer({ fileId, size = 100, onPress }: FileViewerProps) {
+interface IncidentAttachmentBaseProps extends IncidentAttachmentProps {
+  sourceResult?: FileSourceProps['sourceResult'];
+  isLoading?: FileSourceProps['isLoading'];
+  error?: FileSourceProps['error'];
+}
+
+const IncidentAttachmentBase = ({
+  fileId,
+  size = 100,
+  onPress,
+  sourceResult,
+  isLoading = false,
+  error = null,
+}: IncidentAttachmentBaseProps) => {
   const theme = useTheme();
-
-  const [fileDataUri, setFileDataUri] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Function to load file content
-  const loadFileContent = useCallback(async () => {
-    if (fileDataUri || isLoading) {
-      return; // Already loaded or loading
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      console.log('🚀 Loading file:', fileId);
-      
-      const blob = await filesApi.viewFile({ fileId });
-
-      const dataUri = await blobToDataUri(blob);
-      setFileDataUri(dataUri);
-      
-      console.log('✅ File loaded successfully:', fileId);
-    } catch (error) {
-      console.error('❌ Failed to load file:', fileId, error);
-      setError('Failed to load file');
-      Alert.alert('Error', 'Failed to load attachment');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [fileId, fileDataUri, isLoading]);
-
-  // Auto-load file when component mounts
-  useEffect(() => {
-    loadFileContent();
-  }, [loadFileContent]);
 
   const handlePress = () => {
     if (onPress) {
       onPress();
-    } else if (!fileDataUri && !isLoading && !error) {
-      loadFileContent();
+    } else if (error) {
+      // Show error alert if file failed to load
+      Alert.alert('Error', 'Failed to load attachment');
     }
   };
 
@@ -87,7 +66,7 @@ export function FileViewer({ fileId, size = 100, onPress }: FileViewerProps) {
           />
           <Text
             variant="caption"
-            style={{ 
+            style={{
               color: theme.colors.text.secondary,
               textAlign: 'center',
               fontSize: Math.min(10, size / 10),
@@ -105,7 +84,7 @@ export function FileViewer({ fileId, size = 100, onPress }: FileViewerProps) {
           />
           <Text
             variant="caption"
-            style={{ 
+            style={{
               color: theme.colors.semantic.error,
               textAlign: 'center',
               fontSize: Math.min(10, size / 10),
@@ -114,9 +93,9 @@ export function FileViewer({ fileId, size = 100, onPress }: FileViewerProps) {
             Error
           </Text>
         </View>
-      ) : fileDataUri ? (
+      ) : sourceResult ? (
         <Image
-          source={{ uri: fileDataUri }}
+          source={sourceResult}
           style={{ width: '100%', height: '100%' }}
           resizeMode="cover"
         />
@@ -129,7 +108,7 @@ export function FileViewer({ fileId, size = 100, onPress }: FileViewerProps) {
           />
           <Text
             variant="caption"
-            style={{ 
+            style={{
               color: theme.colors.text.secondary,
               textAlign: 'center',
               fontSize: Math.min(10, size / 10),
@@ -141,4 +120,18 @@ export function FileViewer({ fileId, size = 100, onPress }: FileViewerProps) {
       )}
     </TouchableOpacity>
   );
-}
+};
+
+IncidentAttachmentBase.displayName = 'IncidentAttachmentBase';
+
+/**
+ * IncidentAttachment component with file loading support via HOC
+ */
+export const IncidentAttachment = withFileSource(
+  IncidentAttachmentBase,
+  {
+    autoLoad: true,
+    logErrors: true,
+  }
+) as React.ComponentType<IncidentAttachmentProps>;
+
