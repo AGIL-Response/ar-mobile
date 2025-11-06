@@ -10,6 +10,8 @@ import type {
   GetTaskResponse,
   GetTasksResponse,
   TasksQueryParams,
+  UpdateChecklistItemRequest,
+  UpdateChecklistItemResponse,
   UpdateTaskRequest,
   UpdateTaskResponse,
 } from './types';
@@ -93,6 +95,25 @@ export const updateTask = async (
     return response.data;
   } catch (error) {
     console.error(`❌ Error: PUT /tasks/${taskId}`, error);
+    throw handleApiError(error);
+  }
+};
+
+/**
+ * Update a checklist item
+ */
+export const updateChecklistItem = async (
+  checklistId: string,
+  data: UpdateChecklistItemRequest
+): Promise<UpdateChecklistItemResponse> => {
+  try {
+    console.log(`🚀 Request: PATCH /checklists/${checklistId}`);
+    console.log(`📦 Request Body:`, data);
+    const response = await apiClient.patch(`/checklists/${checklistId}`, data);
+    console.log(`✅ Response: PATCH /checklists/${checklistId}`, response.data);
+    return response.data;
+  } catch (error) {
+    console.error(`❌ Error: PATCH /checklists/${checklistId}`, error);
     throw handleApiError(error);
   }
 };

@@ -122,7 +122,13 @@ export interface CreateTaskResponse {
   data: Task;
 }
 
-export interface UpdateTaskResponse {
+export interface UpdateChecklistItemRequest {
+  updatedAt: string;
+  description: string;
+  isCompleted: boolean;
+}
+
+export interface UpdateChecklistItemResponse {
   code: string;
-  data: Task;
+  data: ChecklistItem;
 }

@@ -14,6 +14,7 @@ import {
 import { Check, Minus } from './icons';
 import { ErrorText, Text } from './text';
 import type { BaseComponentProps } from './types';
+import { useTheme } from '@/theme';
 import { View } from './view';
 
 /* ================================
@@ -84,7 +85,7 @@ const createCheckboxBoxStyles = createStyleCreator<CheckboxProps>(
       indeterminate = false,
       disabled = false,
     } = props;
-    const { colors, borderRadius } = theme;
+    const { colors, borderRadius, isDark } = theme;
 
     // Size variants
     const sizeStyles = {
@@ -126,12 +127,13 @@ const createCheckboxBoxStyles = createStyleCreator<CheckboxProps>(
       },
     };
 
-    // Checked/indeterminate state overrides
+    // Checked/indeterminate state overrides - use theme-aware colors
+    const checkedBackgroundColor = isDark ? '#1984cc' : '#1068eb'; // primary500 for dark, primary for light
     const checkedStyles =
       checked || indeterminate
         ? {
-            backgroundColor: colors.primary,
-            borderColor: colors.primary,
+            backgroundColor: checkedBackgroundColor,
+            borderColor: checkedBackgroundColor,
           }
         : {};
 
@@ -171,11 +173,20 @@ const createCheckboxBoxStyles = createStyleCreator<CheckboxProps>(
 
 const createCheckboxIconStyles = createStyleCreator<CheckboxProps>(
   (theme, props) => {
-    const { disabled = false } = props;
+    const { disabled = false, checked = false, indeterminate = false } = props;
     const { colors } = theme;
 
+    // When checked/indeterminate, icon should be white (on colored background)
+    // When unchecked, no icon is shown, but if needed, use theme-aware color
+    if (disabled) {
+      return {
+        color: colors.text.muted,
+      };
+    }
+
+    // Always use white for checked/indeterminate icons (on colored background)
     return {
-      color: disabled ? colors.text.muted : colors.semantic.white,
+      color: colors.semantic.white,
     };
   }
 );
@@ -298,10 +309,16 @@ export const Checkbox = forwardRef<RNView, CheckboxProps>(
       disabled,
     });
 
+    const theme = useTheme();
     const iconStyles = useThemedStyles(createCheckboxIconStyles, {
       size,
       disabled,
+      checked,
+      indeterminate,
     });
+
+    // Extract color from iconStyles for SVG components
+    const iconColor = iconStyles.color || theme.colors.semantic.white;
 
     const contentStyles = useThemedStyles(createCheckboxContentStyles, {
       labelPosition,
@@ -347,11 +364,25 @@ export const Checkbox = forwardRef<RNView, CheckboxProps>(
       const iconSize = size === 'small' ? 12 : size === 'medium' ? 14 : 16;
 
       if (indeterminate) {
-        return <Minus width={iconSize} height={iconSize} style={iconStyles} />;
+        return (
+          <Minus
+            width={iconSize}
+            height={iconSize}
+            color={iconColor}
+            style={iconStyles}
+          />
+        );
       }
 
       if (checked) {
-        return <Check width={iconSize} height={iconSize} style={iconStyles} />;
+        return (
+          <Check
+            width={iconSize}
+            height={iconSize}
+            color={iconColor}
+            style={iconStyles}
+          />
+        );
       }
 
       return null;

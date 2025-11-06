@@ -13,6 +13,7 @@ import {
   AppBar,
   Button,
   Center,
+  Checkbox,
   Icon,
   iconNames,
   Text,
@@ -51,6 +52,14 @@ export default function TaskDetailScreen() {
     if (taskId) {
       await tasksState.actions.updateTaskStatus(taskId as string, status);
     }
+  };
+
+  const handleChecklistToggle = async (
+    checklistId: string,
+    isCompleted: boolean,
+    description: string
+  ) => {
+    await tasksState.actions.updateChecklistItem(checklistId, isCompleted, description);
   };
 
   const getTaskTypeIcon = (type: Task['type']) => {
@@ -395,6 +404,62 @@ export default function TaskDetailScreen() {
             />
           )}
         </View>
+
+        {/* Checklist Section */}
+        {task.checklist && task.checklist.length > 0 && (
+          <View
+            style={{
+              backgroundColor: theme.colors.surface.card,
+              marginHorizontal: 16,
+              marginTop: 16,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: theme.colors.surface.border,
+              overflow: 'hidden',
+            }}
+          >
+            <View
+              style={{
+                padding: 16,
+                borderBottomWidth: 1,
+                borderBottomColor: theme.colors.surface.border,
+              }}
+            >
+              <Text
+                variant="h3"
+                style={{
+                  color: theme.colors.text.primary,
+                }}
+              >
+                Checklist ({task.checklist.filter((item) => item.isCompleted).length}/
+                {task.checklist.length})
+              </Text>
+            </View>
+
+            {task.checklist.map((item, index) => (
+              <View
+                key={item.id}
+                style={{
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  borderBottomWidth:
+                    index < task.checklist.length - 1 ? 1 : 0,
+                  borderBottomColor: theme.colors.surface.border,
+                }}
+              >
+                <Checkbox
+                  label={item.description}
+                  checked={item.isCompleted}
+                  onCheckedChange={(checked) =>
+                    handleChecklistToggle(item.id, checked, item.description)
+                  }
+                  size="medium"
+                  containerStyle={{ marginBottom: 0 }}
+                />
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Action Buttons */}
         <View style={{ padding: 16, gap: 12 }}>

@@ -6,7 +6,8 @@
 import type { StateCreator } from 'zustand';
 
 import { taskApi } from '@/api';
-import type { Task, TasksQueryParams } from '@/api/tasks/types';
+import type { ChecklistItem, Task, TasksQueryParams } from '@/api/tasks/types';
+import { showErrorMessage } from '@/components/utils';
 import { TaskTab } from '@/screens/tasks/components/task-tab-selector';
 import type { IBaseState, InitStateType } from '@/stores/interfaces/IBaseState';
 import { createStore, resetStore } from '@/stores/utils';
@@ -29,6 +30,7 @@ export interface TasksState extends IBaseState {
     fetchTasks: (params?: TasksQueryParams) => Promise<void>;
     fetchTask: (taskId: string) => Promise<void>;
     updateTaskStatus: (taskId: string, status: Task['status']) => Promise<void>;
+    updateChecklistItem: (checklistId: string, isCompleted: boolean, description: string) => Promise<void>;
     setActiveTab: (tab: TaskTab) => void;
     clearSelectedTask: () => void;
     clearError: () => void;
@@ -137,6 +139,85 @@ const tasksStore: StateCreator<TasksState> = (set, get) => ({
         set((state: TasksState) => {
           state.error = error instanceof Error ? error.message : 'Failed to update task status';
         });
+      }
+    },
+
+    updateChecklistItem: async (checklistId: string, isCompleted: boolean, description: string) => {
+      // Store previous state for rollback (deep copy of checklist items)
+      const previousState = {
+        selectedTask: get().selectedTask
+          ? {
+              ...get().selectedTask,
+              checklist: get().selectedTask.checklist
+                ? get().selectedTask.checklist.map((item) => ({ ...item }))
+                : [],
+            }
+          : null,
+        tasks: get().tasks.map((task) => ({
+          ...task,
+          checklist: task.checklist
+            ? task.checklist.map((item) => ({ ...item }))
+            : [],
+        })),
+      };
+
+      // Optimistic update
+      set((state: TasksState) => {
+        const updatedAt = new Date().toISOString();
+        
+        // Update checklist item in selected task
+        if (state.selectedTask?.checklist) {
+          const itemIndex = state.selectedTask.checklist.findIndex(
+            (item) => item.id === checklistId
+          );
+          if (itemIndex !== -1) {
+            state.selectedTask.checklist[itemIndex].isCompleted = isCompleted;
+            state.selectedTask.checklist[itemIndex].updatedAt = updatedAt;
+          }
+        }
+        
+        // Update checklist item in task list
+        state.tasks.forEach((task) => {
+          if (task.checklist) {
+            const itemIndex = task.checklist.findIndex(
+              (item) => item.id === checklistId
+            );
+            if (itemIndex !== -1) {
+              task.checklist[itemIndex].isCompleted = isCompleted;
+              task.checklist[itemIndex].updatedAt = updatedAt;
+            }
+          }
+        });
+      });
+
+      try {
+        const updatedAt = new Date().toISOString();
+        await taskApi.updateChecklistItem(checklistId, {
+          updatedAt,
+          description,
+          isCompleted,
+        });
+
+        // Refetch task to ensure data is in sync with server
+        const currentTask = get().selectedTask;
+        if (currentTask?.id) {
+          await get().actions.fetchTask(currentTask.id);
+        }
+      } catch (error: unknown) {
+        // Rollback to previous state
+        set((state: TasksState) => {
+          if (previousState.selectedTask) {
+            state.selectedTask = previousState.selectedTask;
+          }
+          state.tasks = previousState.tasks;
+        });
+
+        // Show error toast
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : 'Failed to update checklist item';
+        showErrorMessage(errorMessage);
       }
     },
 
