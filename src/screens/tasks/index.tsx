@@ -123,22 +123,6 @@ export default function TasksScreen() {
       );
     }
 
-    if (tasksState.error) {
-      return (
-        <Center style={{ flex: 1 }}>
-          <Text
-            variant="body"
-            style={{
-              color: theme.colors.semantic.error,
-              textAlign: 'center',
-            }}
-          >
-            {tasksState.error}
-          </Text>
-        </Center>
-      );
-    }
-
     const allTasks = tasksState.tasks;
     const pendingTasks = allTasks.filter(
       (task) => !task.status || task.status !== 'completed'

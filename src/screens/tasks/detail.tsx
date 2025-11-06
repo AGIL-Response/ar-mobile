@@ -16,22 +16,34 @@ import {
   Checkbox,
   Icon,
   iconNames,
+  Modal,
+  Select,
   Text,
+  useModal,
   View,
 } from '@/components';
 import { useAuthStore } from '@/stores/auth';
 import { useTasksStore } from '@/stores/tasks';
 import { useTheme } from '@/theme';
 
+const statusOptions = [
+  { label: 'Pending', value: 'pending' },
+  { label: 'In Progress', value: 'in_progress' },
+  { label: 'Completed', value: 'completed' },
+  { label: 'Cancelled', value: 'cancelled' },
+];
+
 export default function TaskDetailScreen() {
   const theme = useTheme();
   const { id } = useLocalSearchParams();
   const authState = useAuthStore();
   const tasksState = useTasksStore();
+  const { ref: statusModalRef, present: presentStatusModal, dismiss: dismissStatusModal } = useModal();
 
   const selectedTenant = authState.selectedTenant;
   const task = tasksState.selectedTask;
   const taskId = id as string;
+  const [selectedStatus, setSelectedStatus] = React.useState<Task['status'] | ''>('');
 
   useEffect(() => {
     if (taskId) {
@@ -60,6 +72,18 @@ export default function TaskDetailScreen() {
     description: string
   ) => {
     await tasksState.actions.updateChecklistItem(checklistId, isCompleted, description);
+  };
+
+  const handleOpenStatusModal = () => {
+    setSelectedStatus(task?.status || '');
+    presentStatusModal();
+  };
+
+  const handleStatusChange = async () => {
+    if (selectedStatus && taskId) {
+      await tasksState.actions.updateTaskStatus(taskId, selectedStatus as Task['status']);
+      dismissStatusModal();
+    }
   };
 
   const getTaskTypeIcon = (type: Task['type']) => {
@@ -205,43 +229,6 @@ export default function TaskDetailScreen() {
           >
             Loading task details...
           </Text>
-        </Center>
-      </Background>
-    );
-  }
-
-  if (tasksState.error) {
-    return (
-      <Background>
-        <AppBar
-          title="Task Details"
-          showBackButton
-          onBackPress={handleBackPress}
-        />
-        <Center style={{ flex: 1 }}>
-          <Text
-            variant="body"
-            style={{
-              color: theme.colors.semantic.error,
-              textAlign: 'center',
-            }}
-          >
-            {tasksState.error}
-          </Text>
-          <Button
-            title="Retry"
-            variant="outline"
-            size="medium"
-            onPress={() => {
-              if (selectedTenant?.id && taskId) {
-                tasksState.actions.fetchTask(
-                  selectedTenant.id,
-                  taskId as string
-                );
-              }
-            }}
-            style={{ marginTop: 16 }}
-          />
         </Center>
       </Background>
     );
@@ -455,28 +442,41 @@ export default function TaskDetailScreen() {
 
         {/* Action Buttons */}
         <View style={{ padding: 16, gap: 12 }}>
-          {canMarkComplete && (
-            <Button
-              title="Mark as Completed"
-              variant="solid"
-              size="medium"
-              onPress={() => handleStatusUpdate('completed')}
-              style={{
-                backgroundColor: theme.colors.semantic.success,
-              }}
-            />
-          )}
-
-          {canMarkPending && (
-            <Button
-              title="Mark as Pending"
-              variant="outline"
-              size="medium"
-              onPress={() => handleStatusUpdate('pending')}
-            />
-          )}
+          <Button
+            title="Change Status"
+            variant="solid"
+            size="medium"
+            onPress={handleOpenStatusModal}
+            style={{
+              backgroundColor: theme.colors.primary,
+            }}
+          />
         </View>
       </ScrollView>
+
+      {/* Status Change Modal */}
+      <Modal
+        ref={statusModalRef}
+        snapPoints={['40%']}
+        title="Change Status"
+      >
+        <View style={{ padding: 16, gap: 16 }}>
+          <Select
+            placeholder="Select Status"
+            value={selectedStatus}
+            onValueChange={(value) => setSelectedStatus(value as Task['status'])}
+            options={statusOptions}
+          />
+
+          <Button
+            title="Update Status"
+            variant="solid"
+            size="medium"
+            onPress={handleStatusChange}
+            disabled={!selectedStatus || selectedStatus === task?.status}
+          />
+        </View>
+      </Modal>
     </Background>
   );
 }

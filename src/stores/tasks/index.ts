@@ -117,17 +117,45 @@ const tasksStore: StateCreator<TasksState> = (set, get) => ({
     },
 
     updateTaskStatus: async (taskId: string, status: Task['status']) => {
+      // Find the task to get its current data
+      const currentState = get();
+      let currentTask: Task | null = null;
+      
+      // Try to find in selected task first
+      if (currentState.selectedTask?.id === taskId) {
+        currentTask = currentState.selectedTask;
+      } else {
+        // Search in tasks list
+        currentTask = currentState.tasks.find((task) => task.id === taskId) || null;
+      }
+
+      if (!currentTask) {
+        showErrorMessage('Task not found');
+        return;
+      }
+
       try {
-        await taskApi.updateTask(taskId, { status });
+        // Send all existing data, only change status
+        await taskApi.updateTask(taskId, {
+          updatedAt: currentTask.updatedAt || new Date().toISOString(),
+          name: currentTask.name,
+          description: currentTask.description,
+          type: currentTask.type,
+          priority: currentTask.priority,
+          status, // Only this changes
+          startTime: currentTask.startTime,
+          deadline: currentTask.deadline,
+          incidentId: currentTask.incidentId || undefined,
+        });
         
         set((state: TasksState) => {
-          // Update task in list
+          // Update task in list - only change status, keep other data
           const taskIndex = state.tasks.findIndex((task) => task.id === taskId);
           if (taskIndex !== -1) {
             state.tasks[taskIndex].status = status;
           }
           
-          // Update selected task if it's the same one
+          // Update selected task if it's the same one - only change status
           if (state.selectedTask?.id === taskId) {
             state.selectedTask.status = status;
           }
@@ -136,13 +164,43 @@ const tasksStore: StateCreator<TasksState> = (set, get) => ({
         // Update computed properties
         get()._updateComputedProperties();
       } catch (error: unknown) {
-        set((state: TasksState) => {
-          state.error = error instanceof Error ? error.message : 'Failed to update task status';
-        });
+        // Show error toast instead of setting error state
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : 'Failed to update task status';
+        showErrorMessage(errorMessage);
       }
     },
 
     updateChecklistItem: async (checklistId: string, isCompleted: boolean, description: string) => {
+      // Find the checklist item to get its current updatedAt value
+      let currentUpdatedAt: string | null = null;
+      const currentState = get();
+      
+      // Try to find the item in selected task first
+      if (currentState.selectedTask?.checklist) {
+        const item = currentState.selectedTask.checklist.find(
+          (item) => item.id === checklistId
+        );
+        if (item) {
+          currentUpdatedAt = item.updatedAt;
+        }
+      }
+      
+      // If not found, search in tasks list
+      if (!currentUpdatedAt) {
+        for (const task of currentState.tasks) {
+          if (task.checklist) {
+            const item = task.checklist.find((item) => item.id === checklistId);
+            if (item) {
+              currentUpdatedAt = item.updatedAt;
+              break;
+            }
+          }
+        }
+      }
+
       // Store previous state for rollback (deep copy of checklist items)
       const previousState = {
         selectedTask: get().selectedTask
@@ -161,10 +219,8 @@ const tasksStore: StateCreator<TasksState> = (set, get) => ({
         })),
       };
 
-      // Optimistic update
+      // Optimistic update - only change isCompleted, keep other data
       set((state: TasksState) => {
-        const updatedAt = new Date().toISOString();
-        
         // Update checklist item in selected task
         if (state.selectedTask?.checklist) {
           const itemIndex = state.selectedTask.checklist.findIndex(
@@ -172,7 +228,6 @@ const tasksStore: StateCreator<TasksState> = (set, get) => ({
           );
           if (itemIndex !== -1) {
             state.selectedTask.checklist[itemIndex].isCompleted = isCompleted;
-            state.selectedTask.checklist[itemIndex].updatedAt = updatedAt;
           }
         }
         
@@ -184,16 +239,14 @@ const tasksStore: StateCreator<TasksState> = (set, get) => ({
             );
             if (itemIndex !== -1) {
               task.checklist[itemIndex].isCompleted = isCompleted;
-              task.checklist[itemIndex].updatedAt = updatedAt;
             }
           }
         });
       });
 
       try {
-        const updatedAt = new Date().toISOString();
         await taskApi.updateChecklistItem(checklistId, {
-          updatedAt,
+          updatedAt: currentUpdatedAt || new Date().toISOString(),
           description,
           isCompleted,
         });

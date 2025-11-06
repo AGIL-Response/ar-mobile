@@ -88,13 +88,13 @@ export const updateTask = async (
   data: UpdateTaskRequest
 ): Promise<UpdateTaskResponse> => {
   try {
-    console.log(`🚀 Request: PUT /tasks/${taskId}`);
+    console.log(`🚀 Request: PATCH /tasks/${taskId}`);
     console.log(`📦 Request Body:`, data);
-    const response = await apiClient.put(`/tasks/${taskId}`, data);
-    console.log(`✅ Response: PUT /tasks/${taskId}`, response.data);
+    const response = await apiClient.patch(`/tasks/${taskId}`, data);
+    console.log(`✅ Response: PATCH /tasks/${taskId}`, response.data);
     return response.data;
   } catch (error) {
-    console.error(`❌ Error: PUT /tasks/${taskId}`, error);
+    console.error(`❌ Error: PATCH /tasks/${taskId}`, error);
     throw handleApiError(error);
   }
 };

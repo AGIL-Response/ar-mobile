@@ -66,6 +66,7 @@ export interface Task {
   deletedBy: string | null;
   assigneeId: string;
   teamId: string;
+  incidentId: string | null;
   checklist: ChecklistItem[];
   assignee: TaskAssignee;
   fileIds: string[];
@@ -108,6 +109,7 @@ export interface CreateTaskRequest {
 }
 
 export interface UpdateTaskRequest {
+  updatedAt?: string;
   name?: string;
   description?: string;
   type?: TaskType;
@@ -115,6 +117,11 @@ export interface UpdateTaskRequest {
   status?: TaskStatus;
   startTime?: string;
   deadline?: string;
+  incidentId?: string;
+  location?: {
+    type: string;
+    coordinates: number[][][];
+  };
 }
 
 export interface CreateTaskResponse {
