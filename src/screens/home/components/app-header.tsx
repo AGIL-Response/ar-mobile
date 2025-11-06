@@ -3,22 +3,22 @@
  * Pixel-perfect implementation matching Figma design
  */
 
-import images from '@assets/images';
 import React from 'react';
-import { Image, ImageBackground } from 'react-native';
 
 import { Icon, iconNames, Text, View } from '@/components';
-import { Palette, useTheme } from '@/theme';
+import { useTheme } from '@/theme';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export function AppHeader({ title }) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <View
       style={{
-        height: 56,
         paddingHorizontal: 16,
-        paddingVertical: 8,
+        paddingTop: insets.top + 8,
+        paddingBottom: 12,
         width: '100%',
         gap: 8,
         alignItems: 'center',

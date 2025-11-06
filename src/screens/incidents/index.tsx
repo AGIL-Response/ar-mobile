@@ -5,16 +5,17 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { FlatList, RefreshControl, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from 'expo-router';
 
 import { IncidentListCard } from './components';
-import { AppBar, Icon, Text, View, iconNames } from '@/components';
+import { AppBar, Icon, Text, View, iconNames, Background } from '@/components';
 import { useAuthStore } from '@/stores/auth';
 import { useIncidentsStore } from '@/stores/incidents';
 import { useUsersStore } from '@/stores/users';
 import { Palette, useTheme } from '@/theme';
 import type { Incident } from '@/api/incidents/types';
+import { AppHeader } from "@/screens/home/components/app-header";
 
 export default function IncidentsScreen() {
   const theme = useTheme();
@@ -22,6 +23,7 @@ export default function IncidentsScreen() {
   const authState = useAuthStore();
   const incidentsState = useIncidentsStore();
   const usersState = useUsersStore();
+  const insets = useSafeAreaInsets();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -100,63 +102,11 @@ export default function IncidentsScreen() {
   );
 
   return (
-    <SafeAreaView
-      edges={['top']}
-      style={{
-        flex: 1,
-        backgroundColor: theme.colors.background.secondary,
-      }}
-    >
-      <View
-        style={{
-          paddingHorizontal: 16,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <Text
-          variant="h3"
-          style={{
-            color: theme.colors.text.primary,
-            fontFamily: theme.fonts.goldmanRegular,
-            backgroundColor: theme.colors.background.secondary,
-          }}
-        >
-          Incidents
-        </Text>
-        <View
-          style={{
-            gap: 8,
-            alignItems: 'center',
-            flexDirection: 'row',
-          }}
-        >
-          {/* Search Icon */}
-          <View
-            style={{
-              width: 32,
-              justifyContent: 'center',
-              alignItems: 'center',
-              borderRadius: 100,
-              height: 32,
-              overflow: 'hidden',
-              backgroundColor: theme.colors.background.overlay,
-            }}
-          >
-            <Icon
-              name={iconNames.search}
-              size={16}
-              color={theme.colors.text.icon}
-            />
-          </View>
-        </View>
-      </View>
+    <Background>
+      <AppHeader title={"Incidents"}/>
 
       {/* Content */}
-      <View
-        style={{ flex: 1, backgroundColor: theme.colors.background.primary }}
-      >
+      <View style={{ flex: 1 }}>
         {incidentsState.isLoading && incidentsState.incidents.length === 0 ? (
           <View
             style={{
@@ -198,6 +148,6 @@ export default function IncidentsScreen() {
           />
         )}
       </View>
-    </SafeAreaView>
+    </Background>
   );
 }

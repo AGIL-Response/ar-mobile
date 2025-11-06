@@ -4,9 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { Screen, View } from '@/components';
+import { Background, View } from "@/components";
 import useAuthStore from '@/stores/auth';
 import { useTheme } from '@/theme';
 
@@ -28,28 +26,23 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView
-      edges={['top']}
-      style={{ flex: 1, backgroundColor: theme.colors.background.secondary }}
-    >
-      <Screen>
-        {/* App Bar */}
-        <AppHeader title={selectedTeam?.name || ''} />
+    <Background>
+      {/* App Bar */}
+      <AppHeader title={selectedTeam?.name || ''} />
 
-        {/* Tab Selector */}
-        <TabSelector activeTab={activeTab} onTabChange={handleTabChange} />
+      {/* Tab Selector */}
+      <TabSelector activeTab={activeTab} onTabChange={handleTabChange} />
 
-        {/* Location Status */}
-        <LocationStatus />
+      {/* Location Status */}
+      <LocationStatus />
 
-        {/* Content - ViewPager */}
-        <View style={{ flex: 1 }}>
-          {activeTab === 'flat' ? <FlatView /> : <MapView />}
-        </View>
+      {/* Content - ViewPager */}
+      <View style={{ flex: 1 }}>
+        {activeTab === 'flat' ? <FlatView /> : <MapView />}
+      </View>
 
-        {/* Floating Action Button */}
-        <FloatingActionButton />
-      </Screen>
-    </SafeAreaView>
+      {/* Floating Action Button */}
+      <FloatingActionButton />
+    </Background>
   );
 }
