@@ -9,6 +9,7 @@ import {
 
 import { AppBar, Avatar, Background, Icon, Text, View } from '@/components';
 import { NetworkSignalIcon } from '@/components/network-signal-icon';
+import { BatteryIcon } from '@/components/battery-icon';
 import icons, { iconNames } from '@assets/icons';
 import { useAuthStore } from '@/stores/auth';
 import { useUsersStore } from '@/stores/users';
@@ -113,10 +114,10 @@ export function MembersScreen(): React.JSX.Element {
                     size={18}
                     color={theme.colors.text.icon}
                   />
-                  <Icon
-                    name={iconNames.battery}
+                  <BatteryIcon
+                    batteryPercentage={user.attributes?.batteryPercentage}
                     size={28}
-                    color={theme.colors.text.icon}
+                    outlineColor={theme.colors.text.icon}
                   />
                 </View>
                 <View style={styles.actionsRow}>

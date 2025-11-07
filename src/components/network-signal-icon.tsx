@@ -20,8 +20,13 @@ interface NetworkSignalIconProps extends SvgProps {
 /**
  * Get the number of signal bars to display based on network speed
  */
-const getSignalBars = (networkMbps?: number): number => {
-  if (networkMbps === undefined || networkMbps === null || networkMbps === 0) {
+const getSignalBars = (networkMbps?: number): number | null => {
+  // Hide icon if undefined or null
+  if (networkMbps === undefined || networkMbps === null) {
+    return null;
+  }
+
+  if (networkMbps === 0) {
     return 0; // No signal - show X icon
   }
 
@@ -64,7 +69,12 @@ export function NetworkSignalIcon({
 }: NetworkSignalIconProps) {
   const bars = getSignalBars(networkMbps);
 
-  // Show X icon when no signal
+  // Hide icon if undefined or null
+  if (bars === null) {
+    return null;
+  }
+
+  // Show X icon when no signal (0)
   if (bars === 0) {
     return <X color={color} width={size} height={size} {...props} />;
   }
