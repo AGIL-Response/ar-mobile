@@ -13,6 +13,10 @@ export type User = {
     type: string;
     coordinates: number[];
   };
+  attributes?: {
+    networkMbps?: number;
+    batteryPercentage?: number;
+  };
 };
 
 export type Role = {

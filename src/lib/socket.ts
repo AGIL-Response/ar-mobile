@@ -16,12 +16,20 @@ export interface SocketLocationPayload {
 
 export interface SocketLocationUpdateEvent {
   event: string;
-  properties: {
-    entityId: string;
-  };
-  geometry: {
-    coordinates: [number, number, number];
-  };
+  type: string;
+  features: Array<{
+    type: string;
+    geometry: {
+      coordinates: [number, number, number];
+    };
+    properties: {
+      entityId: string;
+      attributes?: {
+        networkMbps?: number;
+        batteryPercentage?: number;
+      };
+    };
+  }>;
 }
 
 /**

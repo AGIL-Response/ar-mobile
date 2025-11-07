@@ -14,6 +14,7 @@ import {
   type SocketLocationUpdateEvent 
 } from '@/lib/socket';
 import { useDeviceInfoStore } from '@/stores/device-info';
+import { useUsersStore } from '@/stores/users';
 
 export interface LocationState extends IBaseState {
   // Location data
@@ -287,7 +288,32 @@ const locationStore = (set: any, get: any) => ({
         
         handleListenMapSocket(socket, (event: SocketLocationUpdateEvent) => {
           console.log('📩 Received location update from other user:', event);
-          // Handle location updates from other users if needed
+          
+          // Update users in users store when location updates are received
+          if (event.features && Array.isArray(event.features)) {
+            event.features.forEach((feature) => {
+              const userId = feature.properties?.entityId;
+              const coordinates = feature.geometry?.coordinates;
+              const attributes = feature.properties?.attributes;
+              
+              if (userId && coordinates) {
+                const usersStore = useUsersStore.getState();
+                usersStore.actions.updateUserLocation(
+                  userId,
+                  {
+                    type: 'Point',
+                    coordinates: coordinates,
+                  },
+                  attributes
+                );
+                
+                console.log(`✅ Updated location for user ${userId}:`, {
+                  coordinates,
+                  attributes,
+                });
+              }
+            });
+          }
         });
 
         set((state: LocationState) => {

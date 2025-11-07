@@ -15,6 +15,7 @@ export interface UsersState extends IBaseState {
     fetchUsers: (tenantId: string, params?: UsersQueryParams) => Promise<void>;
     fetchTeamMembers: (teamId: string) => Promise<void>;
     fetchUserRoles: (userId: string, tenantId: string) => Promise<void>;
+    updateUserLocation: (userId: string, location: { type: string; coordinates: number[] }, attributes?: { networkMbps?: number; batteryPercentage?: number }) => void;
     setSearchQuery: (query: string) => void;
     reset: () => void;
   };
@@ -87,6 +88,21 @@ const usersStore = (set: any, get: any) => ({
           state.error = error instanceof Error ? error.message : 'Failed to fetch user roles';
         });
       }
+    },
+
+    updateUserLocation: (userId: string, location: { type: string; coordinates: number[] }, attributes?: { networkMbps?: number; batteryPercentage?: number }) => {
+      set((state: UsersState) => {
+        const userIndex = state.users.findIndex(user => user.id === userId);
+        if (userIndex !== -1) {
+          // Update location
+          state.users[userIndex].location = location;
+          
+          // Update attributes if provided
+          if (attributes) {
+            state.users[userIndex].attributes = attributes;
+          }
+        }
+      });
     },
 
     setSearchQuery: (query: string) => {

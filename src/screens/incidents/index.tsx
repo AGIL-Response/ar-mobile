@@ -29,10 +29,7 @@ export default function IncidentsScreen() {
 
   useEffect(() => {
     // Fetch incidents with default parameters
-    incidentsState.actions.fetchIncidents({
-      type: 'fire',
-      status: 'reported',
-    });
+    incidentsState.actions.fetchIncidents({});
 
     // Fetch team members if we have a selected team
     const teamId = authState.selectedTeam?.id;
