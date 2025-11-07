@@ -152,6 +152,12 @@ export const sendLocationToSocket = (
     if (batteryPercentage !== undefined && batteryPercentage !== null) {
       payload.attributes.batteryPercentage = batteryPercentage;
     }
+    
+    // Log what we're including
+    console.log('🔍 Attributes being added:', {
+      networkMbps: networkMbps !== undefined && networkMbps !== null ? networkMbps : 'null/undefined',
+      batteryPercentage: batteryPercentage !== undefined && batteryPercentage !== null ? batteryPercentage : 'null/undefined',
+    });
   }
 
   console.log('📤 Sending location to WebSocket:', JSON.stringify(payload, null, 2));

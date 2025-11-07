@@ -30,6 +30,7 @@ export interface LocationState extends IBaseState {
   // Monitoring state
   isMonitoring: boolean;
   monitoringInterval: NodeJS.Timeout | null;
+  locationUpdateIntervalMs: number; // Interval time in milliseconds
   
   // Error handling
   error: string | null;
@@ -44,6 +45,7 @@ export interface LocationState extends IBaseState {
     getCurrentLocation: () => Promise<void>;
     startLocationMonitoring: () => Promise<void>;
     stopLocationMonitoring: () => void;
+    setLocationUpdateIntervalMs: (intervalMs: number) => void;
     
     // WebSocket management
     connectToWebSocket: (accessToken: string) => void;
@@ -67,6 +69,7 @@ const initialState: InitStateType<LocationState> = {
   isSocketConnected: false,
   isMonitoring: false,
   monitoringInterval: null,
+  locationUpdateIntervalMs: 10000, // 10 seconds default
   error: null,
   isLoading: false,
 };
@@ -211,6 +214,7 @@ const locationStore = (set: any, get: any) => ({
       await get().actions.getCurrentLocation();
 
       // Start monitoring interval
+      const currentState = get() as LocationState;
       const interval = setInterval(async () => {
         await get().actions.getCurrentLocation();
         
@@ -225,13 +229,15 @@ const locationStore = (set: any, get: any) => ({
           networkSpeed: deviceInfoState.networkSpeed,
           batteryPercentage: deviceInfoState.batteryPercentage,
           isCheckingNetworkSpeed: deviceInfoState.isCheckingNetworkSpeed,
+          isCheckingBattery: deviceInfoState.isCheckingBattery,
+          batteryError: deviceInfoState.batteryError,
         });
         console.log('📍 Sending with:', { networkSpeed, batteryPercentage });
         
         // Pass null values directly (not undefined) so attributes object is created
         // This ensures attributes are included even if values are null initially
         get().actions.sendLocationUpdate(networkSpeed, batteryPercentage);
-      }, 10000); // Send location every 10 seconds
+      }, currentState.locationUpdateIntervalMs); // Use interval from state
 
       set((state: LocationState) => {
         state.isMonitoring = true;
@@ -254,6 +260,18 @@ const locationStore = (set: any, get: any) => ({
       });
 
       console.log('📍 Location monitoring stopped');
+    },
+
+    setLocationUpdateIntervalMs: (intervalMs: number): void => {
+      set((state: LocationState) => {
+        state.locationUpdateIntervalMs = intervalMs;
+      });
+      // Restart monitoring with new interval if already running
+      const currentState = get() as LocationState;
+      if (currentState.isMonitoring && currentState.monitoringInterval) {
+        get().actions.stopLocationMonitoring();
+        get().actions.startLocationMonitoring();
+      }
     },
 
     connectToWebSocket: (accessToken: string): void => {

@@ -1,6 +1,4 @@
 // Unmock the hook to test the real implementation (must be before imports)
-jest.unmock('@/lib/hooks/use-location');
-
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import * as Location from 'expo-location';
 

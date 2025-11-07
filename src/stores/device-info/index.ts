@@ -30,11 +30,15 @@ export interface DeviceInfoState extends IBaseState {
   networkSpeedInterval: NodeJS.Timeout | null;
   checkNetworkSpeedCallback: (() => void) | null; // Callback to trigger network speed check
   
+  // Battery config
+  batteryIntervalMs: number; // Interval time in milliseconds
+  
   // Battery
   batteryPercentage: number | null;
   isCharging: boolean;
   isCheckingBattery: boolean;
   batteryError: string | null;
+  batteryInterval: NodeJS.Timeout | null;
   batteryLevelSubscription: any;
   batteryStateSubscription: any;
 
@@ -51,6 +55,7 @@ export interface DeviceInfoState extends IBaseState {
     startNetworkSpeedMonitoring: () => void;
     stopNetworkSpeedMonitoring: () => void;
     checkBattery: () => Promise<void>;
+    setBatteryIntervalMs: (intervalMs: number) => void;
     startBatteryMonitoring: () => void;
     stopBatteryMonitoring: () => void;
     clearError: () => void;
@@ -73,10 +78,12 @@ const initialState: InitStateType<DeviceInfoState> = {
   networkSpeedError: null,
   networkSpeedInterval: null,
   checkNetworkSpeedCallback: null,
+  batteryIntervalMs: 30000, // 30 seconds default
   batteryPercentage: null,
   isCharging: false,
   isCheckingBattery: false,
   batteryError: null,
+  batteryInterval: null,
   batteryLevelSubscription: null,
   batteryStateSubscription: null,
   isLoading: false,
@@ -190,18 +197,29 @@ const deviceInfoStore: StateCreator<DeviceInfoState> = (set, get) => ({
 
       try {
         const batteryLevel = await Battery.getBatteryLevelAsync();
-        const isCharging = await Battery.isChargingAsync();
+        const batteryState = await Battery.getBatteryStateAsync();
+        const isCharging = batteryState === Battery.BatteryState.CHARGING;
+
+        const batteryPercent = batteryLevel * 100; // Convert to percentage
+        
+        console.log('🔋 Battery check result:', {
+          batteryLevel,
+          batteryPercent,
+          batteryState,
+          isCharging,
+        });
 
         set((state: DeviceInfoState) => {
-          state.batteryPercentage = batteryLevel * 100; // Convert to percentage
+          state.batteryPercentage = batteryPercent;
           state.isCharging = isCharging;
           state.isCheckingBattery = false;
-          console.log('✅ Battery updated:', {
+          console.log('✅ Battery updated in store:', {
             percentage: state.batteryPercentage,
             isCharging: state.isCharging,
           });
         });
       } catch (error) {
+        console.error('❌ Battery check error:', error);
         set((state: DeviceInfoState) => {
           state.isCheckingBattery = false;
           state.batteryError = error instanceof Error ? error.message : 'Failed to check battery';
@@ -209,8 +227,25 @@ const deviceInfoStore: StateCreator<DeviceInfoState> = (set, get) => ({
       }
     },
 
+    setBatteryIntervalMs: (intervalMs: number) => {
+      set((state: DeviceInfoState) => {
+        state.batteryIntervalMs = intervalMs;
+      });
+      // Restart monitoring with new interval if already running
+      const currentState = get() as DeviceInfoState;
+      if (currentState.batteryInterval) {
+        get().actions.stopBatteryMonitoring();
+        get().actions.startBatteryMonitoring();
+      }
+    },
+
     startBatteryMonitoring: () => {
       const state = get() as DeviceInfoState;
+      
+      // Clear existing interval if any
+      if (state.batteryInterval) {
+        clearInterval(state.batteryInterval);
+      }
       
       // Clear existing listeners if any
       if (state.batteryLevelSubscription) {
@@ -223,7 +258,12 @@ const deviceInfoStore: StateCreator<DeviceInfoState> = (set, get) => ({
       // Check immediately
       get().actions.checkBattery();
 
-      // Set up listeners for battery changes
+      // Set up interval to check battery periodically
+      const interval = setInterval(() => {
+        get().actions.checkBattery();
+      }, state.batteryIntervalMs);
+
+      // Set up listeners for battery changes (as backup/real-time updates)
       const batteryLevelSubscription = Battery.addBatteryLevelListener(({ batteryLevel }) => {
         set((state: DeviceInfoState) => {
           state.batteryPercentage = batteryLevel * 100;
@@ -238,6 +278,7 @@ const deviceInfoStore: StateCreator<DeviceInfoState> = (set, get) => ({
       });
 
       set((state: DeviceInfoState) => {
+        state.batteryInterval = interval;
         state.batteryLevelSubscription = batteryLevelSubscription;
         state.batteryStateSubscription = batteryStateSubscription;
       });
@@ -246,6 +287,15 @@ const deviceInfoStore: StateCreator<DeviceInfoState> = (set, get) => ({
     stopBatteryMonitoring: () => {
       const state = get() as DeviceInfoState;
       
+      // Clear interval
+      if (state.batteryInterval) {
+        clearInterval(state.batteryInterval);
+        set((state: DeviceInfoState) => {
+          state.batteryInterval = null;
+        });
+      }
+      
+      // Clear listeners
       if (state.batteryLevelSubscription) {
         state.batteryLevelSubscription.remove();
         set((state: DeviceInfoState) => {
