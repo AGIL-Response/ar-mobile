@@ -358,16 +358,16 @@ export default function IncidentDetailScreen() {
           </View>
         )}
 
-        {/* Action Buttons */}
-        <View style={{ padding: 16, gap: 12 }}>
-          <Button
-            title="Resolve Incident"
-            variant="outline"
-            size="medium"
-            colorVariant="secondary"
-            onPress={handleAction}
-          />
-        </View>
+        {/*/!* Action Buttons *!/*/}
+        {/*<View style={{ padding: 16, gap: 12 }}>*/}
+        {/*  <Button*/}
+        {/*    title="Resolve Incident"*/}
+        {/*    variant="outline"*/}
+        {/*    size="medium"*/}
+        {/*    colorVariant="secondary"*/}
+        {/*    onPress={handleAction}*/}
+        {/*  />*/}
+        {/*</View>*/}
       </ScrollView>
     </Background>
   );

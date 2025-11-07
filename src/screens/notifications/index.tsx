@@ -3,7 +3,7 @@
  * Display user notifications and alerts
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -36,6 +36,11 @@ export default function NotificationsScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const { notifications, isLoading, error, actions } = notificationsState;
+
+  // Reverse notifications to show latest first
+  const reversedNotifications = useMemo(() => {
+    return [...notifications].reverse();
+  }, [notifications]);
 
   // Format timestamp for display
   const formatTimestamp = (timestamp: string) => {
@@ -321,9 +326,9 @@ export default function NotificationsScreen() {
       <AppHeader title={'Notifications'} />
 
       {/* Notifications List */}
-      {notifications.length > 0 ? (
+      {reversedNotifications.length > 0 ? (
         <FlatList
-          data={notifications}
+          data={reversedNotifications}
           keyExtractor={(item) => item.notificationId}
           renderItem={renderNotificationItem}
           refreshControl={
@@ -369,34 +374,34 @@ export default function NotificationsScreen() {
         </Center>
       )}
 
-      {/* Unread Count Badge (if any) */}
-      {unreadCount > 0 && (
-        <View
-          style={{
-            position: 'absolute',
-            top: 60,
-            right: 16,
-            backgroundColor: theme.colors.semantic.error,
-            borderRadius: 12,
-            minWidth: 24,
-            height: 24,
-            justifyContent: 'center',
-            alignItems: 'center',
-            paddingHorizontal: 8,
-          }}
-        >
-          <Text
-            variant="caption"
-            style={{
-              color: 'white',
-              fontWeight: '600',
-              fontSize: 12,
-            }}
-          >
-            {unreadCount}
-          </Text>
-        </View>
-      )}
+      {/*/!* Unread Count Badge (if any) *!/*/}
+      {/*{unreadCount > 0 && (*/}
+      {/*  <View*/}
+      {/*    style={{*/}
+      {/*      position: 'absolute',*/}
+      {/*      top: 60,*/}
+      {/*      right: 16,*/}
+      {/*      backgroundColor: theme.colors.semantic.error,*/}
+      {/*      borderRadius: 12,*/}
+      {/*      minWidth: 24,*/}
+      {/*      height: 24,*/}
+      {/*      justifyContent: 'center',*/}
+      {/*      alignItems: 'center',*/}
+      {/*      paddingHorizontal: 8,*/}
+      {/*    }}*/}
+      {/*  >*/}
+      {/*    <Text*/}
+      {/*      variant="caption"*/}
+      {/*      style={{*/}
+      {/*        color: 'white',*/}
+      {/*        fontWeight: '600',*/}
+      {/*        fontSize: 12,*/}
+      {/*      }}*/}
+      {/*    >*/}
+      {/*      {unreadCount}*/}
+      {/*    </Text>*/}
+      {/*  </View>*/}
+      {/*)}*/}
     </Background>
   );
 }
