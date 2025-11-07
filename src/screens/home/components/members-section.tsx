@@ -35,10 +35,10 @@ export function MembersSection(): React.JSX.Element {
     presentMembers();
   };
 
-  console.log(
-    `\x1b[34m🐣️ members-section MembersSection`,
-    `${JSON.stringify(displayUsers, undefined, 2)}\x1b[0m`,
-  );
+  // console.log(
+  //   `\x1b[34m🐣️ members-section MembersSection`,
+  //   `${JSON.stringify(displayUsers, undefined, 2)}\x1b[0m`,
+  // );
 
   const getInitials = (user: User) => {
     if (user.fullName) {
