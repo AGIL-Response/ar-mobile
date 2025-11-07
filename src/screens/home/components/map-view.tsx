@@ -17,7 +17,6 @@ import { useIncidentsStore } from '@/stores/incidents';
 import { useMemo } from 'react';
 import { getCoordinate } from '@/screens/incidents/utils';
 import { router } from 'expo-router';
-import useAuthStore from '@/stores/auth';
 import { IncidentCoordinate } from '../types';
 
 Mapbox.setAccessToken(
@@ -28,15 +27,7 @@ export function MapView() {
   const theme = useTheme();
   const styles = createStyles(theme);
   const incidentsState = useIncidentsStore();
-  const authState = useAuthStore();
-  const tenantId = authState.selectedTenant?.id;
   const cameraRef = useRef<Mapbox.Camera>(null);
-
-  useEffect(() => {
-    if (tenantId) {
-      incidentsState.actions.fetchIncidents(tenantId);
-    }
-  }, [tenantId]);
 
   const coordinates = useMemo<IncidentCoordinate[]>(() => {
     return incidentsState.incidents

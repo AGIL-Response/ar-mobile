@@ -4,7 +4,7 @@
  */
 
 import { useRouter } from 'expo-router';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { TouchableOpacity } from 'react-native';
 
 import { Text, View } from '@/components';
@@ -19,14 +19,6 @@ export function TasksSection() {
   const router = useRouter();
   const authState = useAuthStore();
   const tasksState = useTasksStore();
-  const selectedTenant = authState.selectedTenant;
-
-  // Fetch tasks on mount
-  useEffect(() => {
-    if (selectedTenant?.id) {
-      tasksState.actions.fetchTasks(selectedTenant.id);
-    }
-  }, [selectedTenant?.id]);
 
   const handleViewAll = () => {
     tasksState.actions.setActiveTab('pending');
