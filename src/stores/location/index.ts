@@ -221,8 +221,7 @@ const locationStore = (set: any, get: any) => ({
         
         // Get network speed and battery from device info store
         const deviceInfoState = useDeviceInfoStore.getState();
-        // Pass values directly (null or number) - don't convert null to undefined
-        // This ensures attributes object is created even if values are null initially
+        // Pass values directly (null or number) - attributes will only be sent if at least one is not null
         const networkSpeed = deviceInfoState.networkSpeed;
         const batteryPercentage = deviceInfoState.batteryPercentage;
         
@@ -233,10 +232,9 @@ const locationStore = (set: any, get: any) => ({
           isCheckingBattery: deviceInfoState.isCheckingBattery,
           batteryError: deviceInfoState.batteryError,
         });
-        console.log('📍 Sending with:', { networkSpeed, batteryPercentage });
+        console.log('📍 Sending location update with:', { networkSpeed, batteryPercentage });
         
-        // Pass null values directly (not undefined) so attributes object is created
-        // This ensures attributes are included even if values are null initially
+        // Send location update - attributes will be included if networkSpeed or batteryPercentage is not null
         get().actions.sendLocationUpdate(networkSpeed, batteryPercentage);
       }, currentState.locationUpdateIntervalMs); // Use interval from state
 

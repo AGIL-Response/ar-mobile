@@ -151,9 +151,12 @@ export const sendLocationToSocket = (
     ],
   };
 
-  // Always include attributes object if values are provided (even if null)
-  // This ensures attributes are included once device info store is initialized
-  if (networkMbps !== undefined || batteryPercentage !== undefined) {
+  // Only include attributes object if at least one value is not null/undefined
+  // This prevents sending empty attributes object which backend might convert to null
+  if (
+    (networkMbps !== undefined && networkMbps !== null) ||
+    (batteryPercentage !== undefined && batteryPercentage !== null)
+  ) {
     payload.attributes = {};
     if (networkMbps !== undefined && networkMbps !== null) {
       payload.attributes.networkMbps = networkMbps;
@@ -166,6 +169,11 @@ export const sendLocationToSocket = (
     console.log('🔍 Attributes being added:', {
       networkMbps: networkMbps !== undefined && networkMbps !== null ? networkMbps : 'null/undefined',
       batteryPercentage: batteryPercentage !== undefined && batteryPercentage !== null ? batteryPercentage : 'null/undefined',
+    });
+  } else {
+    console.log('🔍 Skipping attributes (both values are null/undefined):', {
+      networkMbps,
+      batteryPercentage,
     });
   }
 
