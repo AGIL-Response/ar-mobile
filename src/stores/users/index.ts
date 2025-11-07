@@ -15,7 +15,7 @@ export interface UsersState extends IBaseState {
     fetchUsers: (tenantId: string, params?: UsersQueryParams) => Promise<void>;
     fetchTeamMembers: (teamId: string) => Promise<void>;
     fetchUserRoles: (userId: string, tenantId: string) => Promise<void>;
-    updateUserLocation: (userId: string, location: { type: string; coordinates: number[] }, attributes?: { networkMbps?: number; batteryPercentage?: number }) => void;
+    updateUserLocation: (userId: string, location: { type: string; coordinates: number[] }, attributes?: { networkMbps?: number; batteryPercentage?: number }, status?: string) => void;
     setSearchQuery: (query: string) => void;
     reset: () => void;
   };
@@ -90,7 +90,7 @@ const usersStore = (set: any, get: any) => ({
       }
     },
 
-    updateUserLocation: (userId: string, location: { type: string; coordinates: number[] }, attributes?: { networkMbps?: number; batteryPercentage?: number }) => {
+    updateUserLocation: (userId: string, location: { type: string; coordinates: number[] }, attributes?: { networkMbps?: number; batteryPercentage?: number }, status?: string) => {
       set((state: UsersState) => {
         const userIndex = state.users.findIndex(user => user.id === userId);
         if (userIndex !== -1) {
@@ -100,6 +100,11 @@ const usersStore = (set: any, get: any) => ({
           // Update attributes if provided
           if (attributes) {
             state.users[userIndex].attributes = attributes;
+          }
+          
+          // Update status if provided
+          if (status !== undefined) {
+            state.users[userIndex].status = status;
           }
         }
       });

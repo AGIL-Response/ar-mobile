@@ -295,6 +295,7 @@ const locationStore = (set: any, get: any) => ({
               const userId = feature.properties?.entityId;
               const coordinates = feature.geometry?.coordinates;
               const attributes = feature.properties?.attributes;
+              const status = feature.properties?.status;
               
               if (userId && coordinates) {
                 const usersStore = useUsersStore.getState();
@@ -304,12 +305,14 @@ const locationStore = (set: any, get: any) => ({
                     type: 'Point',
                     coordinates: coordinates,
                   },
-                  attributes
+                  attributes,
+                  status
                 );
                 
                 console.log(`✅ Updated location for user ${userId}:`, {
                   coordinates,
                   attributes,
+                  status,
                 });
               }
             });

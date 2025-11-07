@@ -24,6 +24,7 @@ export interface SocketLocationUpdateEvent {
     };
     properties: {
       entityId: string;
+      status?: string;
       attributes?: {
         networkMbps?: number;
         batteryPercentage?: number;

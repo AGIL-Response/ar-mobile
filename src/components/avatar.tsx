@@ -40,14 +40,47 @@ export interface AvatarProps extends BaseComponentProps {
   badge?: React.ReactNode;
   /** Border variant */
   variant?: 'default' | 'bordered' | 'none';
+  /** User status for border color (active, idle, inactive) */
+  status?: string;
 }
+
+/* ================================
+   STATUS COLOR HELPER
+   ================================ */
+
+/**
+ * Get status border color based on user status
+ * @param status - User status string (active, idle, inactive)
+ * @returns Color string for border
+ */
+const getStatusColor = (status?: string): string => {
+  if (!status) {
+    return '#6B7280'; // Gray for unknown/no status
+  }
+
+  const normalizedStatus = status.toLowerCase();
+
+  if (normalizedStatus === 'active') {
+    return '#42A542'; // Green for active
+  }
+
+  if (normalizedStatus === 'idle') {
+    return '#FA8C16'; // Yellow/Orange for idle
+  }
+
+  if (normalizedStatus === 'inactive') {
+    return '#FF3C3C'; // Red for inactive
+  }
+
+  return '#9CA3AF'; // Gray for unknown status
+};
 
 /* ================================
    STYLE CREATORS
    ================================ */
 
 const createAvatarStyles = (theme: Theme, props: AvatarProps) => {
-  const { size = 'medium', variant = 'default' } = props;
+  const { size = 'medium', variant = 'default', status } = props;
 
   const { colors, borderRadius } = theme;
 
@@ -60,20 +93,24 @@ const createAvatarStyles = (theme: Theme, props: AvatarProps) => {
     xl: { width: 96, height: 96 },
   };
 
-  // Variant styles
-  const variantStyles = {
-    default: {
-      backgroundColor: colors.background.tertiary,
-    },
-    bordered: {
-      backgroundColor: colors.background.tertiary,
-      borderWidth: 2,
-      borderColor: colors.surface.border,
-    },
-    none: {
-      backgroundColor: 'transparent',
-    },
-  };
+  // Variant styles (only apply if status is not provided)
+  const variantStyles = status
+    ? {
+        backgroundColor: colors.background.tertiary,
+      }
+    : {
+        default: {
+          backgroundColor: colors.background.tertiary,
+        },
+        bordered: {
+          backgroundColor: colors.background.tertiary,
+          borderWidth: 2,
+          borderColor: colors.surface.border,
+        },
+        none: {
+          backgroundColor: 'transparent',
+        },
+      }[variant];
 
   return {
     ...sizeStyles[size],
@@ -82,7 +119,7 @@ const createAvatarStyles = (theme: Theme, props: AvatarProps) => {
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
     position: 'relative' as const,
-    ...variantStyles[variant],
+    ...variantStyles,
   };
 };
 
@@ -161,6 +198,7 @@ const AvatarBase = React.forwardRef<
       isOnline = false,
       badge,
       variant = 'default',
+      status,
       style: userStyle,
       ...props
     },
@@ -170,6 +208,7 @@ const AvatarBase = React.forwardRef<
     const avatarStyles = useThemedStyles(createAvatarStyles, {
       size,
       variant,
+      status,
     });
 
     const statusStyles = useThemedStyles(createStatusIndicatorStyles, {
@@ -182,7 +221,16 @@ const AvatarBase = React.forwardRef<
     });
 
     // Merge with user-provided styles
-    const finalStyle = mergeStyles(avatarStyles, userStyle);
+    const mergedStyle = mergeStyles(avatarStyles, userStyle);
+
+    // Apply status border styles last to ensure they override user styles
+    const finalStyle = status
+      ? {
+          ...mergedStyle,
+          borderWidth: 3,
+          borderColor: getStatusColor(status),
+        }
+      : mergedStyle;
 
     // Generate accessibility props
     const accessibilityProps = createAccessibilityProps(props);
@@ -268,8 +316,6 @@ AvatarBase.displayName = 'AvatarBase';
  * Avatar component with file loading support
  * Can use either direct `source` prop or `fileId` prop to load from API
  */
-// @ts-expect-error - TS2347: Type inference works correctly without explicit type arguments
-// @ts-expect-error - TS2607: HOC wrapper properly supports JSX attributes
 export const Avatar = withFileSource(AvatarBase, {
   autoLoad: true,
   logErrors: true,
