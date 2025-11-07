@@ -10,9 +10,8 @@ import { StyleSheet } from 'react-native';
 import FlashMessage from 'react-native-flash-message';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
-import RnSpeedTestProvider, { type RnSpeedTestConfig } from 'rn-speed-test';
 
-import { LocationMonitor } from '@/components/location-monitor';
+import { DeviceInfoMonitor } from '@/components/device-info-monitor';
 import { useAppFonts } from '@/lib/fonts';
 import { useThemeConfig } from '@/lib/use-theme-config';
 
@@ -56,38 +55,21 @@ export default function RootLayout() {
 function Providers({ children }: { children: React.ReactNode }) {
   const theme = useThemeConfig();
 
-  // Configure network speed test
-  const speedTestConfig: RnSpeedTestConfig = {
-    token: 'YXNkZmFzZGxmbnNkYWZoYXNkZmhrYWxm',
-    timeout: 10000,
-    https: true,
-    urlCount: 5,
-    bufferSize: 8,
-    unit: 'MBps',
-  };
-
   return (
-    <RnSpeedTestProvider
-      initialConfig={speedTestConfig}
-      onError={(error) => {
-        console.warn('Network speed test error:', error);
-      }}
+    <GestureHandlerRootView
+      style={styles.container}
+      className={theme.dark ? `dark` : undefined}
     >
-      <GestureHandlerRootView
-        style={styles.container}
-        className={theme.dark ? `dark` : undefined}
-      >
-        <KeyboardProvider>
-          <ThemeProvider value={theme}>
-            <BottomSheetModalProvider>
-              <LocationMonitor />
-              {children}
-              <FlashMessage position="top" />
-            </BottomSheetModalProvider>
-          </ThemeProvider>
-        </KeyboardProvider>
-      </GestureHandlerRootView>
-    </RnSpeedTestProvider>
+      <KeyboardProvider>
+        <ThemeProvider value={theme}>
+          <BottomSheetModalProvider>
+            <DeviceInfoMonitor />
+            {children}
+            <FlashMessage position="top" />
+          </BottomSheetModalProvider>
+        </ThemeProvider>
+      </KeyboardProvider>
+    </GestureHandlerRootView>
   );
 }
 

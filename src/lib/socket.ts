@@ -126,8 +126,8 @@ export const handleListenMapSocket = (
 export const sendLocationToSocket = (
   socket: Socket,
   coordinates: LocationCoordinates,
-  networkMbps?: number,
-  batteryPercentage?: number
+  networkMbps?: number | null,
+  batteryPercentage?: number | null
 ): void => {
   if (!socket.connected) {
     console.warn('⚠️ WebSocket not connected, cannot send location');
@@ -142,18 +142,19 @@ export const sendLocationToSocket = (
     ],
   };
 
-  // Add network speed and battery in attributes object if provided
+  // Always include attributes object if values are provided (even if null)
+  // This ensures attributes are included once device info store is initialized
   if (networkMbps !== undefined || batteryPercentage !== undefined) {
     payload.attributes = {};
-    if (networkMbps !== undefined) {
+    if (networkMbps !== undefined && networkMbps !== null) {
       payload.attributes.networkMbps = networkMbps;
     }
-    if (batteryPercentage !== undefined) {
+    if (batteryPercentage !== undefined && batteryPercentage !== null) {
       payload.attributes.batteryPercentage = batteryPercentage;
     }
   }
 
-  console.log('📤 Sending location to WebSocket:', payload);
+  console.log('📤 Sending location to WebSocket:', JSON.stringify(payload, null, 2));
   socket.emit('maps', payload);
 };
 

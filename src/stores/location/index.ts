@@ -13,7 +13,7 @@ import {
   type LocationCoordinates,
   type SocketLocationUpdateEvent 
 } from '@/lib/socket';
-import { getBatteryPercentage } from '@/lib/utils/device-info';
+import { useDeviceInfoStore } from '@/stores/device-info';
 
 export interface LocationState extends IBaseState {
   // Location data
@@ -48,7 +48,10 @@ export interface LocationState extends IBaseState {
     // WebSocket management
     connectToWebSocket: (accessToken: string) => void;
     disconnectFromWebSocket: () => void;
-    sendLocationUpdate: (networkMbps?: number, batteryPercentage?: number) => void;
+    sendLocationUpdate: (
+      networkMbps?: number | null,
+      batteryPercentage?: number | null
+    ) => void;
     
     // Utility actions
     clearError: () => void;
@@ -211,13 +214,22 @@ const locationStore = (set: any, get: any) => ({
       const interval = setInterval(async () => {
         await get().actions.getCurrentLocation();
         
-        // Get battery percentage before sending
-        const batteryPercentage = await getBatteryPercentage();
+        // Get network speed and battery from device info store
+        const deviceInfoState = useDeviceInfoStore.getState();
+        // Pass values directly (null or number) - don't convert null to undefined
+        // This ensures attributes object is created even if values are null initially
+        const networkSpeed = deviceInfoState.networkSpeed;
+        const batteryPercentage = deviceInfoState.batteryPercentage;
         
-        // Network speed will be passed from component that has access to useRnSpeedTest hook
-        // For now, we'll get it from a global reference if available
-        const networkSpeed = (global as any).__networkSpeed;
+        console.log('📍 Device info state:', {
+          networkSpeed: deviceInfoState.networkSpeed,
+          batteryPercentage: deviceInfoState.batteryPercentage,
+          isCheckingNetworkSpeed: deviceInfoState.isCheckingNetworkSpeed,
+        });
+        console.log('📍 Sending with:', { networkSpeed, batteryPercentage });
         
+        // Pass null values directly (not undefined) so attributes object is created
+        // This ensures attributes are included even if values are null initially
         get().actions.sendLocationUpdate(networkSpeed, batteryPercentage);
       }, 10000); // Send location every 10 seconds
 
@@ -311,7 +323,10 @@ const locationStore = (set: any, get: any) => ({
       console.log('🔌 WebSocket disconnected');
     },
 
-    sendLocationUpdate: (networkMbps?: number, batteryPercentage?: number): void => {
+    sendLocationUpdate: (
+      networkMbps?: number | null,
+      batteryPercentage?: number | null
+    ): void => {
       const state = get() as LocationState;
       
       if (!state.socket || !state.isSocketConnected) {
