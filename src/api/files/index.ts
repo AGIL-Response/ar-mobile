@@ -1,3 +1,5 @@
+import * as FileSystem from 'expo-file-system';
+
 import { apiClient, handleApiError } from '../api-client';
 
 export interface FileUploadOptions {
@@ -32,35 +34,55 @@ export const blobToDataUri = (blob: Blob): Promise<string> => {
 export const filesApi = {
   /**
    * Upload a file attachment to an incident
+   * Matches the web app's uploadFile function behavior
    */
-  uploadIncidentAttachment: async (options: FileUploadOptions): Promise<FileUploadResponse> => {
+  uploadIncidentAttachment: async (
+    options: FileUploadOptions
+  ): Promise<FileUploadResponse> => {
     try {
       const { incidentId, fileUri, fileName, mimeType } = options;
-      
+
       console.log('🚀 File Upload Request:', {
         incidentId,
         fileName,
         mimeType,
-        fileUri: fileUri.substring(0, 50) + '...' // Log truncated URI for privacy
+        fileUri: fileUri.substring(0, 50) + '...', // Log truncated URI for privacy
       });
-      
-      // Read file as binary data (similar to curl --data-binary)
-      const fileResponse = await fetch(fileUri);
-      const fileBlob = await fileResponse.blob();
+
+      // Read file as base64 to match web app's raw binary approach
+      // The web app sends File object directly as body with Content-Type header
+      // In React Native, we read the file and convert to a format axios can send
+      const fileBase64 = await FileSystem.readAsStringAsync(fileUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      // Convert base64 to binary string (Uint8Array) to match web app's File object
+      // This matches how the web app sends raw binary data
+      const binaryString = atob(fileBase64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
 
       console.log('📁 File Info:', {
-        size: fileBlob.size,
-        type: fileBlob.type || mimeType
+        size: bytes.length,
+        type: mimeType,
       });
 
-      const response = await apiClient.post<FileUploadResponse>('/files/upload', fileBlob, {
-        headers: {
-          'x-attached-id': incidentId,
-          'x-file-name': fileName,
-          'x-attached-type': 'incident_attachment',
-          'Content-Type': mimeType,
-        },
-      });
+      // Send raw binary data matching web app's approach
+      // Web app sends: body: file with Content-Type: file.type
+      const response = await apiClient.post<FileUploadResponse>(
+        '/files/upload',
+        bytes,
+        {
+          headers: {
+            'x-attached-id': incidentId,
+            'x-file-name': fileName,
+            'x-attached-type': 'incident_attachment',
+            'Content-Type': mimeType, // Match web app's Content-Type header
+          },
+        }
+      );
 
       console.log('✅ File Upload Response:', response.data);
       return response.data;
@@ -77,7 +99,7 @@ export const filesApi = {
   viewFile: async (options: FileViewOptions): Promise<Blob> => {
     try {
       const { fileId } = options;
-      
+
       console.log('🚀 File View Request:', { fileId });
 
       const url = `/files/view/${fileId}`;
@@ -88,7 +110,7 @@ export const filesApi = {
 
       console.log('✅ File View Response:', {
         size: response.data.size,
-        type: response.data.type
+        type: response.data.type,
       });
 
       return response.data;

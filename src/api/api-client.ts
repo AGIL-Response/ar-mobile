@@ -31,14 +31,34 @@ const requestSuccessInterceptor = (config: any) => {
     );
   }
   if (config.data) {
-    console.log(
-      `\x1b[34m${getTimestamp()} 📦 Request Body: ${JSON.stringify(config.data, undefined, 2)}\x1b[0m`
-    );
+    // Don't try to JSON.stringify FormData or Uint8Array
+    if (config.data instanceof FormData) {
+      console.log(
+        `\x1b[34m${getTimestamp()} 📦 Request Body: [FormData]\x1b[0m`
+      );
+    } else if (config.data instanceof Uint8Array) {
+      console.log(
+        `\x1b[34m${getTimestamp()} 📦 Request Body: [Binary Data, ${config.data.length} bytes]\x1b[0m`
+      );
+    } else {
+      console.log(
+        `\x1b[34m${getTimestamp()} 📦 Request Body: ${JSON.stringify(config.data, undefined, 2)}\x1b[0m`
+      );
+    }
   }
 
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
+
+  // If FormData is being sent, remove Content-Type header to let axios set it automatically
+  // with the correct multipart/form-data boundary
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
+  }
+  // For Uint8Array (raw binary), keep the Content-Type header as set in the request
+  // Don't override it with the default 'application/json'
+
   return config;
 };
 
