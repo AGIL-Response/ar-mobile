@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 
 import { AppBar, Avatar, Background, Icon, Text, View } from '@/components';
+import { NetworkSignalIcon } from '@/components/network-signal-icon';
 import icons, { iconNames } from '@assets/icons';
 import { useAuthStore } from '@/stores/auth';
 import { useUsersStore } from '@/stores/users';
@@ -28,11 +29,12 @@ export function MembersScreen(): React.JSX.Element {
 
   const teamId = authState.selectedTeam?.id;
 
-  useEffect(() => {
-    if (teamId) {
-      usersState.actions.fetchTeamMembers(teamId);
-    }
-  }, [teamId]);
+  // Temp skip fetch because it will override the value from socket
+  // useEffect(() => {
+  //   if (teamId) {
+  //     usersState.actions.fetchTeamMembers(teamId);
+  //   }
+  // }, [teamId]);
 
   const getInitials = (user: User) => {
     if (user.fullName) {
@@ -95,6 +97,7 @@ export function MembersScreen(): React.JSX.Element {
                 fallback={getInitials(user)}
                 style={styles.avatar}
                 fileId={user.avatarId}
+                status={user.status || 'unknown'}
               />
               {/* Status indicator */}
             </View>
@@ -105,8 +108,8 @@ export function MembersScreen(): React.JSX.Element {
               </Text>
               <View style={styles.iconContainer}>
                 <View style={styles.iconItem}>
-                  <Icon
-                    name={iconNames.mobile_signal}
+                  <NetworkSignalIcon
+                    networkMbps={user.attributes?.networkMbps}
                     size={18}
                     color={theme.colors.text.icon}
                   />

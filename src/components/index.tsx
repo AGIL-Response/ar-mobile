@@ -27,6 +27,7 @@ export * from './incident-attachment';
 export * from './floating-action-button';
 export * from './withFileSource';
 export * from './icon';
+export * from './network-signal-icon';
 export * from './input';
 export * from './select';
 export * from './tab-bar';

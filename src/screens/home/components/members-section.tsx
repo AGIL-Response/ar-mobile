@@ -85,23 +85,21 @@ export function MembersSection(): React.JSX.Element {
                 fallback={getInitials(user)}
                 style={styles.avatar}
                 fileId={user.avatarId}
-                status={user.status}
+                status={user.status || 'unknown'}
               />
             </View>
           </View>
         ))}
 
-        {hasMore && (
-          <TouchableOpacity onPress={handleViewAll}>
-            <View style={styles.moreContainer}>
-              <View style={styles.moreCircle}>
-                <Text variant="bodyMedium" style={styles.moreText}>
-                  +{moreCount}
-                </Text>
-              </View>
+        <TouchableOpacity onPress={handleViewAll}>
+          <View style={styles.moreContainer}>
+            <View style={styles.moreCircle}>
+              <Text variant="bodySmall" style={styles.moreText}>
+                View All
+              </Text>
             </View>
-          </TouchableOpacity>
-        )}
+          </View>
+        </TouchableOpacity>
       </View>
 
       {/* Members popup modal */}
@@ -178,5 +176,6 @@ const createStyles = (theme: any) =>
     moreText: {
       color: theme.colors.text.primary,
       textAlign: 'center',
+      fontSize: 10,
     },
   });
