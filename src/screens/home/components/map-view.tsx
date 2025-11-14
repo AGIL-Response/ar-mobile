@@ -3,21 +3,23 @@
  * Contains map interface for the map view tab
  */
 
-import Mapbox, {
-  MapView as MapboxMapView,
-  PointAnnotation,
-  Camera,
-} from '@rnmapbox/maps';
-import React, { useEffect, useRef } from 'react';
-import { StyleSheet } from 'react-native';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 
-import { View, Icon, iconNames } from '@/components';
-import { type Theme, useTheme } from '@/theme';
-import { useIncidentsStore } from '@/stores/incidents';
-import { useMemo } from 'react';
-import { getCoordinate } from '@/screens/incidents/utils';
+import Mapbox, {
+  Camera,
+  MapView as MapboxMapView,
+  MarkerView,
+} from '@rnmapbox/maps';
 import { router } from 'expo-router';
-import { IncidentCoordinate } from '../types';
+
+import { Avatar, Icon, View, iconNames } from '@/components';
+import { getCoordinate } from '@/screens/incidents/utils';
+import { useIncidentsStore } from '@/stores/incidents';
+import { type Theme, useTheme } from '@/theme';
+import { useUsersStore } from '@/stores/users';
+
+import type { IncidentCoordinate, UserCoordinate } from '../types';
 
 Mapbox.setAccessToken(
   'sk.eyJ1IjoibGFpem4iLCJhIjoiY21lamxqZzh4MDQ0bjJrcXZ0dWRiZHAzNyJ9.NU6sHZrIkDuDpHCEManSJQ'
@@ -27,7 +29,16 @@ export function MapView() {
   const theme = useTheme();
   const styles = createStyles(theme);
   const incidentsState = useIncidentsStore();
-  const cameraRef = useRef<Mapbox.Camera>(null);
+  const usersState = useUsersStore();
+
+  const { fetchIncidents, setMapFocusIncident } = incidentsState.actions;
+  const mapFocusIncidentId = incidentsState.mapFocusIncidentId;
+
+  const { setMapFocusUserId } = usersState.actions;
+  const mapFocusUserId = usersState.mapFocusUserId;
+
+  const cameraRef = useRef<Camera>(null);
+  const hasCenteredDefaultRef = useRef(false);
 
   const coordinates = useMemo<IncidentCoordinate[]>(() => {
     return incidentsState.incidents
@@ -42,19 +53,101 @@ export function MapView() {
       .filter((item) => Boolean(item.coordinates));
   }, [incidentsState.incidents]);
 
+  const usersCoordinates = useMemo<UserCoordinate[]>(() => {
+    return usersState.users
+      ?.filter((user) => user.location?.coordinates && user.avatarId) // only with coords and avatarId
+      .map((user) => ({
+        id: user.id,
+        avatarId: user.avatarId!,
+        status: user.status || 'unknown',
+        coordinates: getCoordinate(user.location!.coordinates) as [
+          number,
+          number,
+        ],
+      }))
+      .filter((item) => Boolean(item.coordinates));
+  }, [usersState.users]);
+
+  console.log('usersCoordinates', usersCoordinates, usersState);
+  useEffect(() => {
+    fetchIncidents({});
+  }, [fetchIncidents]);
+
   const handleMarkerPress = (incidentId: string) => {
-    router.push(`/incidents/${incidentId}`);
+    router.push(`/incidents/${incidentId}` as any);
+  };
+
+  const handleUserMarkerPress = (userId: string) => {
+    console.log('handleUserMarkerPress', userId);
   };
 
   useEffect(() => {
-    if (coordinates.length > 0 && cameraRef.current) {
-      cameraRef.current.setCamera({
-        centerCoordinate: coordinates[0].coordinates,
-        zoomLevel: 12,
-        animationDuration: 1000,
-      });
+    if (!cameraRef.current) {
+      return;
     }
-  }, [coordinates]);
+
+    if (mapFocusIncidentId) {
+      const target = coordinates.find(
+        (coordinate) => coordinate.id === mapFocusIncidentId
+      );
+
+      if (target && cameraRef.current) {
+        cameraRef.current.setCamera({
+          centerCoordinate: target.coordinates,
+          zoomLevel: 15,
+          animationDuration: 1000,
+        });
+
+        hasCenteredDefaultRef.current = true;
+        requestAnimationFrame(() => {
+          setMapFocusIncident(null);
+        });
+      }
+      return;
+    }
+
+    if (mapFocusUserId) {
+      const target = usersCoordinates.find(
+        (coordinate) => coordinate.id === mapFocusUserId
+      );
+
+      if (target && cameraRef.current) {
+        cameraRef.current.setCamera({
+          centerCoordinate: target.coordinates,
+          zoomLevel: 15,
+          animationDuration: 1000,
+        });
+        hasCenteredDefaultRef.current = true;
+        requestAnimationFrame(() => {
+          setMapFocusUserId(null);
+        });
+      }
+      return;
+    }
+
+    if (
+      !hasCenteredDefaultRef.current &&
+      (coordinates.length > 0 || usersCoordinates.length > 0)
+    ) {
+      const defaultCoordinate =
+        coordinates[0]?.coordinates || usersCoordinates[0]?.coordinates;
+      if (defaultCoordinate && cameraRef.current) {
+        cameraRef.current.setCamera({
+          centerCoordinate: defaultCoordinate,
+          zoomLevel: 15,
+          animationDuration: 1000,
+        });
+        hasCenteredDefaultRef.current = true;
+      }
+    }
+  }, [
+    coordinates,
+    usersCoordinates,
+    mapFocusIncidentId,
+    mapFocusUserId,
+    setMapFocusIncident,
+    setMapFocusUserId,
+  ]);
 
   return (
     <View style={styles.container}>
@@ -66,23 +159,46 @@ export function MapView() {
           <Camera ref={cameraRef} />
 
           {coordinates.map((coordinate) => (
-            <PointAnnotation
-              key={`marker-${coordinate.id}`}
-              id={`marker-${coordinate.id}`}
+            <MarkerView
+              key={`incident-marker-${coordinate.id}`}
               coordinate={coordinate.coordinates}
-              onSelected={() => handleMarkerPress(coordinate.id)}
-              draggable={false}
-              onDragStart={() => {}}
-              onDragEnd={() => {}}
+              allowOverlapWithPuck={false}
             >
-              <View style={{ alignItems: 'center' }}>
-                <Icon
-                  name={iconNames.incident}
-                  size={32}
-                  color={theme.colors.semantic.error}
+              <TouchableOpacity
+                onPress={() => handleMarkerPress(coordinate.id)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.incidentMarker} collapsable={false}>
+                  <View style={styles.incidentOuterRing} />
+                  <View style={styles.incidentInnerCircle}>
+                    <Icon
+                      name={iconNames.incident}
+                      size={20}
+                      color={theme.colors.semantic.white}
+                    />
+                  </View>
+                </View>
+              </TouchableOpacity>
+            </MarkerView>
+          ))}
+
+          {usersCoordinates.map((coordinate) => (
+            <MarkerView
+              key={`user-marker-${coordinate.id}`}
+              coordinate={coordinate.coordinates}
+              allowOverlapWithPuck={false}
+            >
+              <TouchableOpacity
+                onPress={() => handleUserMarkerPress(coordinate.id)}
+              >
+                <Avatar
+                  fileId={coordinate.avatarId}
+                  status={coordinate.status}
+                  size="small"
+                  isMapAvatar={true}
                 />
-              </View>
-            </PointAnnotation>
+              </TouchableOpacity>
+            </MarkerView>
           ))}
         </MapboxMapView>
       </View>
@@ -99,6 +215,33 @@ const createStyles = (theme: Theme) => {
     },
     map: {
       flex: 1,
+    },
+    incidentMarker: {
+      width: 64,
+      height: 64,
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+      borderWidth: 2,
+      borderColor: theme.colors.status.errorAlt,
+      borderRadius: 32,
+    },
+    incidentOuterRing: {
+      position: 'absolute',
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      borderColor: theme.colors.semantic.error,
+      backgroundColor: theme.colors.semantic.error,
+      opacity: 0.35,
+    },
+    incidentInnerCircle: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: theme.colors.semantic.error,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
   });
 };

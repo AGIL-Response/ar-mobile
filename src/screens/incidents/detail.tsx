@@ -3,14 +3,13 @@
  * Detailed view of a specific incident
  */
 
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView, TouchableOpacity } from 'react-native';
 
 import type { Incident } from '@/api/incidents/types';
 import {
   AppBar,
-  Button,
   Center,
   IncidentAttachment,
   Icon,
@@ -28,6 +27,7 @@ export default function IncidentDetailScreen() {
   const { id } = useLocalSearchParams();
   const authState = useAuthStore();
   const incidentsState = useIncidentsStore();
+  const router = useRouter();
 
   const selectedTenant = authState.selectedTenant;
   const incident = incidentsState.selectedIncident;
@@ -115,6 +115,16 @@ export default function IncidentDetailScreen() {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const handleViewLocation = () => {
+    const coordinates = incident?.location?.coordinates;
+    if (!incident || !coordinates) {
+      return;
+    }
+
+    incidentsState.actions.setMapFocusIncident(incident.id);
+    router.push('/' as any);
   };
 
   const InfoRow = ({
@@ -308,6 +318,14 @@ export default function IncidentDetailScreen() {
                   {incident.type} Incident
                 </Text>
               </View>
+
+              <TouchableOpacity onPress={handleViewLocation}>
+                <Icon
+                  name={iconNames.location}
+                  size={30}
+                  color={theme.colors.text.icon}
+                />
+              </TouchableOpacity>
             </View>
 
             {/* Description */}

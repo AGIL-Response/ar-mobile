@@ -4,6 +4,8 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+
+import { useRouter } from 'expo-router';
 import {
   Alert,
   FlatList,
@@ -27,12 +29,13 @@ import {
 import { useAuthStore } from '@/stores/auth';
 import { useNotificationsStore } from '@/stores/notifications';
 import { useTheme } from '@/theme';
-import { AppHeader } from '../home/components/app-header';
 
 export default function NotificationsScreen() {
   const theme = useTheme();
   const authState = useAuthStore();
   const notificationsState = useNotificationsStore();
+  const router = useRouter();
+
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const { notifications, isLoading, error, actions } = notificationsState;
@@ -180,10 +183,13 @@ export default function NotificationsScreen() {
         style={{
           backgroundColor: isRead
             ? theme.colors.background.primary
-            : theme.colors.background.secondary,
-          borderBottomWidth: 2,
-          borderBottomColor: theme.colors.surface.border,
+            : theme.colors.background.qua,
+          borderWidth: 2,
+          borderColor: isRead
+            ? theme.colors.surface.border
+            : theme.colors.surface.activeBorder,
           padding: 16,
+          borderRadius: 2,
         }}
       >
         <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -206,7 +212,7 @@ export default function NotificationsScreen() {
           </View>
 
           {/* Notification Content */}
-          <View style={{ flex: 1, gap: 4 }}>
+          <View style={{ flex: 1, gap: 8 }}>
             <View
               style={{
                 flexDirection: 'row',
@@ -215,60 +221,48 @@ export default function NotificationsScreen() {
               }}
             >
               <Text
-                variant="body"
+                variant="h4"
                 style={{
-                  color: theme.colors.text.primary,
-                  fontWeight: isRead ? '400' : '600',
-                  flex: 1,
+                  color: theme.colors.text.tertiary,
+                  fontFamily: theme.fonts.goldmanRegular,
                 }}
               >
                 {item.metadata?.name || 'Notification'}
               </Text>
-              <Text
-                variant="caption"
-                style={{
-                  color: theme.colors.text.secondary,
-                  marginLeft: 8,
-                }}
-              >
-                {formatTimestamp(item.createdAt)}
-              </Text>
             </View>
 
             <Text
-              variant="caption"
+              variant="bodyMedium"
               style={{
                 color: theme.colors.text.secondary,
-                lineHeight: 18,
               }}
             >
               {item.message}
             </Text>
 
-            {/* Actor info */}
-            {item.metadata?.actor && (
-              <Text
-                variant="caption"
-                style={{
-                  color: theme.colors.text.tertiary,
-                  fontSize: 11,
-                }}
-              >
-                From: {item.metadata.actor.fullName}
-              </Text>
-            )}
+            <Text
+              variant="caption"
+              style={{
+                color: theme.colors.text.disabled,
+                paddingTop: 4,
+              }}
+            >
+              {formatTimestamp(item.createdAt)}
+            </Text>
 
             {/* Unread indicator */}
             {!isRead && (
               <View
                 style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
+                  width: 10,
+                  height: 10,
+                  borderRadius: 7,
                   backgroundColor: theme.colors.semantic.error,
+                  borderWidth: 1,
+                  borderColor: theme.colors.semantic.white,
                   position: 'absolute',
-                  top: 16,
-                  right: -8,
+                  top: 10,
+                  right: 0,
                 }}
               />
             )}
@@ -279,13 +273,19 @@ export default function NotificationsScreen() {
   };
 
   // Get unread count
-  const unreadCount = notifications.filter((n) => n.status?.toLowerCase() === 'unread').length;
+  const unreadCount = notifications.filter(
+    (n) => n.status?.toLowerCase() === 'unread'
+  ).length;
 
   // Show loading state
   if (isLoading && notifications.length === 0) {
     return (
       <Background>
-        <AppBar title="Notifications" />
+        <AppBar
+          title="Notifications"
+          showBackButton={true}
+          onBackPress={() => router.back()}
+        />
         <Center style={{ flex: 1 }}>
           <Text
             variant="body"
@@ -304,7 +304,11 @@ export default function NotificationsScreen() {
   if (error) {
     return (
       <Background>
-        <AppBar title="Notifications" />
+        <AppBar
+          title="Notifications"
+          showBackButton={true}
+          onBackPress={() => router.back()}
+        />
         <Center style={{ flex: 1 }}>
           <Text
             variant="body"
@@ -323,7 +327,16 @@ export default function NotificationsScreen() {
   return (
     <Background>
       {/* Header */}
-      <AppHeader title={'Notifications'} />
+      <AppBar
+        title="Notifications"
+        titleFontFamily={theme.fonts.goldmanRegular}
+        showBackButton={true}
+        onBackPress={() => router.back()}
+        titleAlign="left"
+        style={{
+          borderBottomColor: 'transparent',
+        }}
+      />
 
       {/* Notifications List */}
       {reversedNotifications.length > 0 ? (
@@ -341,6 +354,10 @@ export default function NotificationsScreen() {
             />
           }
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            padding: 16,
+            gap: 10,
+          }}
         />
       ) : (
         <Center style={{ flex: 1 }}>
@@ -373,35 +390,6 @@ export default function NotificationsScreen() {
           </View>
         </Center>
       )}
-
-      {/*/!* Unread Count Badge (if any) *!/*/}
-      {/*{unreadCount > 0 && (*/}
-      {/*  <View*/}
-      {/*    style={{*/}
-      {/*      position: 'absolute',*/}
-      {/*      top: 60,*/}
-      {/*      right: 16,*/}
-      {/*      backgroundColor: theme.colors.semantic.error,*/}
-      {/*      borderRadius: 12,*/}
-      {/*      minWidth: 24,*/}
-      {/*      height: 24,*/}
-      {/*      justifyContent: 'center',*/}
-      {/*      alignItems: 'center',*/}
-      {/*      paddingHorizontal: 8,*/}
-      {/*    }}*/}
-      {/*  >*/}
-      {/*    <Text*/}
-      {/*      variant="caption"*/}
-      {/*      style={{*/}
-      {/*        color: 'white',*/}
-      {/*        fontWeight: '600',*/}
-      {/*        fontSize: 12,*/}
-      {/*      }}*/}
-      {/*    >*/}
-      {/*      {unreadCount}*/}
-      {/*    </Text>*/}
-      {/*  </View>*/}
-      {/*)}*/}
     </Background>
   );
 }

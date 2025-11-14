@@ -307,7 +307,7 @@ const createColors = (isDark: boolean) => ({
     overlay: isDark ? Palette.primary900 : 'rgba(0, 0, 0, 0.05)',
     input: isDark ? Palette.primary1200 : Palette.gray400,
     qua: isDark ? `${Palette.primary50}0D` : `${Palette.primary1100}0D`, //alpha 5%
-},
+  },
 
   // Text colors
   text: {
@@ -365,6 +365,7 @@ const createColors = (isDark: boolean) => ({
     card: isDark ? Palette.primary1000 : Palette.white,
     input: isDark ? Palette.primary1200 : Palette.white,
     border: isDark ? `${Palette.primary600}66` : `${Palette.primary500}66`,
+    activeBorder: isDark ? `${Palette.primary600}` : `${Palette.primary500}`,
     divider: isDark ? Palette.dimGray : Palette.gray300,
     disabled: isDark ? Palette.charcoal800 : Palette.gray100,
   },

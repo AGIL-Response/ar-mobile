@@ -7,7 +7,7 @@ import React from 'react';
 import type { ImageProps, ImageSourcePropType } from 'react-native';
 import { Image } from 'react-native';
 
-import type { Theme } from '@/theme';
+import { type Theme } from '@/theme';
 
 import {
   createAccessibilityProps,
@@ -42,6 +42,23 @@ export interface AvatarProps extends BaseComponentProps {
   variant?: 'default' | 'bordered' | 'none';
   /** User status for border color (active, idle, inactive) */
   status?: string;
+  /** Whether this is a map avatar with glowing rings */
+  isMapAvatar?: boolean;
+  /** Color for the rings (defaults to warning/orange) */
+  ringColor?: string;
+  /** Opacity of the outer glow ring */
+  outerRingOpacity?: number;
+}
+
+export interface MapAvatarProps extends Omit<AvatarProps, 'size'> {
+  /** Size of the avatar (not the entire marker) */
+  avatarSize?: AvatarProps['size'];
+  /** Whether the marker is pressable */
+  onPress?: () => void;
+  /** Color for the rings (defaults to warning/orange) */
+  ringColor?: string;
+  /** Opacity of the outer glow ring */
+  outerRingOpacity?: number;
 }
 
 /* ================================
@@ -53,27 +70,62 @@ export interface AvatarProps extends BaseComponentProps {
  * @param status - User status string (active, idle, inactive)
  * @returns Color string for border
  */
-const getStatusColor = (status?: string): string => {
+type StatusColorType = 'border' | 'outerRing' | 'innerRing';
+type StatusColorKey = 'active' | 'idle' | 'inactive' | 'unknown' | 'default';
+
+const statusColorMap: Record<
+  StatusColorType,
+  Record<StatusColorKey, string>
+> = {
+  border: {
+    active: '#42A542', // Green for active
+    idle: '#FA8C16', // Yellow/Orange for idle
+    inactive: '#FF3C3C', // Red for inactive
+    unknown: '#9CA3AF', // Gray for unknown status
+    default: '#6B7280', // Gray for unknown/no status
+  },
+  outerRing: {
+    active: '#42A54233', // Green for active
+    idle: '#FA8C1633', // Yellow/Orange for idle
+    inactive: '#FF3C3C33', // Red with transparency
+    unknown: '#9CA3AF33', // Default gray with transparency
+    default: '#6B728033',
+  },
+  innerRing: {
+    active: '#42A5421A', // Green for active
+    idle: '#FA8C161A', // Yellow/Orange for idle
+    inactive: '#FF3C3C1A', // Red with transparency
+    unknown: '#9CA3AF1A', // Default gray with transparency
+    default: '#6B72801A',
+  },
+};
+
+// Unified status-to-color function
+function getStatusColorByType(type: StatusColorType, status?: string): string {
+  const colorSet = statusColorMap[type];
   if (!status) {
-    return '#6B7280'; // Gray for unknown/no status
+    return colorSet.default;
   }
 
   const normalizedStatus = status.toLowerCase();
+  let statusKey: StatusColorKey = 'unknown';
 
-  if (normalizedStatus === 'active') {
-    return '#42A542'; // Green for active
+  switch (normalizedStatus) {
+    case 'active':
+      statusKey = 'active';
+      break;
+    case 'idle':
+      statusKey = 'idle';
+      break;
+    case 'inactive':
+      statusKey = 'inactive';
+      break;
+    default:
+      statusKey = 'unknown';
   }
 
-  if (normalizedStatus === 'idle') {
-    return '#FA8C16'; // Yellow/Orange for idle
-  }
-
-  if (normalizedStatus === 'inactive') {
-    return '#FF3C3C'; // Red for inactive
-  }
-
-  return '#9CA3AF'; // Gray for unknown status
-};
+  return colorSet[statusKey] ?? colorSet.default;
+}
 
 /* ================================
    STYLE CREATORS
@@ -176,6 +228,109 @@ const createFallbackTextStyles = (theme: Theme, props: AvatarProps) => {
   };
 };
 
+type MapAvatarSize = NonNullable<AvatarProps['size']>;
+
+const defaultMapAvatarSize: MapAvatarSize = 'medium';
+
+const mapAvatarDimensions: Record<
+  MapAvatarSize,
+  {
+    outerDiameter: number;
+    outerBorderWidth: number;
+    innerDiameter: number;
+    innerBorderWidth: number;
+  }
+> = {
+  xs: {
+    outerDiameter: 48,
+    outerBorderWidth: 2,
+    innerDiameter: 32,
+    innerBorderWidth: 2,
+  },
+  small: {
+    outerDiameter: 64,
+    outerBorderWidth: 2,
+    innerDiameter: 42,
+    innerBorderWidth: 3,
+  },
+  medium: {
+    outerDiameter: 84,
+    outerBorderWidth: 3,
+    innerDiameter: 58,
+    innerBorderWidth: 3,
+  },
+  large: {
+    outerDiameter: 108,
+    outerBorderWidth: 3,
+    innerDiameter: 80,
+    innerBorderWidth: 4,
+  },
+  xl: {
+    outerDiameter: 140,
+    outerBorderWidth: 4,
+    innerDiameter: 110,
+    innerBorderWidth: 4,
+  },
+};
+
+const getMapAvatarDimensions = (size?: MapAvatarSize) => {
+  if (!size) {
+    return mapAvatarDimensions[defaultMapAvatarSize];
+  }
+  return mapAvatarDimensions[size] ?? mapAvatarDimensions[defaultMapAvatarSize];
+};
+
+const createMapAvatarStyles = (
+  theme: Theme,
+  props: {
+    size?: MapAvatarSize;
+    ringBorderColor: string;
+    outerRingColor: string;
+    innerFillColor: string;
+    outerRingOpacity: number;
+  }
+) => {
+  const { outerDiameter, outerBorderWidth, innerDiameter, innerBorderWidth } =
+    getMapAvatarDimensions(props.size);
+
+  return {
+    mapContainer: {
+      width: outerDiameter,
+      height: outerDiameter,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      position: 'relative' as const,
+    },
+    outerRing: {
+      position: 'absolute' as const,
+      width: outerDiameter,
+      height: outerDiameter,
+      borderRadius: outerDiameter / 2,
+      borderWidth: outerBorderWidth,
+      borderColor: props.ringBorderColor,
+      backgroundColor: props.outerRingColor,
+      opacity: props.outerRingOpacity,
+    },
+    innerRing: {
+      width: innerDiameter,
+      height: innerDiameter,
+      borderRadius: innerDiameter / 2,
+      borderWidth: innerBorderWidth,
+      borderColor: props.ringBorderColor,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      backgroundColor: props.innerFillColor || theme.colors.background.primary,
+      overflow: 'hidden' as const,
+    },
+    avatarWrapper: {
+      width: '100%',
+      height: '100%',
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+    },
+  };
+};
+
 /* ================================
    AVATAR BASE COMPONENT (Internal)
    ================================ */
@@ -200,10 +355,17 @@ const AvatarBase = React.forwardRef<
       variant = 'default',
       status,
       style: userStyle,
+      isMapAvatar = false,
+      ringColor,
+      outerRingOpacity = 0.4,
       ...props
     },
     ref
   ) => {
+    const ringBorderColor = ringColor ?? getStatusColorByType('border', status);
+    const outerRingColor = getStatusColorByType('outerRing', status);
+    const innerFillColor = getStatusColorByType('innerRing', status);
+
     // Generate themed styles
     const avatarStyles = useThemedStyles(createAvatarStyles, {
       size,
@@ -220,17 +382,28 @@ const AvatarBase = React.forwardRef<
       size,
     });
 
+    // Generate map avatar styles (always call hook, but only use if isMapAvatar is true)
+    const mapAvatarStyles = useThemedStyles(createMapAvatarStyles, {
+      size,
+      ringBorderColor,
+      outerRingColor,
+      innerFillColor,
+      outerRingOpacity,
+    });
+
     // Merge with user-provided styles
     const mergedStyle = mergeStyles(avatarStyles, userStyle);
 
     // Apply status border styles last to ensure they override user styles
-    const finalStyle = status
-      ? {
-          ...mergedStyle,
-          borderWidth: 3,
-          borderColor: getStatusColor(status),
-        }
-      : mergedStyle;
+    // But don't apply status border if it's a map avatar (rings handle the border)
+    const finalStyle =
+      isMapAvatar || !status
+        ? mergedStyle
+        : {
+            ...mergedStyle,
+            borderWidth: 3,
+            borderColor: getStatusColorByType('border', status),
+          };
 
     // Generate accessibility props
     const accessibilityProps = createAccessibilityProps(props);
@@ -288,7 +461,8 @@ const AvatarBase = React.forwardRef<
       );
     };
 
-    return (
+    // Render avatar content
+    const avatarContent = (
       <View style={finalStyle}>
         {renderAvatarContent()}
 
@@ -303,11 +477,24 @@ const AvatarBase = React.forwardRef<
         )}
       </View>
     );
+
+    // If map avatar, wrap in rings
+    if (isMapAvatar) {
+      return (
+        <View style={mapAvatarStyles.mapContainer} collapsable={false}>
+          <View style={mapAvatarStyles.outerRing} />
+          <View style={mapAvatarStyles.innerRing}>
+            <View style={mapAvatarStyles.avatarWrapper}>{avatarContent}</View>
+          </View>
+        </View>
+      );
+    }
+
+    return avatarContent;
   }
 );
 
 AvatarBase.displayName = 'AvatarBase';
-
 /* ================================
    AVATAR COMPONENT
    ================================ */

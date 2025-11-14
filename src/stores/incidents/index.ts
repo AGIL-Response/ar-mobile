@@ -23,6 +23,7 @@ export interface IncidentsState extends IBaseState {
     type?: string;
     severity?: string;
   };
+  mapFocusIncidentId: string | null;
 
   // Actions namespace
   actions: {
@@ -35,6 +36,7 @@ export interface IncidentsState extends IBaseState {
     setSearchQuery: (query: string) => void;
     setFilters: (filters: Partial<IncidentsState['filters']>) => void;
     clearError: () => void;
+    setMapFocusIncident: (incidentId: string | null) => void;
     reset: () => void;
   };
 }
@@ -47,6 +49,7 @@ const initialState: InitStateType<IncidentsState> = {
   error: null,
   searchQuery: '',
   filters: {},
+  mapFocusIncidentId: null,
 };
 
 const incidentsStore: StateCreator<IncidentsState> = (set, get) => ({
@@ -60,14 +63,17 @@ const incidentsStore: StateCreator<IncidentsState> = (set, get) => ({
 
       try {
         const incidents = await incidentsApi.getIncidents(params);
-        
+
         set((state: IncidentsState) => {
           state.incidents = incidents;
           state.isLoading = false;
         });
       } catch (error) {
         set((state: IncidentsState) => {
-          state.error = error instanceof Error ? error.message : 'Failed to fetch incidents';
+          state.error =
+            error instanceof Error
+              ? error.message
+              : 'Failed to fetch incidents';
           state.isLoading = false;
         });
       }
@@ -81,20 +87,23 @@ const incidentsStore: StateCreator<IncidentsState> = (set, get) => ({
 
       try {
         const incident = await incidentsApi.getIncident(incidentId);
-        
+
         set((state: IncidentsState) => {
           state.selectedIncident = incident;
           state.isLoadingDetails = false;
-          
+
           // Update in incidents list if it exists
-          const index = state.incidents.findIndex(i => i.id === incidentId);
+          const index = state.incidents.findIndex((i) => i.id === incidentId);
           if (index !== -1) {
             state.incidents[index] = incident;
           }
         });
       } catch (error) {
         set((state: IncidentsState) => {
-          state.error = error instanceof Error ? error.message : 'Failed to fetch incident details';
+          state.error =
+            error instanceof Error
+              ? error.message
+              : 'Failed to fetch incident details';
           state.isLoadingDetails = false;
         });
       }
@@ -108,7 +117,7 @@ const incidentsStore: StateCreator<IncidentsState> = (set, get) => ({
 
       try {
         const newIncident = await incidentsApi.createIncident(data);
-        
+
         set((state: IncidentsState) => {
           state.incidents = [newIncident, ...state.incidents];
           state.isLoading = false;
@@ -117,7 +126,10 @@ const incidentsStore: StateCreator<IncidentsState> = (set, get) => ({
         return newIncident;
       } catch (error) {
         set((state: IncidentsState) => {
-          state.error = error instanceof Error ? error.message : 'Failed to create incident';
+          state.error =
+            error instanceof Error
+              ? error.message
+              : 'Failed to create incident';
           state.isLoading = false;
         });
         throw error;
@@ -132,24 +144,27 @@ const incidentsStore: StateCreator<IncidentsState> = (set, get) => ({
 
       try {
         const updatedIncident = await incidentsApi.updateIncident(data);
-        
+
         set((state: IncidentsState) => {
-          const index = state.incidents.findIndex(i => i.id === data.id);
+          const index = state.incidents.findIndex((i) => i.id === data.id);
           if (index !== -1) {
             state.incidents[index] = updatedIncident;
           }
-          
+
           if (state.selectedIncident?.id === data.id) {
             state.selectedIncident = updatedIncident;
           }
-          
+
           state.isLoading = false;
         });
 
         return updatedIncident;
       } catch (error) {
         set((state: IncidentsState) => {
-          state.error = error instanceof Error ? error.message : 'Failed to update incident';
+          state.error =
+            error instanceof Error
+              ? error.message
+              : 'Failed to update incident';
           state.isLoading = false;
         });
         throw error;
@@ -164,19 +179,22 @@ const incidentsStore: StateCreator<IncidentsState> = (set, get) => ({
 
       try {
         await incidentsApi.deleteIncident(incidentId);
-        
+
         set((state: IncidentsState) => {
-          state.incidents = state.incidents.filter(i => i.id !== incidentId);
-          
+          state.incidents = state.incidents.filter((i) => i.id !== incidentId);
+
           if (state.selectedIncident?.id === incidentId) {
             state.selectedIncident = null;
           }
-          
+
           state.isLoading = false;
         });
       } catch (error) {
         set((state: IncidentsState) => {
-          state.error = error instanceof Error ? error.message : 'Failed to delete incident';
+          state.error =
+            error instanceof Error
+              ? error.message
+              : 'Failed to delete incident';
           state.isLoading = false;
         });
         throw error;
@@ -204,6 +222,12 @@ const incidentsStore: StateCreator<IncidentsState> = (set, get) => ({
     clearError: () => {
       set((state: IncidentsState) => {
         state.error = null;
+      });
+    },
+
+    setMapFocusIncident: (incidentId: string | null) => {
+      set((state: IncidentsState) => {
+        state.mapFocusIncidentId = incidentId;
       });
     },
 

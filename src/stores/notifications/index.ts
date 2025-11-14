@@ -16,6 +16,7 @@ import { createStore, resetStore } from '@/stores/utils';
 
 export interface NotificationsState extends IBaseState {
   // State properties
+  unreadCount: number;
   notifications: UserNotification[];
   isLoading: boolean;
   error: string | null;
@@ -23,14 +24,19 @@ export interface NotificationsState extends IBaseState {
   // Actions namespace
   actions: {
     fetchNotifications: (params?: NotificationsQueryParams) => Promise<void>;
-    markNotificationRead: (notificationId: string, status: NotificationStatus) => Promise<void>;
+    markNotificationRead: (
+      notificationId: string,
+      status: NotificationStatus
+    ) => Promise<void>;
     markAllNotificationsRead: (userId: string) => Promise<void>;
+    getUnreadCount: () => Promise<void>;
     clearError: () => void;
     reset: () => void;
   };
 }
 
 const initialState: InitStateType<NotificationsState> = {
+  unreadCount: 0,
   notifications: [],
   isLoading: false,
   error: null,
@@ -41,41 +47,65 @@ const notificationsStore: StateCreator<NotificationsState> = (set, get) => ({
 
   actions: {
     fetchNotifications: async (params?: NotificationsQueryParams) => {
-      console.log('Notifications store - fetchNotifications called with params:', params);
-      
-      set((state: NotificationsState) => {
-        state.isLoading = true;
-        state.error = null;
+      console.log(
+        'Notifications store - fetchNotifications called with params:',
+        params
+      );
+
+      set((state: NotificationsState): NotificationsState => {
+        return {
+          ...state,
+          isLoading: true,
+          error: null,
+        };
       });
 
       try {
         const response = await notificationsApi.getNotifications(params);
         console.log('Notifications store - API response:', response);
-        
+
         set((state: NotificationsState) => {
-          state.notifications = response.data;
-          state.isLoading = false;
+          return {
+            ...state,
+            notifications: response.data,
+            isLoading: false,
+          };
         });
-        
-        console.log('Notifications store - notifications updated, count:', response.data.length);
+
+        console.log(
+          'Notifications store - notifications updated, count:',
+          response.data.length
+        );
       } catch (error: unknown) {
         console.error('Notifications store - fetch error:', error);
         set((state: NotificationsState) => {
-          state.error = error instanceof Error ? error.message : 'Failed to fetch notifications';
-          state.isLoading = false;
+          return {
+            ...state,
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to fetch notifications',
+            isLoading: false,
+          };
         });
       }
     },
 
-    markNotificationRead: async (notificationId: string, status: NotificationStatus) => {
+    markNotificationRead: async (
+      notificationId: string,
+      status: NotificationStatus
+    ) => {
       try {
-        console.log('Notifications store - marking notification as:', status, notificationId);
-        
+        console.log(
+          'Notifications store - marking notification as:',
+          status,
+          notificationId
+        );
+
         await notificationsApi.markNotificationRead({
           notificationId,
           status,
         });
-
         // Update local state
         set((state: NotificationsState) => {
           const notificationIndex = state.notifications.findIndex(
@@ -84,43 +114,92 @@ const notificationsStore: StateCreator<NotificationsState> = (set, get) => ({
           if (notificationIndex !== -1) {
             state.notifications[notificationIndex].status = status;
           }
+          return {
+            ...state,
+            notifications: state.notifications,
+          };
         });
-        
+        await get().actions.getUnreadCount();
         console.log('Notifications store - notification status updated');
       } catch (error: unknown) {
         console.error('Notifications store - mark read error:', error);
         set((state: NotificationsState) => {
-          state.error = error instanceof Error ? error.message : 'Failed to update notification';
+          return {
+            ...state,
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to update notification',
+          };
         });
       }
     },
 
-    markAllNotificationsRead: async (userId: string) => {
+    markAllNotificationsRead: async () => {
       try {
-        console.log('Notifications store - marking all notifications as read for user:', userId);
-        
-        await notificationsApi.markAllNotificationsRead(userId);
+        console.log(
+          'Notifications store - marking all notifications as read for user:'
+        );
+
+        await notificationsApi.markAllNotificationsRead();
 
         // Update local state
         set((state: NotificationsState) => {
-          state.notifications = state.notifications.map(notification => ({
-            ...notification,
-            status: 'read' as NotificationStatus,
-          }));
+          return {
+            ...state,
+            notifications: state.notifications.map((notification) => ({
+              ...notification,
+              status: 'read' as NotificationStatus,
+            })),
+          };
         });
-        
+
+        await get().actions.getUnreadCount();
         console.log('Notifications store - all notifications marked as read');
       } catch (error: unknown) {
         console.error('Notifications store - mark all read error:', error);
         set((state: NotificationsState) => {
-          state.error = error instanceof Error ? error.message : 'Failed to mark all notifications as read';
+          return {
+            ...state,
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to mark all notifications as read',
+          };
+        });
+      }
+    },
+
+    getUnreadCount: async () => {
+      try {
+        // const response = await notificationsApi.getUnreadCount();
+        // const unreadCount = response.pagination.total;
+        // set((state: NotificationsState) => {
+        //   return {
+        //     ...state,
+        //     unreadCount: unreadCount,
+        //   };
+        // });
+      } catch (error: unknown) {
+        console.error('Notifications store - get unread count error:', error);
+        set((state: NotificationsState) => {
+          return {
+            ...state,
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to get unread count',
+          };
         });
       }
     },
 
     clearError: () => {
       set((state: NotificationsState) => {
-        state.error = null;
+        return {
+          ...state,
+          error: null,
+        };
       });
     },
 
@@ -128,4 +207,5 @@ const notificationsStore: StateCreator<NotificationsState> = (set, get) => ({
   },
 });
 
-export const useNotificationsStore = createStore<NotificationsState>(notificationsStore);
+export const useNotificationsStore =
+  createStore<NotificationsState>(notificationsStore);

@@ -3,12 +3,13 @@
  * Main dashboard with tab-based view switching
  */
 
-import React, { useState, useEffect } from 'react';
-import { Background, View } from "@/components";
+import React, { useEffect, useState } from 'react';
+
+import { Background, View } from '@/components';
 import useAuthStore from '@/stores/auth';
-import { useTheme } from '@/theme';
-import { useTasksStore } from '@/stores/tasks';
 import { useIncidentsStore } from '@/stores/incidents';
+import { useTasksStore } from '@/stores/tasks';
+import { useTheme } from '@/theme';
 
 import { AppHeader } from './components/app-header';
 import { FlatView } from './components/flat-view';
@@ -16,12 +17,14 @@ import { FloatingActionButton } from './components/floating-action-button';
 import { LocationStatus } from './components/location-status';
 import { MapView } from './components/map-view';
 import { TabSelector } from './components/tab-selector';
+import { useUsersStore } from '@/stores/users';
 
 export default function HomeScreen() {
   const theme = useTheme();
   const authState = useAuthStore();
   const tasksState = useTasksStore();
   const incidentsState = useIncidentsStore();
+  const usersState = useUsersStore();
   const selectedTenant = authState.selectedTenant;
   const selectedTeam = authState.selectedTeam;
   const userId = authState.user?.id;
@@ -45,6 +48,15 @@ export default function HomeScreen() {
       incidentsState.actions.fetchIncidents({});
     }
   }, [userId, teamId, selectedTenant?.id]);
+
+  useEffect(() => {
+    if (incidentsState.mapFocusIncidentId && activeTab !== 'map') {
+      setActiveTab('map');
+    }
+    if (usersState.mapFocusUserId && activeTab !== 'map') {
+      setActiveTab('map');
+    }
+  }, [incidentsState.mapFocusIncidentId, usersState.mapFocusUserId, activeTab]);
 
   const handleTabChange = (tab: 'flat' | 'map') => {
     setActiveTab(tab);

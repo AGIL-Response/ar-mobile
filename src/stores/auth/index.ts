@@ -54,6 +54,7 @@ export interface IUser {
   lastName?: string;
   tenantId: string;
   realm: string;
+  avatarId: string;
   roles: string[];
   permissions: string[];
   teamRoles?: any[];

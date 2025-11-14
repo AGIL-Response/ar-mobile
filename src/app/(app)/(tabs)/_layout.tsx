@@ -5,7 +5,7 @@
 
 import { Tabs, useRouter } from 'expo-router';
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 
 // Import the new Icon component and constants
 import { Icon, type IconName, iconNames } from '@/components';
@@ -26,47 +26,13 @@ function TabBarIcon({
     tasks: iconNames.list,
     incidents: iconNames.incident,
     create: iconNames.plus,
-    notifications: iconNames.notification_badge,
     chat: iconNames.message_square,
-    profile: iconNames.user,
   };
 
   const iconName = iconMap[name];
 
   return <Icon name={iconName} size={24} color={color} />;
 }
-
-// function TabBarBadge({ count }: { count?: number }) {
-//   if (!count) return null;
-
-//   return (
-//     <View
-//       style={{
-//         position: 'absolute',
-//         top: -4,
-//         right: -4,
-//         backgroundColor: '#c92a2a', // Red from Figma
-//         borderRadius: 8,
-//         minWidth: 16,
-//         height: 16,
-//         justifyContent: 'center',
-//         alignItems: 'center',
-//         zIndex: 1,
-//       }}
-//     >
-//       <Text
-//         style={{
-//           color: 'white',
-//           fontSize: 12,
-//           fontWeight: '600',
-//           textAlign: 'center',
-//         }}
-//       >
-//         {count}
-//       </Text>
-//     </View>
-//   );
-// }
 
 export default function TabLayout() {
   const theme = useTheme();
@@ -109,16 +75,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="incidents"
-        options={{
-          title: 'Incidents',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name="incidents" color={color} focused={focused} />
-          ),
-        }}
-      />
-      {/* Create Incident */}
-      <Tabs.Screen
         name="create"
         options={{
           title: 'Create',
@@ -147,21 +103,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="notifications"
+        name="incidents"
         options={{
-          title: 'Notifications',
+          title: 'Incidents',
           tabBarIcon: ({ color, focused }) => (
-            <View>
-              <TabBarIcon
-                name="notifications"
-                color={color}
-                focused={focused}
-              />
-              {/*<TabBarBadge count={3} />*/}
-            </View>
+            <TabBarIcon name="incidents" color={color} focused={focused} />
           ),
         }}
       />
+      {/* Create Incident */}
       <Tabs.Screen
         name="chat"
         options={{
@@ -171,15 +121,6 @@ export default function TabLayout() {
               <TabBarIcon name="chat" color={color} focused={focused} />
               {/*<TabBarBadge count={1} />*/}
             </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name="profile" color={color} focused={focused} />
           ),
         }}
       />

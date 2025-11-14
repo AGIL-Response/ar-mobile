@@ -19,10 +19,12 @@ import {
 import { useAuthStore } from '@/stores/auth';
 import { useTheme } from '@/theme';
 import images from '@assets/images';
+import { useRouter } from 'expo-router';
 
 export default function ProfileScreen() {
   const theme = useTheme();
   const authState = useAuthStore();
+  const router = useRouter();
 
   const user = authState.user;
   const selectedTenant = authState.selectedTenant;
@@ -86,7 +88,11 @@ export default function ProfileScreen() {
 
   return (
     <Background>
-      <AppBar title="Profile" />
+      <AppBar
+        title="Profile"
+        showBackButton={true}
+        onBackPress={() => router.back()}
+      />
 
       <ScrollView
         style={{ flex: 1 }}

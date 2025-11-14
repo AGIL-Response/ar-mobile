@@ -1,4 +1,4 @@
-import { getTeamMembers,getUserRoles, getUsersByTenant } from '@/api/users';
+import { getTeamMembers, getUserRoles, getUsersByTenant } from '@/api/users';
 import type { IBaseState, InitStateType } from '@/stores/interfaces/IBaseState';
 import { createStore, resetStore } from '@/stores/utils';
 import type { User, UsersQueryParams } from '@/types';
@@ -9,14 +9,21 @@ export interface UsersState extends IBaseState {
   isLoading: boolean;
   error: string | null;
   searchQuery: string;
+  mapFocusUserId: string | null;
 
   // Actions namespace
   actions: {
     fetchUsers: (tenantId: string, params?: UsersQueryParams) => Promise<void>;
     fetchTeamMembers: (teamId: string) => Promise<void>;
     fetchUserRoles: (userId: string, tenantId: string) => Promise<void>;
-    updateUserLocation: (userId: string, location: { type: string; coordinates: number[] }, attributes?: { networkMbps?: number; batteryPercentage?: number }, status?: string) => void;
+    updateUserLocation: (
+      userId: string,
+      location: { type: string; coordinates: number[] },
+      attributes?: { networkMbps?: number; batteryPercentage?: number },
+      status?: string
+    ) => void;
     setSearchQuery: (query: string) => void;
+    setMapFocusUserId: (userId: string | null) => void;
     reset: () => void;
   };
 }
@@ -26,6 +33,7 @@ const initialState: InitStateType<UsersState> = {
   isLoading: false,
   error: null,
   searchQuery: '',
+  mapFocusUserId: null,
 };
 
 const usersStore = (set: any, get: any) => ({
@@ -46,7 +54,8 @@ const usersStore = (set: any, get: any) => ({
         });
       } catch (error) {
         set((state: UsersState) => {
-          state.error = error instanceof Error ? error.message : 'Failed to fetch users';
+          state.error =
+            error instanceof Error ? error.message : 'Failed to fetch users';
           state.isLoading = false;
         });
       }
@@ -67,7 +76,10 @@ const usersStore = (set: any, get: any) => ({
         });
       } catch (error) {
         set((state: UsersState) => {
-          state.error = error instanceof Error ? error.message : 'Failed to fetch team members';
+          state.error =
+            error instanceof Error
+              ? error.message
+              : 'Failed to fetch team members';
           state.isLoading = false;
         });
       }
@@ -78,35 +90,49 @@ const usersStore = (set: any, get: any) => ({
         const roles = await getUserRoles(userId, tenantId);
 
         set((state: UsersState) => {
-          const userIndex = state.users.findIndex(user => user.id === userId);
+          const userIndex = state.users.findIndex((user) => user.id === userId);
           if (userIndex !== -1) {
             state.users[userIndex].roles = roles;
           }
         });
       } catch (error) {
         set((state: UsersState) => {
-          state.error = error instanceof Error ? error.message : 'Failed to fetch user roles';
+          state.error =
+            error instanceof Error
+              ? error.message
+              : 'Failed to fetch user roles';
         });
       }
     },
 
-    updateUserLocation: (userId: string, location: { type: string; coordinates: number[] }, attributes?: { networkMbps?: number; batteryPercentage?: number }, status?: string) => {
+    updateUserLocation: (
+      userId: string,
+      location: { type: string; coordinates: number[] },
+      attributes?: { networkMbps?: number; batteryPercentage?: number },
+      status?: string
+    ) => {
       set((state: UsersState) => {
-        const userIndex = state.users.findIndex(user => user.id === userId);
+        const userIndex = state.users.findIndex((user) => user.id === userId);
         if (userIndex !== -1) {
           // Update location
           state.users[userIndex].location = location;
-          
+
           // Update attributes if provided
           if (attributes) {
             state.users[userIndex].attributes = attributes;
           }
-          
+
           // Update status if provided
           if (status !== undefined) {
             state.users[userIndex].status = status;
           }
         }
+      });
+    },
+
+    setMapFocusUserId: (userId: string | null) => {
+      set((state: UsersState) => {
+        state.mapFocusUserId = userId;
       });
     },
 

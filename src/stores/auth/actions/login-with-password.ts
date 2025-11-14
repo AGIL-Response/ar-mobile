@@ -75,6 +75,7 @@ const loginWithPassword =
             [],
           permissions: [], // Extract from roles if needed
           teamRoles: profileResponse.data.teamRoles || [],
+          avatarId: profileResponse.data.avatarId || '',
         };
 
         // Set the selected tenant from the API response
@@ -84,16 +85,18 @@ const loginWithPassword =
             name: profileResponse.data.tenants.name,
             displayName: profileResponse.data.tenants.name, // Use name as displayName for now
           };
-          
+
           set((state: AuthState) => {
             state.selectedTenant = tenantFromResponse;
             // Also add to tenants array if not already there
-            const existingTenant = state.tenants.find(t => t.id === tenantFromResponse.id);
+            const existingTenant = state.tenants.find(
+              (t) => t.id === tenantFromResponse.id
+            );
             if (!existingTenant) {
               state.tenants.push(tenantFromResponse);
             }
           });
-          
+
           console.log('Selected tenant set from profile:', tenantFromResponse);
         }
       } catch (profileError) {
@@ -113,6 +116,7 @@ const loginWithPassword =
           roles: [],
           permissions: [],
           teamRoles: [],
+          avatarId: '',
         };
       }
 
@@ -126,10 +130,17 @@ const loginWithPassword =
       try {
         console.log('Fetching user teams...');
         const teamsResponse = await authApi.getUserTeams(userId);
-        if (teamsResponse?.data && Array.isArray(teamsResponse.data) && teamsResponse.data.length > 0) {
+        if (
+          teamsResponse?.data &&
+          Array.isArray(teamsResponse.data) &&
+          teamsResponse.data.length > 0
+        ) {
           // Store only the first team since user only has one team
           get().actions.setSelectedTeam(teamsResponse.data[0]);
-          console.log('User team fetched successfully:', teamsResponse.data[0].name);
+          console.log(
+            'User team fetched successfully:',
+            teamsResponse.data[0].name
+          );
         } else {
           get().actions.setSelectedTeam(null);
           console.log('No teams found for user');
@@ -160,13 +171,13 @@ const loginWithPassword =
       // Initialize location monitoring after successful login (non-blocking)
       try {
         const locationStore = useLocationStore.getState();
-        
+
         // Connect to WebSocket with access token
         locationStore.actions.connectToWebSocket(tokens.accessToken);
-        
+
         // Start location monitoring
         await locationStore.actions.startLocationMonitoring();
-        
+
         console.log('📍 Location monitoring initialized after login');
       } catch (locationError) {
         console.warn(

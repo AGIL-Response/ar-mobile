@@ -4,7 +4,13 @@
  */
 
 export type NotificationStatus = 'read' | 'unread';
-export type NotificationType = 'task_assigned' | 'incident_assigned' | 'task_completed' | 'incident_resolved' | 'team_update' | 'system_maintenance';
+export type NotificationType =
+  | 'task_assigned'
+  | 'incident_assigned'
+  | 'task_completed'
+  | 'incident_resolved'
+  | 'team_update'
+  | 'system_maintenance';
 
 export interface NotificationActor {
   id: string;
@@ -74,6 +80,23 @@ export interface NotificationsQueryParams {
 export interface NotificationsResponse {
   code: string;
   data: UserNotification[];
+  message: string;
+  pagination: {
+    total: number;
+    hasNextPage: boolean;
+  };
+}
+
+export interface NotificationsUnreadCountResponse {
+  code: string;
+  data: {
+    type: NotificationType;
+    message: string;
+    metadata: NotificationMetadata;
+    userId: string;
+    notificationId: string;
+    status: NotificationStatus;
+  }[];
   message: string;
   pagination: {
     total: number;

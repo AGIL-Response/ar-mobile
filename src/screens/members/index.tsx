@@ -24,6 +24,7 @@ export function MembersScreen(): React.JSX.Element {
   const router = useRouter();
   const authState = useAuthStore();
   const usersState = useUsersStore();
+  const { setMapFocusUserId } = usersState.actions;
   const theme = useTheme();
   const { ref, present } = useModal();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -85,6 +86,11 @@ export function MembersScreen(): React.JSX.Element {
     present();
   };
 
+  const handleMapFocus = (userId: string) => {
+    setMapFocusUserId(userId);
+    router.push('/');
+  };
+
   const renderUserCard = (user: User) => {
     const styles = createStyles(theme);
 
@@ -121,7 +127,10 @@ export function MembersScreen(): React.JSX.Element {
                   />
                 </View>
                 <View style={styles.actionsRow}>
-                  <TouchableOpacity style={styles.actionBtn}>
+                  <TouchableOpacity
+                    style={styles.actionBtn}
+                    onPress={() => handleMapFocus(user.id)}
+                  >
                     <Icon
                       name={iconNames.location}
                       size={18}
