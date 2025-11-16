@@ -7,63 +7,22 @@
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
 
-import type { Incident, IncidentSeverity } from '@/api/incidents/types';
+import type { Incident } from '@/api/incidents/types';
 import { Icon, iconNames, Text, View } from '@/components';
 import { useUsersStore } from '@/stores/users';
-import { Palette, useTheme } from '@/theme';
+import { useTheme } from '@/theme';
 import { FontFamilies } from '@/lib/fonts';
+import {
+  getPriorityBackgroundColor,
+  getPriorityColor,
+  getPriorityLabel,
+  mapIncidentTypeToSeverity,
+} from '../detail';
 
 interface IncidentCardProps {
   incident: Incident;
   onPress?: (incident: Incident) => void;
 }
-
-const getBackgroundColor = (severity: IncidentSeverity): string => {
-  switch (severity) {
-    case 'high':
-      return Palette.errorAlt;
-    case 'medium':
-      return Palette.warningAlt;
-    case 'low':
-      return Palette.backgroundSecondary;
-    default:
-      return Palette.backgroundSecondary;
-  }
-};
-
-const getSeverityColor = (severity?: IncidentSeverity): string => {
-  switch (severity) {
-    case 'high':
-      return Palette.error; // Red
-    case 'medium':
-      return Palette.warning; // Orange
-    case 'low':
-      return Palette.primary500; // Orange-red
-    default:
-      return Palette.warning; // Default to medium/orange for unknown
-  }
-};
-
-const getSeverityLabel = (severity?: IncidentSeverity): string => {
-  if (!severity) return 'Medium'; // Default display
-  return severity.charAt(0).toUpperCase() + severity.slice(1);
-};
-
-// Helper function to map incident type to severity for display
-const mapIncidentTypeToSeverity = (type: string): IncidentSeverity => {
-  switch (type?.toLowerCase()) {
-    case 'emergency':
-      return 'high';
-    case 'maintenance':
-    case 'security':
-      return 'medium';
-    case 'health':
-    case 'environmental':
-      return 'low';
-    default:
-      return 'medium';
-  }
-};
 
 const formatTimeAgo = (dateString: string): string => {
   const date = new Date(dateString);
@@ -127,6 +86,7 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
       {/* Header Row */}
       <View
         style={{
+          flex: 1,
           flexDirection: 'row',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -136,6 +96,7 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
         <Text
           variant="h4"
           style={{
+            flex: 1,
             color: theme.colors.text.primary,
             fontFamily: FontFamilies.goldmanRegular,
           }}
@@ -144,7 +105,7 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
         </Text>
         <View
           style={{
-            backgroundColor: getBackgroundColor(displaySeverity),
+            backgroundColor: getPriorityBackgroundColor(displaySeverity),
             paddingHorizontal: 6,
             paddingTop: 8,
             paddingBottom: 4,
@@ -153,9 +114,9 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
         >
           <Text
             variant="bodySmall"
-            style={{ color: getSeverityColor(displaySeverity)}}
+            style={{ color: getPriorityColor(displaySeverity) }}
           >
-            {getSeverityLabel(displaySeverity)}
+            {getPriorityLabel(displaySeverity)}
           </Text>
         </View>
       </View>

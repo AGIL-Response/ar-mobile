@@ -107,7 +107,7 @@ const createCheckboxBoxStyles = createStyleCreator<CheckboxProps>(
     const baseStyles = {
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: borderRadius.xs,
+      borderRadius: borderRadius.md,
       borderWidth: 2,
     };
 
@@ -127,13 +127,27 @@ const createCheckboxBoxStyles = createStyleCreator<CheckboxProps>(
       },
     };
 
+    const checkedVariantStyles = {
+      default: {
+        backgroundColor: colors.text.secondary,
+        borderColor: colors.text.secondary,
+      },
+      outlined: {
+        backgroundColor: colors.button.ghost,
+        borderColor: colors.button.ghost,
+        borderWidth: 0,
+      },
+      filled: {
+        backgroundColor: colors.text.secondary,
+        borderColor: colors.text.secondary,
+      },
+    };
+
     // Checked/indeterminate state overrides - use theme-aware colors
-    const checkedBackgroundColor = isDark ? '#1984cc' : '#1068eb'; // primary500 for dark, primary for light
     const checkedStyles =
       checked || indeterminate
         ? {
-            backgroundColor: checkedBackgroundColor,
-            borderColor: checkedBackgroundColor,
+            ...checkedVariantStyles[variant],
           }
         : {};
 
@@ -173,8 +187,19 @@ const createCheckboxBoxStyles = createStyleCreator<CheckboxProps>(
 
 const createCheckboxIconStyles = createStyleCreator<CheckboxProps>(
   (theme, props) => {
-    const { disabled = false, checked = false, indeterminate = false } = props;
+    const {
+      disabled = false,
+      checked = false,
+      indeterminate = false,
+      variant = 'default',
+    } = props;
     const { colors } = theme;
+
+    if (variant === 'outlined') {
+      return {
+        color: colors.text.tertiary,
+      };
+    }
 
     // When checked/indeterminate, icon should be white (on colored background)
     // When unchecked, no icon is shown, but if needed, use theme-aware color
@@ -198,8 +223,8 @@ const createCheckboxContentStyles = createStyleCreator<CheckboxProps>(
 
     const marginMap = {
       small: spacing.gap.xs,
-      medium: spacing.gap.sm,
-      large: spacing.gap.md,
+      medium: spacing.gap.md,
+      large: spacing.gap.lg,
     };
 
     return {
@@ -217,12 +242,12 @@ const createCheckboxLabelStyles = createStyleCreator<CheckboxProps>(
 
     const typographyVariants = {
       small: typography.caption,
-      medium: typography.body,
-      large: typography.h4,
+      medium: typography.bodyMedium,
+      large: typography.body,
     };
 
     return {
-      color: disabled ? colors.text.muted : colors.text.primary,
+      color: disabled ? colors.text.muted : colors.text.tertiary,
       ...typographyVariants[size],
     };
   }
@@ -312,6 +337,7 @@ export const Checkbox = forwardRef<RNView, CheckboxProps>(
     const theme = useTheme();
     const iconStyles = useThemedStyles(createCheckboxIconStyles, {
       size,
+      variant,
       disabled,
       checked,
       indeterminate,
@@ -362,6 +388,8 @@ export const Checkbox = forwardRef<RNView, CheckboxProps>(
     // Determine which icon to show
     const renderIcon = () => {
       const iconSize = size === 'small' ? 12 : size === 'medium' ? 14 : 16;
+      // Make stroke thicker for bolder appearance
+      const strokeWidth = size === 'small' ? 2.5 : size === 'medium' ? 4 : 3.5;
 
       if (indeterminate) {
         return (
@@ -370,6 +398,7 @@ export const Checkbox = forwardRef<RNView, CheckboxProps>(
             height={iconSize}
             color={iconColor}
             style={iconStyles}
+            strokeWidth={strokeWidth}
           />
         );
       }
@@ -381,6 +410,7 @@ export const Checkbox = forwardRef<RNView, CheckboxProps>(
             height={iconSize}
             color={iconColor}
             style={iconStyles}
+            strokeWidth={strokeWidth}
           />
         );
       }

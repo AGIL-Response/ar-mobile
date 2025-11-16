@@ -5,7 +5,7 @@
 
 import React from 'react';
 import type { PressableProps } from 'react-native';
-import { ActivityIndicator, Pressable } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 
 import type { Theme } from '@/theme';
 
@@ -81,6 +81,10 @@ const createButtonStyles = (
     disabled: colors.button.disabled,
   };
 
+  const buttonBorderColor = {
+    disabled: colors.button.border,
+  };
+
   const buttonColor = colorSchemes[colorVariant];
 
   // Base button styles
@@ -99,7 +103,8 @@ const createButtonStyles = (
   const variantStyles = {
     solid: {
       backgroundColor: buttonColor,
-      borderWidth: 0,
+      borderWidth: buttonBorderColor[colorVariant] ? 1 : 0,
+      borderColor: buttonBorderColor[colorVariant] || 'transparent',
     },
     outline: {
       backgroundColor: 'transparent',
@@ -175,7 +180,7 @@ const createButtonTextStyles = (theme: Theme, props: ButtonProps) => {
   // Typography variant based on size
   const typographyVariants = {
     small: 'caption' as const,
-    medium: 'label' as const,
+    medium: 'body' as const,
     large: 'h3' as const,
   };
 
@@ -278,8 +283,8 @@ export const Button = React.forwardRef<any, ButtonProps & PressableProps>(
       if (iconPosition === 'left') {
         return (
           <React.Fragment>
-            {iconElement && <React.Fragment>{iconElement}</React.Fragment>}
-            {iconElement && textElement && <React.Fragment> </React.Fragment>}
+            {iconElement}
+            {iconElement && textElement && <View style={{ width: 8 }} />}
             {textElement}
           </React.Fragment>
         );
@@ -288,8 +293,8 @@ export const Button = React.forwardRef<any, ButtonProps & PressableProps>(
       return (
         <React.Fragment>
           {textElement}
-          {iconElement && textElement && <React.Fragment> </React.Fragment>}
-          {iconElement && <React.Fragment>{iconElement}</React.Fragment>}
+          {iconElement && textElement && <View style={{ width: 8 }} />}
+          {iconElement}
         </React.Fragment>
       );
     };

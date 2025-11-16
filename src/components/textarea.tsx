@@ -87,7 +87,7 @@ const createTextAreaWrapperStyles = createStyleCreator<TextAreaProps>(
     };
 
     const paddingMap = {
-      small: spacing.padding.sm,
+      small: spacing.padding.lg,
       medium: spacing.padding.xxl,
       large: spacing.padding.xxxl,
     };
@@ -288,7 +288,8 @@ export const TextArea = forwardRef<TextInput, TextAreaProps>(
 
     // Get theme for default placeholder color
     const theme = useThemedStyles((theme) => theme, {});
-    const defaultPlaceholderColor = placeholderTextColor || theme.colors.text.placeholder;
+    const defaultPlaceholderColor =
+      placeholderTextColor || theme.colors.text.placeholder;
 
     // Create accessibility props
     const accessibilityProps = createAccessibilityProps({

@@ -71,8 +71,8 @@ const createInputWrapperStyles = createStyleCreator<InputProps>(
     // Size variants
     const sizeStyles = {
       small: {
-        height: 40,
-        paddingHorizontal: spacing.padding.sm,
+        height: 32,
+        paddingHorizontal: spacing.padding.lg,
       },
       medium: {
         height: components.input.height,

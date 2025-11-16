@@ -1,5 +1,7 @@
 import * as FileSystem from 'expo-file-system';
 
+import { storage } from '@/lib/storage';
+
 import { apiClient, handleApiError } from '../api-client';
 
 export interface FileUploadOptions {
@@ -20,7 +22,7 @@ export interface FileViewOptions {
 }
 
 /**
- * Convert blob to data URI for displaying in React Native
+ * Convert blob to data URI for displaying in React Native (for images)
  */
 export const blobToDataUri = (blob: Blob): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -29,6 +31,243 @@ export const blobToDataUri = (blob: Blob): Promise<string> => {
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
+};
+
+/**
+ * Convert blob to file URI for React Native (for videos)
+ * Saves blob to temporary file and returns file:// URI
+ */
+export const blobToFileUri = async (
+  blob: Blob,
+  mimeType?: string
+): Promise<string> => {
+  try {
+    const extension = mimeType?.includes('video/mp4')
+      ? 'mp4'
+      : mimeType?.includes('video/quicktime')
+        ? 'mov'
+        : mimeType?.includes('video/webm')
+          ? 'webm'
+          : 'mp4'; // default to mp4
+
+    // Create temporary file path
+    const fileName = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}.${extension}`;
+    const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
+
+    // Convert blob to base64
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        const base64Data = result.includes(',') ? result.split(',')[1] : result;
+        resolve(base64Data);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+
+    // Write to file system
+    await FileSystem.writeAsStringAsync(fileUri, base64, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+
+    return fileUri;
+  } catch (error) {
+    console.error('Failed to convert blob to file URI:', error);
+    throw error;
+  }
+};
+
+/**
+ * Convert blob to appropriate URI based on mime type
+ * - Images: data URI (for React Native Image component)
+ * - Videos: file URI (for expo-video player)
+ */
+export const blobToUri = async (
+  blob: Blob,
+  mimeType?: string | null
+): Promise<string> => {
+  const isVideo = mimeType?.startsWith('video/') ?? false;
+
+  if (isVideo) {
+    return blobToFileUri(blob, mimeType || undefined);
+  } else {
+    return blobToDataUri(blob);
+  }
+};
+
+/**
+ * File cache interface
+ */
+interface FileCacheEntry {
+  uri: string;
+  mimeType: string | null;
+}
+
+/**
+ * Storage key prefix for file cache entries
+ */
+const CACHE_KEY_PREFIX = 'file_cache_';
+const CACHE_KEYS_KEY = 'file_cache_keys';
+
+/**
+ * In-memory cache for file URIs by fileId (for fast access)
+ * Synced with persistent MMKV storage
+ */
+const fileUriCache = new Map<string, FileCacheEntry>();
+
+/**
+ * Initialize cache from persistent storage
+ * Called once to load existing cache entries into memory
+ */
+let cacheInitialized = false;
+
+const initializeCache = (): void => {
+  if (cacheInitialized) return;
+
+  try {
+    const cacheKeys = storage.getString(CACHE_KEYS_KEY);
+    if (cacheKeys) {
+      const keys: string[] = JSON.parse(cacheKeys);
+      keys.forEach((fileId) => {
+        const cacheKey = `${CACHE_KEY_PREFIX}${fileId}`;
+        const cachedValue = storage.getString(cacheKey);
+        if (cachedValue) {
+          const entry: FileCacheEntry = JSON.parse(cachedValue);
+          fileUriCache.set(fileId, entry);
+        }
+      });
+    }
+  } catch (error) {
+    console.log('Failed to initialize file cache from storage:', error);
+  }
+
+  cacheInitialized = true;
+};
+
+/**
+ * Get all cache keys from storage
+ */
+const getCacheKeys = (): string[] => {
+  try {
+    const keys = storage.getString(CACHE_KEYS_KEY);
+    return keys ? JSON.parse(keys) : [];
+  } catch {
+    return [];
+  }
+};
+
+/**
+ * Save cache keys to storage
+ */
+const saveCacheKeys = (keys: string[]): void => {
+  storage.set(CACHE_KEYS_KEY, JSON.stringify(keys));
+};
+
+/**
+ * Get cached file URI for a fileId
+ * Checks in-memory cache first, then persistent storage
+ */
+export const getCachedFileUri = (
+  fileId: string | null | undefined
+): FileCacheEntry | null => {
+  if (!fileId) return null;
+
+  // Initialize cache on first access
+  if (!cacheInitialized) {
+    initializeCache();
+  }
+
+  // Check in-memory cache first (fast)
+  if (fileUriCache.has(fileId)) {
+    return fileUriCache.get(fileId) || null;
+  }
+
+  // Check persistent storage
+  try {
+    const cacheKey = `${CACHE_KEY_PREFIX}${fileId}`;
+    const cachedValue = storage.getString(cacheKey);
+    if (cachedValue) {
+      const entry: FileCacheEntry = JSON.parse(cachedValue);
+      // Update in-memory cache for future fast access
+      fileUriCache.set(fileId, entry);
+      return entry;
+    }
+  } catch (error) {
+    console.log('Failed to get cached file URI from storage:', error);
+  }
+
+  return null;
+};
+
+/**
+ * Cache file URI for a fileId
+ * Saves to both in-memory cache and persistent storage
+ */
+export const cacheFileUri = (
+  fileId: string,
+  uri: string,
+  mimeType: string | null
+): void => {
+  const entry: FileCacheEntry = { uri, mimeType };
+
+  // Update in-memory cache
+  fileUriCache.set(fileId, entry);
+
+  // Save to persistent storage
+  try {
+    const cacheKey = `${CACHE_KEY_PREFIX}${fileId}`;
+    storage.set(cacheKey, JSON.stringify(entry));
+
+    // Update cache keys list
+    const keys = getCacheKeys();
+    if (!keys.includes(fileId)) {
+      keys.push(fileId);
+      saveCacheKeys(keys);
+    }
+  } catch (error) {
+    console.log('Failed to save file URI to cache storage:', error);
+  }
+};
+
+/**
+ * Clear cache for a specific fileId
+ */
+export const clearCachedFileUri = (fileId: string): void => {
+  // Remove from in-memory cache
+  fileUriCache.delete(fileId);
+
+  // Remove from persistent storage
+  try {
+    const cacheKey = `${CACHE_KEY_PREFIX}${fileId}`;
+    storage.delete(cacheKey);
+
+    // Update cache keys list
+    const keys = getCacheKeys().filter((key) => key !== fileId);
+    saveCacheKeys(keys);
+  } catch (error) {
+    console.log('Failed to clear cached file URI from storage:', error);
+  }
+};
+
+/**
+ * Clear all cached file URIs
+ */
+export const clearAllCachedFileUris = (): void => {
+  // Clear in-memory cache
+  fileUriCache.clear();
+
+  // Clear persistent storage
+  try {
+    const keys = getCacheKeys();
+    keys.forEach((fileId) => {
+      const cacheKey = `${CACHE_KEY_PREFIX}${fileId}`;
+      storage.delete(cacheKey);
+    });
+    storage.delete(CACHE_KEYS_KEY);
+  } catch (error) {
+    console.log('Failed to clear all cached file URIs from storage:', error);
+  }
 };
 
 export const filesApi = {

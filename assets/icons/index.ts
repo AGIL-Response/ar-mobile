@@ -20,6 +20,12 @@ import MobileSignalIcon from './mobile-signal.svg';
 import MessageDotsSquareIcon from './message-dots-square.svg';
 import ChevronLeftIcon from './chevron-left.svg';
 import CameraIcon from './camera.svg';
+import UserPlusIcon from './user-plus.svg';
+import CheckCircleBrokenIcon from './check-circle-broken.svg';
+import HourglassIcon from './hourglass.svg';
+import ClockFastForwardIcon from './clock-fast-forward.svg';
+import PlayIcon from './play.svg';
+import UploadIcon from './upload.svg';
 
 // Icon component type
 type IconComponent = React.ComponentType<SvgProps>;
@@ -46,6 +52,12 @@ export const iconNames = {
   message_dots_square: 'messageDotsSquare',
   chevron_left: 'chevronLeft',
   camera: 'camera',
+  user_plus: 'userPlus',
+  check_circle_broken: 'checkCircleBroken',
+  hourglass: 'hourglass',
+  clock_fast_forward: 'clockFastForward',
+  play: 'play',
+  upload: 'upload',
 } as const;
 
 // Icons object with proper typing
@@ -75,6 +87,12 @@ const icons: Record<string, IconComponent> = {
   [iconNames.message_dots_square]: MessageDotsSquareIcon,
   [iconNames.chevron_left]: ChevronLeftIcon,
   [iconNames.camera]: CameraIcon,
+  [iconNames.user_plus]: UserPlusIcon,
+  [iconNames.check_circle_broken]: CheckCircleBrokenIcon,
+  [iconNames.hourglass]: HourglassIcon,
+  [iconNames.clock_fast_forward]: ClockFastForwardIcon,
+  [iconNames.play]: PlayIcon,
+  [iconNames.upload]: UploadIcon,
 } as const;
 
 // Export icon names as type for better TypeScript support

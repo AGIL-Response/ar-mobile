@@ -1,98 +1,94 @@
-import React from 'react';
-import { TouchableOpacity } from 'react-native';
-import { Text, View } from '@/components';
-import { Modal } from '@/components/modal';
-import { useTheme } from '@/theme';
 import {
-  useCameraPermissions,
   launchCameraAsync,
-  PermissionStatus,
   launchImageLibraryAsync,
+  MediaTypeOptions,
+  PermissionStatus,
+  useCameraPermissions,
   useMediaLibraryPermissions,
 } from 'expo-image-picker';
+import React from 'react';
+import { getMimeTypeFromUri } from '../create';
+
 type Props = {
-  ref: React.RefObject<any>;
-  onImagePicked: (image: string) => void;
+  onAttachmentPicked: (uri: string, mimeType: string) => void;
 };
 
-export const IncidentUploadModel = React.forwardRef<any, Props>(
-  ({ onImagePicked }, ref) => {
-    const theme = useTheme();
+export interface IncidentUploadModelRef {
+  takePhoto: () => Promise<void>;
+  uploadPhoto: () => Promise<void>;
+}
 
-    const [cameraPermissionInformation, requestPermission] =
-      useCameraPermissions();
-    const [galleryPermissionInformation, requestGalleryPermission] =
-      useMediaLibraryPermissions();
+export const IncidentUploadModel = React.forwardRef<
+  IncidentUploadModelRef,
+  Props
+>(({ onAttachmentPicked }, ref) => {
+  const [cameraPermissionInformation, requestPermission] =
+    useCameraPermissions();
+  const [galleryPermissionInformation, requestGalleryPermission] =
+    useMediaLibraryPermissions();
 
-    const verifyCameraPermission = async () => {
-      if (
-        cameraPermissionInformation?.status === PermissionStatus.UNDETERMINED
-      ) {
-        const permissionResponse = await requestPermission();
-        return permissionResponse.granted;
-      }
-      return true;
-    };
+  const verifyCameraPermission = async () => {
+    if (cameraPermissionInformation?.status === PermissionStatus.UNDETERMINED) {
+      const permissionResponse = await requestPermission();
+      return permissionResponse.granted;
+    }
+    return cameraPermissionInformation?.status === PermissionStatus.GRANTED;
+  };
 
-    const verifyGalleryPermission = async () => {
-      if (
-        galleryPermissionInformation?.status === PermissionStatus.UNDETERMINED
-      ) {
-        const permissionResponse = await requestGalleryPermission();
-        return permissionResponse.granted;
-      }
-      return true;
-    };
+  const verifyGalleryPermission = async () => {
+    if (
+      galleryPermissionInformation?.status === PermissionStatus.UNDETERMINED
+    ) {
+      const permissionResponse = await requestGalleryPermission();
+      return permissionResponse.granted;
+    }
+    return galleryPermissionInformation?.status === PermissionStatus.GRANTED;
+  };
 
-    const handleTakePhoto = async () => {
-      const hasPermission = await verifyCameraPermission();
-      if (!hasPermission) {
-        return;
-      }
-      const image = await launchCameraAsync({
-        allowsEditing: true,
-        aspect: [16, 9],
-        quality: 1,
-      });
+  const handleTakePhoto = async () => {
+    const hasPermission = await verifyCameraPermission();
+    if (!hasPermission) {
+      return;
+    }
+    const result = await launchCameraAsync({
+      mediaTypes: MediaTypeOptions.All, // Allow both images and videos
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 1,
+      videoQuality: 1,
+    });
 
-      if (!image.canceled) {
-        console.log(image.assets[0].uri);
-        onImagePicked(image.assets[0].uri);
-      }
-    };
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      const mimeType = asset.mimeType || getMimeTypeFromUri(asset.uri);
+      onAttachmentPicked(asset.uri, mimeType);
+    }
+  };
 
-    const handleChooseFromGallery = async () => {
-      const hasPermission = await verifyGalleryPermission();
-      if (!hasPermission) {
-        return;
-      }
-      const image = await launchImageLibraryAsync({
-        allowsEditing: true,
-        aspect: [16, 9],
-        quality: 1,
-      });
+  const handleChooseFromGallery = async () => {
+    const hasPermission = await verifyGalleryPermission();
+    if (!hasPermission) {
+      return;
+    }
+    const result = await launchImageLibraryAsync({
+      mediaTypes: MediaTypeOptions.All, // Allow both images and videos
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 1,
+      videoQuality: 1,
+    });
 
-      if (!image.canceled) {
-        console.log(image.assets[0].uri);
-        onImagePicked(image.assets[0].uri);
-      }
-    };
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      const mimeType = asset.mimeType || getMimeTypeFromUri(asset.uri);
+      onAttachmentPicked(asset.uri, mimeType);
+    }
+  };
 
-    return (
-      <Modal ref={ref} snapPoints={['15%']}>
-        <View style={{ flex: 1, padding: 20 }}>
-          <TouchableOpacity
-            onPress={handleTakePhoto}
-            style={{ marginBottom: 20 }}
-          >
-            <Text variant="h4">Take Photo</Text>
-          </TouchableOpacity>
+  React.useImperativeHandle(ref, () => ({
+    takePhoto: handleTakePhoto,
+    uploadPhoto: handleChooseFromGallery,
+  }));
 
-          <TouchableOpacity onPress={handleChooseFromGallery}>
-            <Text variant="h4">Choose from Gallery</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
-    );
-  }
-);
+  return null;
+});

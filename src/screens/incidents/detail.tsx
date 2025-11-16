@@ -7,32 +7,217 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { ScrollView, TouchableOpacity } from 'react-native';
 
-import type { Incident } from '@/api/incidents/types';
+import type { Incident, IncidentSeverity } from '@/api/incidents/types';
 import {
   AppBar,
+  AttachmentsGallery,
+  Background,
   Center,
-  IncidentAttachment,
   Icon,
   iconNames,
   Text,
   View,
-  Background,
 } from '@/components';
 import { useAuthStore } from '@/stores/auth';
 import { useIncidentsStore } from '@/stores/incidents';
-import { useTheme } from '@/theme';
+import { Palette, useTheme } from '@/theme';
+import { useUsersStore } from '@/stores/users';
+
+export const mapIncidentTypeToSeverity = (
+  type?: Incident['type']
+): IncidentSeverity => {
+  switch (type?.toLowerCase()) {
+    case 'emergency':
+      return 'high';
+    case 'maintenance':
+    case 'security':
+      return 'medium';
+    case 'health':
+    case 'environmental':
+      return 'low';
+    default:
+      return 'medium';
+  }
+};
+
+export const getTypeLabel = (type: Incident['type']) => {
+  switch (type) {
+    case 'fire':
+      return 'Fire';
+    case 'emergency':
+      return 'Emergency';
+    case 'maintenance':
+      return 'Maintenance';
+    case 'security':
+      return 'Security';
+    case 'health':
+      return 'Health';
+    case 'environmental':
+      return 'Environmental';
+    default:
+      const typeStr = String(type);
+      return typeStr.charAt(0).toUpperCase() + typeStr.slice(1);
+  }
+};
+
+export const getTypeColor = (type: Incident['type']) => {
+  switch (type) {
+    case 'fire':
+      return Palette.error;
+    case 'emergency':
+      return Palette.warning;
+    case 'maintenance':
+      return Palette.primary500;
+    case 'security':
+      return Palette.warning;
+    case 'health':
+      return Palette.primary500;
+    case 'environmental':
+      return Palette.primary500;
+    default:
+      return Palette.primary500;
+  }
+};
+
+export const getTypeBackgroundColor = (type: Incident['type']) => {
+  switch (type) {
+    case 'fire':
+      return Palette.errorAlt;
+    case 'emergency':
+      return Palette.warningAlt;
+    case 'maintenance':
+      return Palette.backgroundSecondary;
+    case 'security':
+      return Palette.warningAlt;
+    case 'health':
+      return Palette.backgroundSecondary;
+    case 'environmental':
+      return Palette.backgroundSecondary;
+    default:
+      return Palette.backgroundSecondary;
+  }
+};
+
+export const getPriorityColor = (severity?: IncidentSeverity) => {
+  switch (severity) {
+    case 'high':
+      return Palette.error;
+    case 'medium':
+      return Palette.warning;
+    case 'low':
+      return Palette.primary500;
+    default:
+      return Palette.primary500;
+  }
+};
+
+export const getPriorityBackgroundColor = (severity?: IncidentSeverity) => {
+  switch (severity) {
+    case 'high':
+      return Palette.errorAlt;
+    case 'medium':
+      return Palette.warningAlt;
+    case 'low':
+      return Palette.backgroundSecondary;
+    default:
+      return Palette.backgroundSecondary;
+  }
+};
+
+export const getIncidentTypeIcon = (type: Incident['type']) => {
+  switch (type) {
+    case 'maintenance':
+      return iconNames.settings;
+    case 'emergency':
+      return iconNames.notification_badge;
+    case 'security':
+      return iconNames.list;
+    case 'health':
+      return iconNames.user;
+    case 'environmental':
+      return iconNames.clock;
+    default:
+      return iconNames.list;
+  }
+};
+
+export const getIncidentTypeColor = (type: Incident['type']) => {
+  switch (type) {
+    case 'maintenance':
+      return Palette.primary500;
+    case 'emergency':
+      return Palette.error;
+    case 'security':
+      return Palette.warning;
+    case 'health':
+      return Palette.primary500;
+    case 'environmental':
+      return Palette.primary500;
+    default:
+      return Palette.primary500;
+  }
+};
+
+export const getStatusColor = (status: Incident['status']) => {
+  switch (status) {
+    case 'RESOLVED':
+      return Palette.success;
+    case 'IN_PROGRESS':
+      return Palette.primary500;
+    case 'CLOSED':
+      return Palette.primary500;
+    case 'NEW':
+    default:
+      return Palette.warning;
+  }
+};
+
+export const getStatusBackgroundColor = (status: Incident['status']) => {
+  switch (status) {
+    case 'RESOLVED':
+      return Palette.successAlt;
+    case 'IN_PROGRESS':
+      return Palette.backgroundSecondary;
+    case 'CLOSED':
+      return Palette.backgroundSecondary;
+    case 'NEW':
+    default:
+      return Palette.warningAlt;
+  }
+};
+
+export const getStatusLabel = (status: Incident['status']) => {
+  switch (status) {
+    case 'NEW':
+      return 'Reported';
+    case 'IN_PROGRESS':
+      return 'In Progress';
+    case 'RESOLVED':
+      return 'Resolved';
+    case 'CLOSED':
+      return 'Closed';
+    case 'reported':
+      return 'Reported';
+    default:
+      return String(status).replace('_', ' ');
+  }
+};
+export const getPriorityLabel = (severity?: IncidentSeverity) => {
+  if (!severity) return 'Medium';
+  return severity.charAt(0).toUpperCase() + severity.slice(1);
+};
 
 export default function IncidentDetailScreen() {
   const theme = useTheme();
   const { id } = useLocalSearchParams();
-  const authState = useAuthStore();
   const incidentsState = useIncidentsStore();
+  const usersState = useUsersStore();
   const router = useRouter();
 
-  const selectedTenant = authState.selectedTenant;
   const incident = incidentsState.selectedIncident;
   const incidentId = id as string;
-
+  const displaySeverity =
+    incident?.severity || mapIncidentTypeToSeverity(incident?.type);
   const { actions } = incidentsState;
 
   useEffect(() => {
@@ -53,67 +238,15 @@ export default function IncidentDetailScreen() {
   // Placeholder for potential updates/actions on incident
   const handleAction = async () => {};
 
-  const getIncidentTypeIcon = (type: Incident['type']) => {
-    switch (type) {
-      case 'maintenance':
-        return iconNames.settings;
-      case 'emergency':
-        return iconNames.notification_badge;
-      case 'security':
-        return iconNames.list;
-      case 'health':
-        return iconNames.user;
-      case 'environmental':
-        return iconNames.clock;
-      default:
-        return iconNames.list;
-    }
-  };
-
-  const getIncidentTypeColor = (type: Incident['type']) => {
-    switch (type) {
-      case 'maintenance':
-        return theme.colors.primary;
-      case 'emergency':
-        return theme.colors.semantic.error;
-      case 'security':
-        return theme.colors.semantic.warning;
-      case 'health':
-        return theme.colors.primary;
-      case 'environmental':
-        return theme.colors.text.secondary;
-      default:
-        return theme.colors.text.secondary;
-    }
-  };
-
-  const getStatusColor = (status: Incident['status']) => {
-    switch (status) {
-      case 'RESOLVED':
-        return theme.colors.semantic.success;
-      case 'IN_PROGRESS':
-        return theme.colors.primary;
-      case 'CLOSED':
-        return theme.colors.text.secondary;
-      case 'NEW':
-      default:
-        return theme.colors.semantic.warning;
-    }
-  };
-
-  const getStatusLabel = (status: Incident['status']) => {
-    return status.replace('_', ' ');
-  };
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
+    return date.toLocaleString('en-US', {
       year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
+      hour12: false,
     });
   };
 
@@ -127,53 +260,97 @@ export default function IncidentDetailScreen() {
     router.push('/' as any);
   };
 
+  const getCreatedByName = () => {
+    if (incident?.reportedBy) {
+      return incident.reportedBy;
+    }
+
+    if (incident?.createdBy) {
+      const user = usersState.users.find(
+        (user) => user.id === incident.createdBy
+      );
+      if (user) {
+        return user.fullName || user.username || 'Unknown User';
+      }
+    }
+
+    return 'Unknown Reporter';
+  };
+
   const InfoRow = ({
     icon,
     label,
     value,
-    valueColor,
   }: {
     icon: string;
     label: string;
     value: string;
-    valueColor?: string;
   }) => (
     <View
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.surface.border,
+        paddingVertical: 8,
+        justifyContent: 'space-between',
       }}
     >
-      <Icon
-        name={icon}
-        size={20}
-        color={theme.colors.text.secondary}
-        style={{ marginRight: 12 }}
-      />
-      <View style={{ flex: 1 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Icon
+          name={icon}
+          size={20}
+          color={theme.colors.text.icon}
+          style={{ marginRight: 8 }}
+        />
         <Text
-          variant="caption"
+          variant="bodyMedium"
           style={{
             color: theme.colors.text.secondary,
-            marginBottom: 2,
           }}
         >
           {label}
         </Text>
+      </View>
+      <View style={{ flex: 1, alignItems: 'flex-end' }}>
         <Text
-          variant="body"
+          variant="bodyMedium"
           style={{
-            color: valueColor || theme.colors.text.primary,
-            fontWeight: '500',
+            color: theme.colors.text.secondary,
+            textAlign: 'right',
           }}
         >
           {value}
         </Text>
       </View>
+    </View>
+  );
+
+  const Pill = ({
+    label,
+    backgroundColor,
+    textColor = theme.colors.semantic.white,
+  }: {
+    label: string;
+    backgroundColor: string;
+    textColor?: string;
+  }) => (
+    <View
+      style={{
+        backgroundColor,
+        borderRadius: 4,
+        marginRight: 8,
+        paddingHorizontal: 8,
+        paddingTop: 6,
+        paddingBottom: 2,
+      }}
+    >
+      <Text
+        variant="caption"
+        style={{
+          color: textColor,
+        }}
+      >
+        {label}
+      </Text>
     </View>
   );
 
@@ -183,7 +360,7 @@ export default function IncidentDetailScreen() {
         style={{ flex: 1, backgroundColor: theme.colors.background.primary }}
       >
         <AppBar
-          title="Incident Details"
+          title="Incidents Detail"
           showBackButton
           onBackPress={handleBackPress}
         />
@@ -205,7 +382,7 @@ export default function IncidentDetailScreen() {
     return (
       <Background>
         <AppBar
-          title="Incident Details"
+          title="Incidents Detail"
           showBackButton
           onBackPress={handleBackPress}
         />
@@ -228,7 +405,7 @@ export default function IncidentDetailScreen() {
     return (
       <Background>
         <AppBar
-          title="Incident Details"
+          title="Incidents Detail"
           showBackButton
           onBackPress={handleBackPress}
         />
@@ -250,142 +427,132 @@ export default function IncidentDetailScreen() {
   return (
     <Background>
       <AppBar
-        title="Incident Details"
+        title="Incidents Detail"
         showBackButton
         onBackPress={handleBackPress}
         testID="back-button"
+        titleFontFamily={theme.fonts.goldmanRegular}
+        titleAlign="left"
       />
 
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: 24 }}
       >
-        {/* Header Section */}
-        <View
-          style={{
-            backgroundColor: theme.colors.surface.card,
-            marginHorizontal: 16,
-            marginTop: 16,
-            borderRadius: 8,
-            borderWidth: 2,
-            borderColor: theme.colors.surface.border,
-            overflow: 'hidden',
-          }}
-        >
-          {/* Title and Type */}
-          <View style={{ padding: 16 }}>
-            <View
+        {/* Title Section with Icon and Tags */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginBottom: 12,
+            }}
+          >
+            <Icon
+              name={getIncidentTypeIcon(incident.type)}
+              size={20}
+              color={getIncidentTypeColor(incident.type)}
+            />
+            <Text
+              variant="h4"
               style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                marginBottom: 12,
+                color: theme.colors.text.primary,
+                fontFamily: theme.fonts.goldmanRegular,
+                marginLeft: 8,
               }}
             >
-              <View
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  backgroundColor: `${getIncidentTypeColor(incident.type)}20`,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  marginRight: 12,
-                }}
-              >
-                <Icon
-                  name={getIncidentTypeIcon(incident.type)}
-                  size={20}
-                  color={getIncidentTypeColor(incident.type)}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text
-                  variant="h3"
-                  style={{
-                    color: theme.colors.text.primary,
-                    marginBottom: 4,
-                  }}
-                >
-                  {incident.name}
-                </Text>
-                <Text
-                  variant="caption"
-                  style={{
-                    color: theme.colors.text.secondary,
-                    textTransform: 'capitalize',
-                  }}
-                >
-                  {incident.type} Incident
-                </Text>
-              </View>
-
-              <TouchableOpacity onPress={handleViewLocation}>
-                <Icon
-                  name={iconNames.location}
-                  size={30}
-                  color={theme.colors.text.icon}
-                />
-              </TouchableOpacity>
-            </View>
-
-            {/* Description */}
-            {incident.description && (
-              <Text
-                variant="body"
-                style={{
-                  color: theme.colors.text.secondary,
-                  lineHeight: 20,
-                }}
-              >
-                {incident.description}
-              </Text>
-            )}
+              {incident.name}
+            </Text>
           </View>
 
+          {/* Tags Row */}
+          <View
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              marginBottom: 8,
+            }}
+          >
+            <Pill
+              label={getTypeLabel(incident.type)}
+              textColor={getTypeColor(incident.type)}
+              backgroundColor={getTypeBackgroundColor(incident.type)}
+            />
+            <Pill
+              label={getPriorityLabel(displaySeverity)}
+              textColor={getPriorityColor(displaySeverity)}
+              backgroundColor={getPriorityBackgroundColor(displaySeverity)}
+            />
+            <Pill
+              label={getStatusLabel(incident.status)}
+              textColor={getStatusColor(incident.status)}
+              backgroundColor={getStatusBackgroundColor(incident.status)}
+            />
+          </View>
+        </View>
+
+        {/* Details Section */}
+        <View
+          style={{
+            marginHorizontal: 16,
+          }}
+        >
+          {/* Reported by */}
           <InfoRow
-            icon={iconNames.clock}
-            label="Status"
-            value={getStatusLabel(incident.status)}
-            valueColor={getStatusColor(incident.status)}
+            icon={iconNames.user_plus}
+            label="Reported by"
+            value={getCreatedByName()}
           />
 
+          {/* Location */}
           <InfoRow
-            icon={iconNames.clock}
-            label="Created"
+            icon={iconNames.location}
+            label="Location"
+            value={
+              incident.location?.coordinates
+                ? `${incident.location.coordinates[1]?.toFixed(6)}, ${incident.location.coordinates[0]?.toFixed(6)}`
+                : 'Not specified'
+            }
+          />
+
+          {/* Reported at */}
+          <InfoRow
+            icon={iconNames.clock_fast_forward}
+            label="Reported at"
             value={formatDate(incident.createdAt)}
           />
         </View>
 
-        {/* Attachments Section */}
-        {incident.fileIds && incident.fileIds.length > 0 && (
-          <View style={{ padding: 16 }}>
+        {/* Action Section (if incident has tasks) */}
+        {incident.description && (
+          <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
             <Text
-              variant="h3"
+              variant="h4"
               style={{
-                color: theme.colors.text.primary,
-                marginBottom: 12,
+                color: theme.colors.text.tertiary,
+                fontFamily: theme.fonts.goldmanRegular,
+                marginBottom: 8,
               }}
             >
-              Attachments ({incident.fileIds.length})
+              Description
             </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-              {incident.fileIds.map((fileId) => (
-                <IncidentAttachment key={fileId} fileId={fileId} size={100} />
-              ))}
-            </View>
+            <Text
+              variant="bodyMedium"
+              style={{
+                color: theme.colors.text.tertiary,
+              }}
+            >
+              {incident.description}
+            </Text>
           </View>
         )}
 
-        {/*/!* Action Buttons *!/*/}
-        {/*<View style={{ padding: 16, gap: 12 }}>*/}
-        {/*  <Button*/}
-        {/*    title="Resolve Incident"*/}
-        {/*    variant="outline"*/}
-        {/*    size="medium"*/}
-        {/*    colorVariant="secondary"*/}
-        {/*    onPress={handleAction}*/}
-        {/*  />*/}
-        {/*</View>*/}
+        {/* Attachments Section */}
+        {incident.fileIds && incident.fileIds.length > 0 && (
+          <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+            <AttachmentsGallery fileIds={incident.fileIds} gap={12} />
+          </View>
+        )}
       </ScrollView>
     </Background>
   );

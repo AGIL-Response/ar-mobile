@@ -9,6 +9,7 @@ import { TouchableOpacity } from 'react-native';
 import type { Task } from '@/api/tasks/types';
 import { Avatar, Text, View } from '@/components';
 import { Palette, useTheme } from '@/theme';
+import { formatDateTime, getBackgroundColor, getStatusColor } from '../detail';
 
 interface TaskCardProps {
   task: Task;
@@ -17,50 +18,6 @@ interface TaskCardProps {
 
 export function TaskCard({ task, onPress }: TaskCardProps) {
   const theme = useTheme();
-
-  const getBackgroundColor = (status: Task['status']) => {
-    switch (status) {
-      case 'completed':
-        return Palette.successAlt; // Forest green from Figma
-      case 'in_progress':
-        return Palette.warningAlt;
-      case 'cancelled':
-        return Palette.errorAlt;
-      case 'pending':
-      default:
-        return Palette.backgroundSecondary;
-    }
-  };
-
-  const getStatusColor = (status: Task['status']) => {
-    switch (status) {
-      case 'completed':
-        return Palette.success; // Forest green from Figma
-      case 'in_progress':
-        return Palette.warning; // Orange from Figma
-      case 'cancelled':
-        return Palette.error; // Fire brick from Figma
-      case 'pending':
-      default:
-        return Palette.primary500; // Whitesmoke from Figma for "Not Started"
-    }
-  };
-
-  const formatDateTime = (dateString?: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const datePart = date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
-    const timePart = date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    });
-    return `${datePart} ${timePart}`;
-  };
 
   const getStatusLabel = (status: Task['status']) => {
     if (!status) return 'Not Started';

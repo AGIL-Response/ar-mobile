@@ -3,7 +3,6 @@ export type IncidentCoordinate = {
   coordinates: [number, number];
 };
 
-
 export type UserCoordinate = {
   id: string;
   avatarId: string;

@@ -116,7 +116,6 @@ const createAppBarStyles = (theme: Theme, props: AppBarProps) => {
       alignItems: 'center' as const,
       gap: 16,
       borderBottomWidth: 1,
-      borderBottomColor: colors.surface.border,
       backgroundColor: colors.background.secondary,
     },
     'bottom-navigation': {
@@ -262,18 +261,14 @@ export const AppBar = React.forwardRef<any, AppBarProps & ViewProps>(
                 width: 32,
                 height: 32,
                 borderRadius: 16,
-                backgroundColor: theme.colors.background.overlay,
-                borderWidth: 1,
-                borderColor: theme.colors.surface.border,
                 justifyContent: 'center',
                 alignItems: 'center',
-                marginLeft: 16,
-                marginBottom: 8,
+                marginLeft: 8,
               }}
             >
               <Icon
                 name={iconNames.chevron_left}
-                size={16}
+                size={24}
                 color={theme.colors.text.icon}
               />
             </View>
@@ -301,14 +296,14 @@ export const AppBar = React.forwardRef<any, AppBarProps & ViewProps>(
       }
 
       return (
-        <>
+        <View style={{ paddingBottom: 10 }}>
           <View style={contentStyles.left}>
             {leftContent ||
               (titleAlign === 'left' ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   {getLeftContent()}
                   {title && (
-                    <View style={{ marginLeft: getLeftContent() ? 16 : 0 }}>
+                    <View style={{ marginLeft: getLeftContent() ? 8 : 0 }}>
                       <Text variant="h3" style={{ fontFamily: props.titleFontFamily }}>
                         {title}
                       </Text>
@@ -342,7 +337,7 @@ export const AppBar = React.forwardRef<any, AppBarProps & ViewProps>(
               rightContent || (showBackButton && <View style={{ width: 32 }} />)
             )}
           </View>
-        </>
+        </View>
       );
     };
 

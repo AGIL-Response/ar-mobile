@@ -87,8 +87,8 @@ const createSelectTriggerStyles = createStyleCreator<SelectProps>(
     // Size variants
     const sizeStyles = {
       small: {
-        height: 40,
-        paddingHorizontal: spacing.padding.sm,
+        height: 32,
+        paddingHorizontal: spacing.padding.lg,
       },
       medium: {
         height: components.input.height,
@@ -161,7 +161,7 @@ const createSelectTextStyles = createStyleCreator<SelectProps>(
     };
 
     const sizeLineHeights = {
-      small: 40, // Match container height
+      small: 30, // Match container height
       medium: 48, // Match container height
       large: 56, // Match container height
     };
@@ -187,7 +187,7 @@ const createPlaceholderStyles = createStyleCreator<SelectProps>(
     };
 
     const sizeLineHeights = {
-      small: 40, // Match container height
+      small: 30, // Match container height
       medium: 48, // Match container height
       large: 56, // Match container height
     };

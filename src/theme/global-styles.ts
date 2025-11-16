@@ -241,7 +241,7 @@ export const Palette = {
   blue700: '#0063b5',
   blue800: '#004d8c',
   blue900: '#003b6b',
-  blue1000: '#5DA9DC66',
+  blue1000: '#5DA9DC',
   blue1100: '#1778BA66',
 
   // Yellow color palette
@@ -282,8 +282,6 @@ export const Palette = {
 
   primary90030: '#0B3556',
   toastStatusBg: '#0B355666',
-  buttonGhostDef: '#125E9166',
-  input: '#5DA9DC66',
   backgroundSecondary: '#1984CC66',
 
   brown50: '#374151',
@@ -315,19 +313,21 @@ const createColors = (isDark: boolean) => ({
     secondary: isDark ? Palette.primary500 : Palette.blue500,
     tertiary: isDark ? Palette.primary400 : Palette.gray900,
     muted: isDark ? Palette.primary800 : Palette.gray600,
-    disabled: isDark ? Palette.blue1000 : Palette.blue1000,
-    placeholder: isDark ? Palette.blue1000 : Palette.gray500,
+    disabled: isDark ? `${Palette.blue1000}66` : `${Palette.blue1000}66`,
+    placeholder: isDark ? `${Palette.blue1000}66` : `${Palette.gray500}66`,
     inverse: isDark ? Palette.primary1000 : Palette.white,
     icon: isDark ? Palette.primary400 : Palette.primary500, // For dark/light backgrounds
     accent: Palette.primary, // For highlighted text
-    inactive: isDark ? Palette.blue1000 : Palette.gray400,
+    inactive: isDark ? `${Palette.blue1000}66` : `${Palette.gray400}66`,
   },
 
   button: {
     primary: isDark ? Palette.primary400 : Palette.gray100,
     secondary: isDark ? Palette.primary500 : Palette.gray700,
-    ghost: isDark ? Palette.buttonGhostDef : Palette.gray100,
+    ghost: isDark ? `${Palette.primary700}66` : Palette.gray100,
     disabled: isDark ? `${Palette.brown200}33` : `${Palette.brown200}`,
+    border: isDark ? Palette.brown100 : Palette.primary500,
+    borderPrimary: isDark ? Palette.blue1000 : Palette.blue1000,
   },
 
   // Status colors (same for both themes)
@@ -368,6 +368,7 @@ const createColors = (isDark: boolean) => ({
     activeBorder: isDark ? `${Palette.primary600}` : `${Palette.primary500}`,
     divider: isDark ? Palette.dimGray : Palette.gray300,
     disabled: isDark ? Palette.charcoal800 : Palette.gray100,
+    muted: isDark ? Palette.blue1100 : Palette.gray600,
   },
 
   // Additional utility colors
@@ -547,7 +548,7 @@ export const ComponentTokens = {
       medium: 48,
       large: 56,
     },
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.md,
     padding: {
       horizontal: Padding.xxl,
       vertical: Padding.lg,

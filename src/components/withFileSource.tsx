@@ -6,13 +6,20 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import type { ImageSourcePropType } from 'react-native';
 
-import { blobToDataUri, filesApi } from '@/api/files';
+import {
+  blobToUri,
+  cacheFileUri,
+  filesApi,
+  getCachedFileUri,
+} from '@/api/files';
 
 export interface FileSourceProps {
   /** File ID to load */
   fileId?: string;
   /** Source result (data URI) - injected by HOC */
   sourceResult?: ImageSourcePropType | null;
+  /** File mime type - injected by HOC */
+  mimeType?: string | null;
   /** Loading state - injected by HOC */
   isLoading?: boolean;
   /** Error state - injected by HOC */
@@ -37,83 +44,121 @@ export interface WithFileSourceOptions {
 export function withFileSource<
   TProps extends FileSourceProps = FileSourceProps,
 >(
-  Component: React.ComponentType<TProps> | React.ForwardRefExoticComponent<TProps>,
+  Component:
+    | React.ComponentType<TProps>
+    | React.ForwardRefExoticComponent<TProps>,
   options: WithFileSourceOptions = {}
-): React.ForwardRefExoticComponent<Omit<TProps, 'sourceResult' | 'isLoading' | 'error'>> {
+): React.ForwardRefExoticComponent<
+  Omit<TProps, 'sourceResult' | 'isLoading' | 'error' | 'mimeType'>
+> {
   const { autoLoad = true, logErrors = true } = options;
 
-  const WrappedComponent = React.forwardRef<any, Omit<TProps, 'sourceResult' | 'isLoading' | 'error'>>(
-    (props, ref) => {
-      const { fileId, ...restProps } = props as TProps & { fileId?: string };
+  const WrappedComponent = React.forwardRef<
+    any,
+    Omit<TProps, 'sourceResult' | 'isLoading' | 'error' | 'mimeType'>
+  >((props, ref) => {
+    const { fileId, ...restProps } = props as unknown as { fileId?: string };
 
-      const [fileDataUri, setFileDataUri] = useState<string | null>(null);
-      const [isLoading, setIsLoading] = useState(false);
-      const [error, setError] = useState<string | null>(null);
+    const [fileDataUri, setFileDataUri] = useState<string | null>(null);
+    const [mimeType, setMimeType] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-      // Function to load file content
-      const loadFileContent = useCallback(async () => {
-        if (!fileId) {
-          return; // No fileId provided
+    // Function to load file content
+    const loadFileContent = useCallback(async () => {
+      if (!fileId) {
+        return; // No fileId provided
+      }
+
+      if (fileDataUri || isLoading) {
+        return; // Already loaded or loading
+      }
+
+      // Check cache first
+      const cached = getCachedFileUri(fileId);
+      if (cached) {
+        if (logErrors) {
+          console.log('📦 Using cached file:', fileId);
+        }
+        setFileDataUri(cached.uri);
+        setMimeType(cached.mimeType);
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        if (logErrors) {
+          console.log('🚀 Loading file:', fileId);
         }
 
-        if (fileDataUri || isLoading) {
-          return; // Already loaded or loading
+        const blob = await filesApi.viewFile({ fileId });
+        const blobMimeType = blob.type || null;
+
+        // Convert blob to appropriate URI based on mime type
+        // Videos need file:// URI, images can use data:// URI
+        const uri = await blobToUri(blob, blobMimeType);
+
+        // Cache the result for future use
+        cacheFileUri(fileId, uri, blobMimeType);
+
+        setFileDataUri(uri);
+        setMimeType(blobMimeType);
+
+        if (logErrors) {
+          console.log(
+            '✅ File loaded successfully:',
+            fileId,
+            'type:',
+            blob.type
+          );
         }
+      } catch (err) {
+        const errorMessage = 'Failed to load file';
+        setError(errorMessage);
 
-        setIsLoading(true);
-        setError(null);
-
-        try {
-          if (logErrors) {
-            console.log('🚀 Loading file:', fileId);
-          }
-
-          const blob = await filesApi.viewFile({ fileId });
-          const dataUri = await blobToDataUri(blob);
-          setFileDataUri(dataUri);
-
-          if (logErrors) {
-            console.log('✅ File loaded successfully:', fileId);
-          }
-        } catch (err) {
-          const errorMessage = 'Failed to load file';
-          setError(errorMessage);
-
-          if (logErrors) {
-            console.error('❌ Failed to load file:', fileId, err);
-          }
-        } finally {
-          setIsLoading(false);
+        if (logErrors) {
+          console.error('❌ Failed to load file:', fileId, err);
         }
-      }, [fileId, fileDataUri, isLoading, logErrors]);
+      } finally {
+        setIsLoading(false);
+      }
+    }, [fileId, fileDataUri, isLoading, logErrors]);
 
-      // Auto-load file when component mounts or fileId changes
-      useEffect(() => {
-        if (autoLoad && fileId) {
-          loadFileContent();
-        }
-      }, [fileId, autoLoad, loadFileContent]);
+    // Reset state when fileId changes
+    useEffect(() => {
+      setFileDataUri(null);
+      setMimeType(null);
+      setError(null);
+    }, [fileId]);
 
-      // Convert data URI to ImageSourcePropType
-      const sourceResult: ImageSourcePropType | null = fileDataUri
-        ? { uri: fileDataUri }
-        : null;
+    // Auto-load file when component mounts or fileId changes
+    useEffect(() => {
+      if (autoLoad && fileId) {
+        loadFileContent();
+      }
+    }, [fileId, autoLoad, loadFileContent]);
 
-      return (
-        <Component
-          ref={ref}
-          {...(restProps as TProps)}
-          fileId={fileId}
-          sourceResult={sourceResult}
-          isLoading={isLoading}
-          error={error}
-        />
-      );
-    }
-  );
+    // Convert data URI to ImageSourcePropType
+    const sourceResult: ImageSourcePropType | null = fileDataUri
+      ? { uri: fileDataUri }
+      : null;
+
+    return (
+      <Component
+        ref={ref}
+        {...(restProps as TProps)}
+        fileId={fileId}
+        sourceResult={sourceResult}
+        mimeType={mimeType}
+        isLoading={isLoading}
+        error={error}
+      />
+    );
+  });
 
   WrappedComponent.displayName = `withFileSource(${Component.displayName || Component.name})`;
 
   return WrappedComponent;
 }
-

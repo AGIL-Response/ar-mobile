@@ -5,13 +5,7 @@
 
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-  Alert,
-  Dimensions,
-  Image,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native';
+import { Alert, ScrollView } from 'react-native';
 
 import { filesApi } from '@/api';
 import type { CreateIncidentRequest } from '@/api/incidents/types';
@@ -22,10 +16,10 @@ import {
   Icon,
   iconNames,
   Input,
-  SafeAreaView,
+  LocalAttachmentsGallery,
   Text,
-  useModal,
   View,
+  type LocalAttachment,
 } from '@/components';
 import { Select } from '@/components/select';
 import { TextArea } from '@/components/textarea';
@@ -36,13 +30,11 @@ import { Palette, useTheme } from '@/theme';
 
 import { LocationPermissionScreen } from './components';
 import { IncidentUploadModel } from './components/incident-upload-model';
-import images from '@assets/images';
-
 interface CreateIncidentForm {
   name: string;
   description: string;
   type: string;
-  images: string;
+  attachments: LocalAttachment[];
 }
 
 const incidentTypes = [
@@ -53,65 +45,41 @@ const incidentTypes = [
   { label: 'Traffic', value: 'traffic' },
 ];
 
+export const getMimeTypeFromUri = (uri: string) => {
+  if (!uri) return 'image/jpeg';
+  const ext = uri.split('.').pop() || 'jpg';
+  if (ext === 'mp4' || ext === 'mov') {
+    return 'video/mp4';
+  }
+  return 'image/jpeg';
+};
+
 export default function CreateIncidentScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const authState = useAuthStore();
   const incidentsState = useIncidentsStore();
   const location = useLocation();
-  const { ref, present, dismiss } = useModal();
+  const ref = React.useRef<any>(null);
   const [form, setForm] = useState<CreateIncidentForm>({
     name: '',
     description: '',
     type: '',
-    images: '',
+    attachments: [],
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Reusable Take Photo button component
-  const TakePhotoButton = ({ isOverlay = false }: { isOverlay?: boolean }) => (
-    <TouchableOpacity
-      onPress={handleOpenModal}
-      activeOpacity={0.8}
-      style={
-        isOverlay
-          ? {
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }
-          : undefined
-      }
-    >
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 8,
-          paddingHorizontal: 14,
-          paddingVertical: 8,
-          borderRadius: 6,
-          borderWidth: 2,
-          borderColor: Palette.blue1100,
-          backgroundColor: Palette.buttonGhostDef,
-        }}
-      >
-        <Icon
-          name={iconNames.camera}
-          size={18}
-          color={theme.colors.semantic.white}
-        />
-        <Text variant="body" style={{ color: theme.colors.semantic.white }}>
-          Take a Photo
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
+  const handleTakePhoto = async () => {
+    if (ref.current) {
+      await ref.current.takePhoto();
+    }
+  };
+
+  const handleUploadPhoto = async () => {
+    if (ref.current) {
+      await ref.current.uploadPhoto();
+    }
+  };
 
   // Check location permission on mount
   useEffect(() => {
@@ -127,7 +95,7 @@ export default function CreateIncidentScreen() {
       // Permission granted but no location yet, get it
       location.actions.getCurrentLocation();
     }
-  }, [location.hasPermission, location.coordinates]);
+  }, [location.hasPermission, location.coordinates, location.actions]);
 
   const handleInputChange = (
     field: keyof CreateIncidentForm,
@@ -176,20 +144,20 @@ export default function CreateIncidentScreen() {
         await incidentsState.actions.createIncident(incidentData);
 
       // Step 2: Upload image if selected
-      let imageUploadSuccess = false;
-      if (form.images && createdIncident) {
+
+      if (form.attachments && form.attachments.length > 0 && createdIncident) {
         try {
-          await filesApi.uploadIncidentAttachment({
-            incidentId: createdIncident.id,
-            fileUri: form.images,
-            fileName: `incident_${createdIncident.id}_${Date.now()}.jpg`,
-            mimeType: 'image/jpeg',
-          });
-          console.log(
-            'Image uploaded successfully for incident:',
-            createdIncident.id
-          );
-          imageUploadSuccess = true;
+          for (const attachment of form.attachments) {
+            const ext = attachment.uri.split('.').pop() || 'jpg';
+            const mimeType =
+              attachment.mimeType || getMimeTypeFromUri(attachment.uri);
+            await filesApi.uploadIncidentAttachment({
+              incidentId: createdIncident.id,
+              fileUri: attachment.uri,
+              fileName: `incident_${createdIncident.id}_${Date.now()}.${ext}`,
+              mimeType,
+            });
+          }
         } catch (uploadError) {
           console.warn(
             'Failed to upload image, but incident was created:',
@@ -199,14 +167,13 @@ export default function CreateIncidentScreen() {
         }
       }
 
-      const successMessage = form.images
-        ? imageUploadSuccess
-          ? 'Incident created and image uploaded successfully'
-          : 'Incident created successfully, but image upload failed'
-        : 'Incident created successfully';
+      const successMessage =
+        form.attachments && form.attachments.length > 0
+          ? 'Incident created and attachments uploaded successfully'
+          : 'Incident created successfully';
 
       Alert.alert('Success', successMessage, [
-        { text: 'OK', onPress: () => router.replace('/incidents') },
+        { text: 'OK', onPress: () => router.replace('/incidents' as any) },
       ]);
     } catch (error) {
       const errorMessage =
@@ -217,17 +184,27 @@ export default function CreateIncidentScreen() {
     }
   };
 
-  const handleOpenModal = () => {
-    present();
-  };
-
-  const handleImagePicked = useCallback(
-    (image: string) => {
-      setForm((prev) => ({ ...prev, images: image }));
-      dismiss();
+  const handleAttachmentPicked = useCallback(
+    (uri: string, mimeType: string) => {
+      const newAttachment: LocalAttachment = {
+        id: `local_${Date.now()}_${Math.random()}`,
+        uri,
+        mimeType,
+      };
+      setForm((prev) => ({
+        ...prev,
+        attachments: [...prev.attachments, newAttachment],
+      }));
     },
-    [dismiss, setForm]
+    []
   );
+
+  const handleRemoveAttachment = (attachmentId: string) => {
+    setForm((prev) => ({
+      ...prev,
+      attachments: prev.attachments.filter((att) => att.id !== attachmentId),
+    }));
+  };
 
   // Show loading while checking permissions
   if (location.hasPermission === null) {
@@ -277,154 +254,165 @@ export default function CreateIncidentScreen() {
 
   // Show main create incident form
   return (
-    <SafeAreaView
-      edges={['top']}
-      style={{
-        flex: 1,
-        backgroundColor: theme.colors.background.secondary,
-      }}
-    >
+    <Background>
       <AppBar
-        title="Incidents"
+        title="Create Incidents"
         titleFontFamily={theme.fonts.goldmanRegular}
         showBackButton={true}
         onBackPress={() => router.back()}
         safeArea={true}
         titleAlign="left"
-        style={{ borderBottomWidth: 0 }}
       />
 
-      <Background>
-        <ScrollView
-          style={{
-            flex: 1,
-          }}
-          contentContainerStyle={{
-            padding: 16,
-          }}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Incident Name */}
-          <View style={{ marginBottom: 16 }}>
-            <Text
-              variant="bodySmall"
-              style={{
-                color: theme.colors.text.muted,
-                marginBottom: 4,
-              }}
-            >
-              Incident Name
-            </Text>
-            <Input
-              placeholder="Enter incident"
-              value={form.name}
-              onChangeText={(text) => handleInputChange('name', text)}
-              autoCapitalize="sentences"
-            />
-          </View>
+      <ScrollView
+        style={{
+          flex: 1,
+        }}
+        contentContainerStyle={{
+          padding: 16,
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Incident Name */}
+        <View style={{ marginBottom: 16 }}>
+          <Text
+            variant="bodySmall"
+            style={{
+              color: theme.colors.text.disabled,
+              marginBottom: 4,
+            }}
+          >
+            Incident Name
+          </Text>
+          <Input
+            placeholder="Enter incident"
+            value={form.name}
+            onChangeText={(text) => handleInputChange('name', text)}
+            autoCapitalize="sentences"
+            size="small"
+          />
+        </View>
 
-          {/* Description */}
-          <View style={{ marginBottom: 16 }}>
-            <Text
-              variant="bodySmall"
-              style={{
-                color: theme.colors.text.muted,
-                marginBottom: 4,
-              }}
-            >
-              Label
-            </Text>
-            <TextArea
-              placeholder="Placeholder"
-              value={form.description}
-              onChangeText={(text) => handleInputChange('description', text)}
-              autoCapitalize="sentences"
-            />
-          </View>
+        {/* Description */}
+        <View style={{ marginBottom: 16 }}>
+          <Text
+            variant="bodySmall"
+            style={{
+              color: theme.colors.text.disabled,
+              marginBottom: 4,
+            }}
+          >
+            Description
+          </Text>
+          <TextArea
+            placeholder="Placeholder"
+            value={form.description}
+            onChangeText={(text) => handleInputChange('description', text)}
+            autoCapitalize="sentences"
+            size="small"
+          />
+        </View>
 
-          {/* Incident Type */}
-          <View style={{ marginBottom: 16 }}>
-            <Text
-              variant="bodySmall"
-              style={{
-                color: theme.colors.text.muted,
-                marginBottom: 4,
-              }}
-            >
-              Incident Name
-            </Text>
-            <Select
-              placeholder="Select"
-              value={form.type}
-              onValueChange={(value) =>
-                handleInputChange('type', String(value))
-              }
-              options={incidentTypes}
-            />
-          </View>
+        {/* Incident Type */}
+        <View style={{ marginBottom: 16 }}>
+          <Text
+            variant="bodySmall"
+            style={{
+              color: theme.colors.text.disabled,
+              marginBottom: 4,
+            }}
+          >
+            Incident Type
+          </Text>
+          <Select
+            placeholder="Select"
+            value={form.type}
+            onValueChange={(value) => handleInputChange('type', String(value))}
+            options={incidentTypes}
+            size="small"
+          />
+        </View>
 
-          {/* Image Upload */}
-          <View style={{ marginBottom: 16 }}>
-            <View
+        {/* Image Upload */}
+        <View style={{ marginBottom: 16 }}>
+          <Text
+            variant="bodySmall"
+            style={{
+              color: theme.colors.text.disabled,
+              marginBottom: 4,
+            }}
+          >
+            Attachments
+          </Text>
+
+          {/* Take Photo and Upload Photo Buttons */}
+          <View
+            style={{
+              flexDirection: 'row',
+              gap: 12,
+              marginBottom: 16,
+            }}
+          >
+            <Button
+              variant="solid"
+              size="medium"
+              title="Take a Photo"
+              onPress={handleTakePhoto}
+              disabled={isSubmitting}
               style={{
                 flex: 1,
-                // width: '100%',
-                height: 250,
-                // borderRadius: 8,
+                borderWidth: 1,
+                borderColor: theme.colors.button.borderPrimary,
+                backgroundColor: theme.colors.button.ghost,
               }}
-            >
-              <View style={{ flex: 1 }}>
-                <View
-                  style={{
-                    flex: 1,
-                    borderRadius: 4,
-                    borderWidth: 2,
-                    borderColor: theme.colors.surface.border,
-                    backgroundColor: theme.colors.background.primary,
-                  }}
-                >
-                  {form.images ? (
-                    <View
-                      style={{
-                        position: 'relative',
-                        width: '100%',
-                        height: '100%',
-                      }}
-                    >
-                      <Image
-                        source={{ uri: form.images }}
-                        style={{ width: '100%', height: '100%' }}
-                        resizeMode="cover"
-                      />
-                      <TakePhotoButton isOverlay={true} />
-                    </View>
-                  ) : (
-                    <>
-                      {/* Placeholder Icon Background */}
-                      <View
-                        style={{
-                          position: 'absolute',
-                          width: '100%',
-                          height: '100%',
-                        }}
-                      >
-                        <Image
-                          source={images.file_upload_placeholder}
-                          style={{ width: '100%', height: '100%' }}
-                          resizeMode="cover"
-                        />
-                      </View>
-                      <TakePhotoButton isOverlay={true} />
-                    </>
-                  )}
-                </View>
-              </View>
-            </View>
+              colorVariant="secondary"
+              icon={
+                <Icon
+                  name={iconNames.camera}
+                  size={20}
+                  color={theme.colors.text.primary}
+                />
+              }
+            />
 
-            <IncidentUploadModel ref={ref} onImagePicked={handleImagePicked} />
+            <Button
+              variant="solid"
+              size="medium"
+              title="Upload a Photo"
+              onPress={handleUploadPhoto}
+              disabled={isSubmitting}
+              style={{
+                flex: 1,
+                borderWidth: 1,
+                borderColor: theme.colors.button.borderPrimary,
+                backgroundColor: theme.colors.button.ghost,
+              }}
+              colorVariant="secondary"
+              icon={
+                <Icon
+                  name={iconNames.upload}
+                  size={20}
+                  color={theme.colors.text.primary}
+                />
+              }
+            />
           </View>
-        </ScrollView>
-      </Background>
+
+          {/* Image Preview Area */}
+          {form.attachments.length > 0 && (
+            <LocalAttachmentsGallery
+              attachments={form.attachments}
+              onRemove={handleRemoveAttachment}
+              gap={12}
+            />
+          )}
+
+          <IncidentUploadModel
+            ref={ref}
+            onAttachmentPicked={handleAttachmentPicked}
+          />
+        </View>
+      </ScrollView>
 
       {/* Submit Button */}
       <View
@@ -438,20 +426,18 @@ export default function CreateIncidentScreen() {
         }}
       >
         <Button
-          variant="outline"
+          variant="solid"
           size="medium"
           title="Cancel"
           onPress={() => router.back()}
           disabled={isSubmitting}
           style={{
             flex: 1,
-            borderWidth: 2,
-            borderColor: theme.colors.surface.border,
           }}
           colorVariant="disabled"
         />
         <Button
-          variant="outline"
+          variant="solid"
           size="medium"
           title={isSubmitting ? 'Creating...' : 'Create Incident'}
           onPress={handleSubmit}
@@ -460,6 +446,6 @@ export default function CreateIncidentScreen() {
           colorVariant="secondary"
         />
       </View>
-    </SafeAreaView>
+    </Background>
   );
 }
