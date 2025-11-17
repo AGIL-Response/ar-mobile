@@ -3,6 +3,7 @@
  * User profile and settings
  */
 
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { ScrollView, TouchableOpacity } from 'react-native';
 
@@ -10,6 +11,8 @@ import {
   AppBar,
   Avatar,
   Background,
+  Button,
+  CenteredModal,
   Icon,
   iconNames,
   Text,
@@ -18,8 +21,6 @@ import {
 } from '@/components';
 import { useAuthStore } from '@/stores/auth';
 import { useTheme } from '@/theme';
-import images from '@assets/images';
-import { useRouter } from 'expo-router';
 
 export default function ProfileScreen() {
   const theme = useTheme();
@@ -28,18 +29,8 @@ export default function ProfileScreen() {
 
   const user = authState.user;
   const selectedTenant = authState.selectedTenant;
-
-  // Get user display name
-  const getDisplayName = () => {
-    if (user?.firstName && user?.lastName) {
-      return `${user.firstName} ${user.lastName}`;
-    }
-    if (user?.firstName) {
-      return user.firstName;
-    }
-    return user?.username || 'User';
-  };
-
+  const [isLogoutModalVisible, setIsLogoutModalVisible] =
+    React.useState(false);
   // Get user role/title
   const getUserRole = () => {
     if (user?.roles && user.roles.length > 0) {
@@ -51,36 +42,43 @@ export default function ProfileScreen() {
     return selectedTenant?.displayName || selectedTenant?.name || 'Team Member';
   };
 
-  const handleNotificationPress = () => {
-    // TODO: Navigate to notification settings
-    console.log('Navigate to notification settings');
+  const handleProfileDetailsPress = () => {
+    router.push('/(app)/profile/detail' as any);
+  };
+
+  const handleChangePasswordPress = () => {
+    router.push('/(app)/profile/change-password' as any);
   };
 
   const handleAccountSettingsPress = () => {
-    // TODO: Navigate to account settings
-    console.log('Navigate to account settings');
+    setIsLogoutModalVisible(true);
+  };
+
+  const handleConfirmLogout = () => {
+    authState.actions.logout();
+    setIsLogoutModalVisible(false);
+    router.back();
   };
 
   const settingsItems = [
     {
-      id: 'notifications',
-      icon: iconNames.notification_badge,
-      title: 'Notification Preferences',
-      onPress: handleNotificationPress,
+      id: 'profile',
+      icon: iconNames.user,
+      title: 'Profile Details',
+      onPress: handleProfileDetailsPress,
       showChevron: true,
     },
     {
-      id: 'theme',
-      icon: iconNames.sun,
-      title: 'Dark Mode',
-      onPress: null, // Handled by toggle
-      showChevron: false,
-      rightComponent: <ThemeToggle size="small" />,
+      id: 'change-password',
+      icon: iconNames.lock,
+      title: 'Change Password',
+      onPress: handleChangePasswordPress,
+      showChevron: true,
     },
     {
-      id: 'account',
-      icon: iconNames.settings,
-      title: 'Account Settings',
+      id: 'logout',
+      icon: iconNames.log_out,
+      title: 'Logout',
       onPress: handleAccountSettingsPress,
       showChevron: true,
     },
@@ -109,54 +107,49 @@ export default function ProfileScreen() {
         >
           {/* Avatar */}
           <Avatar
-            source={images.avatar_image}
+            fileId={user?.avatarId}
             size="xl"
-            fallback={getDisplayName()}
-            style={{ marginBottom: 16 }}
+            fallback={user?.fullName || 'N/A'}
+            style={{
+              marginBottom: 16,
+              borderWidth: 2,
+              borderColor: theme.colors.semantic.white,
+            }}
           />
 
           {/* User Name */}
           <Text
-            variant="h2"
+            variant="h4"
             style={{
               color: theme.colors.text.primary,
               textAlign: 'center',
               marginBottom: 4,
+              fontFamily: theme.fonts.goldmanRegular,
             }}
           >
-            {getDisplayName()}
+            {user?.fullName || 'N/A'}
           </Text>
 
           {/* User Role/Title */}
           <Text
-            variant="bodyMedium"
+            variant="bodySmall"
             style={{
               color: theme.colors.text.secondary,
               textAlign: 'center',
             }}
           >
-            {getUserRole()}
+            {user?.email}
           </Text>
         </View>
 
         {/* Settings Section */}
         <View style={{ paddingHorizontal: 16 }}>
-          <Text
-            variant="h4"
-            style={{
-              color: theme.colors.text.primary,
-              marginBottom: 12,
-            }}
-          >
-            Settings
-          </Text>
-
           <View
             style={{
-              backgroundColor: theme.colors.surface.card,
+              backgroundColor: theme.colors.background.input,
               borderRadius: 8,
               borderWidth: 2,
-              borderColor: theme.colors.surface.border,
+              borderColor: theme.colors.background.border,
               overflow: 'hidden',
             }}
           >
@@ -168,9 +161,9 @@ export default function ProfileScreen() {
                     alignItems: 'center',
                     paddingVertical: 12,
                     paddingHorizontal: 16,
-                    opacity: item.onPress ? 1 : 1, // Keep opacity consistent
+                    opacity: 1,
                   }}
-                  onPress={item.onPress}
+                  onPress={item.onPress ? item.onPress : undefined}
                   disabled={!item.onPress}
                 >
                   {/* Icon */}
@@ -178,8 +171,6 @@ export default function ProfileScreen() {
                     style={{
                       width: 32,
                       height: 32,
-                      borderRadius: 16,
-                      backgroundColor: theme.colors.surface.input,
                       justifyContent: 'center',
                       alignItems: 'center',
                       marginRight: 12,
@@ -188,16 +179,16 @@ export default function ProfileScreen() {
                     <Icon
                       name={item.icon}
                       size={18}
-                      color={theme.colors.text.secondary}
+                      color={theme.colors.text.primary}
                     />
                   </View>
 
                   {/* Title */}
                   <View style={{ flex: 1 }}>
                     <Text
-                      variant="body"
+                      variant="bodyMedium"
                       style={{
-                        color: theme.colors.text.primary,
+                        color: theme.colors.text.tertiary,
                       }}
                     >
                       {item.title}
@@ -205,25 +196,24 @@ export default function ProfileScreen() {
                   </View>
 
                   {/* Right Content */}
-                  {item.rightComponent ? (
-                    item.rightComponent
-                  ) : item.showChevron ? (
+                  {item.showChevron ? (
                     <Icon
-                      name={iconNames.arrow_left} // We'll rotate this or add a right arrow
+                      name={iconNames.chevron_left} // We'll rotate this or add a right arrow
                       size={16}
-                      color={theme.colors.text.secondary}
+                      color={theme.colors.text.primary}
                       style={{ transform: [{ rotate: '180deg' }] }}
                     />
                   ) : null}
                 </TouchableOpacity>
 
                 {/* Divider */}
-                {index < settingsItems.length - 1 && (
+                {index === settingsItems.length - 2 && (
                   <View
                     style={{
                       height: 1,
-                      backgroundColor: theme.colors.surface.border,
-                      marginLeft: 60, // Align with text (32px icon + 12px margin + 16px padding)
+                      backgroundColor: theme.colors.button.borderSecondary,
+                      marginLeft: 20, // Align with text (32px icon + 12px margin + 16px padding)
+                      marginRight: 20,
                     }}
                   />
                 )}
@@ -232,6 +222,39 @@ export default function ProfileScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <CenteredModal
+        visible={isLogoutModalVisible}
+        onClose={() => setIsLogoutModalVisible(false)}
+        title="Log out"
+        subText="Do you want to log out?"
+      >
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'flex-end',
+            gap: 12,
+            marginTop: 16,
+          }}
+        >
+          <Button
+            title="No"
+            variant="solid"
+            size="medium"
+            onPress={() => setIsLogoutModalVisible(false)}
+            colorVariant="disabled"
+            style={{ minWidth: 80 }}
+          />
+          <Button
+            title="Yes"
+            variant="solid"
+            size="medium"
+            onPress={handleConfirmLogout}
+            colorVariant="secondary"
+            style={{ minWidth: 80 }}
+          />
+        </View>
+      </CenteredModal>
     </Background>
   );
 }

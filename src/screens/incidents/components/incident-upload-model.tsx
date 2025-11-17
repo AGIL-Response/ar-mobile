@@ -1,12 +1,15 @@
+import React from 'react';
+
 import {
   launchCameraAsync,
   launchImageLibraryAsync,
   MediaTypeOptions,
-  PermissionStatus,
-  useCameraPermissions,
-  useMediaLibraryPermissions,
 } from 'expo-image-picker';
-import React from 'react';
+
+import {
+  useCameraPermission,
+  useMediaLibraryPermission,
+} from '@/lib/media-permissions';
 import { getMimeTypeFromUri } from '../create';
 
 type Props = {
@@ -22,28 +25,8 @@ export const IncidentUploadModel = React.forwardRef<
   IncidentUploadModelRef,
   Props
 >(({ onAttachmentPicked }, ref) => {
-  const [cameraPermissionInformation, requestPermission] =
-    useCameraPermissions();
-  const [galleryPermissionInformation, requestGalleryPermission] =
-    useMediaLibraryPermissions();
-
-  const verifyCameraPermission = async () => {
-    if (cameraPermissionInformation?.status === PermissionStatus.UNDETERMINED) {
-      const permissionResponse = await requestPermission();
-      return permissionResponse.granted;
-    }
-    return cameraPermissionInformation?.status === PermissionStatus.GRANTED;
-  };
-
-  const verifyGalleryPermission = async () => {
-    if (
-      galleryPermissionInformation?.status === PermissionStatus.UNDETERMINED
-    ) {
-      const permissionResponse = await requestGalleryPermission();
-      return permissionResponse.granted;
-    }
-    return galleryPermissionInformation?.status === PermissionStatus.GRANTED;
-  };
+  const verifyCameraPermission = useCameraPermission();
+  const verifyGalleryPermission = useMediaLibraryPermission();
 
   const handleTakePhoto = async () => {
     const hasPermission = await verifyCameraPermission();

@@ -296,7 +296,13 @@ export const AppBar = React.forwardRef<any, AppBarProps & ViewProps>(
       }
 
       return (
-        <View style={{ paddingBottom: 10 }}>
+        <View
+          style={{
+            paddingBottom: 10,
+            flexDirection: 'row',
+            alignItems: 'center',
+          }}
+        >
           <View style={contentStyles.left}>
             {leftContent ||
               (titleAlign === 'left' ? (
@@ -304,7 +310,10 @@ export const AppBar = React.forwardRef<any, AppBarProps & ViewProps>(
                   {getLeftContent()}
                   {title && (
                     <View style={{ marginLeft: getLeftContent() ? 8 : 0 }}>
-                      <Text variant="h3" style={{ fontFamily: props.titleFontFamily }}>
+                      <Text
+                        variant="h3"
+                        style={{ fontFamily: props.titleFontFamily }}
+                      >
                         {title}
                       </Text>
                     </View>
@@ -318,7 +327,10 @@ export const AppBar = React.forwardRef<any, AppBarProps & ViewProps>(
           <View style={contentStyles.center}>
             {titleAlign === 'center'
               ? centerContent || (
-                  <Text variant="h3" style={{ fontFamily: props.titleFontFamily }}>
+                  <Text
+                    variant="h3"
+                    style={{ fontFamily: props.titleFontFamily }}
+                  >
                     {title}
                   </Text>
                 )
@@ -328,7 +340,10 @@ export const AppBar = React.forwardRef<any, AppBarProps & ViewProps>(
           <View style={contentStyles.right}>
             {titleAlign === 'right' ? (
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text variant="h3" style={{ fontFamily: props.titleFontFamily }}>
+                <Text
+                  variant="h3"
+                  style={{ fontFamily: props.titleFontFamily }}
+                >
                   {title}
                 </Text>
                 {rightContent}

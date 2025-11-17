@@ -154,7 +154,7 @@ const createInputTextStyles = createStyleCreator<InputProps>((theme, props) => {
 
   return {
     flex: 1,
-    color: disabled ? colors.text.muted : colors.text.primary,
+    color: disabled ? colors.text.muted : colors.text.secondary,
     ...typographyVariants[size],
   };
 });

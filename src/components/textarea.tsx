@@ -161,7 +161,7 @@ const createTextAreaTextStyles = createStyleCreator<TextAreaProps>(
     };
 
     return mergeTypographyStyles(typographyVariants[size], {
-      color: disabled ? colors.text.muted : colors.text.primary,
+      color: disabled ? colors.text.muted : colors.text.secondary,
       textAlignVertical: 'top',
       lineHeight: lineHeightMap[size],
     });

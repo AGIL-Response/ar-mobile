@@ -28,8 +28,8 @@ describe('ProfileScreen', () => {
         realm: 'realm-1',
         permissions: [],
         username: 'jane.doe',
-        firstName: 'Jane',
-        lastName: 'Doe',
+        fullName: 'Jane Doe',
+        description: 'Manager at Acme Corp',
         roles: ['Manager'],
       },
       selectedTenant: {
@@ -59,8 +59,7 @@ describe('ProfileScreen', () => {
     mockAuthState.user = {
       ...mockAuthState.user!,
       username: 'jane.doe',
-      firstName: 'Jane',
-      lastName: undefined,
+      fullName: 'Jane Doe',
       roles: [],
     };
 

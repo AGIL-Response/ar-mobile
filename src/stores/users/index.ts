@@ -1,4 +1,10 @@
-import { getTeamMembers, getUserRoles, getUsersByTenant } from '@/api/users';
+import {
+  getTeamMembers,
+  getUserRoles,
+  getUsersByTenant,
+  updateUser,
+  UpdateUserPayload,
+} from '@/api/users';
 import type { IBaseState, InitStateType } from '@/stores/interfaces/IBaseState';
 import { createStore, resetStore } from '@/stores/utils';
 import type { User, UsersQueryParams } from '@/types';
@@ -24,6 +30,7 @@ export interface UsersState extends IBaseState {
     ) => void;
     setSearchQuery: (query: string) => void;
     setMapFocusUserId: (userId: string | null) => void;
+    updateUser: (userId: string, payload: UpdateUserPayload) => Promise<User>;
     reset: () => void;
   };
 }
@@ -140,6 +147,23 @@ const usersStore = (set: any, get: any) => ({
       set((state: UsersState) => {
         state.searchQuery = query;
       });
+    },
+
+    updateUser: async (userId: string, payload: UpdateUserPayload) => {
+      try {
+        const user = await updateUser(userId, payload);
+        set((state: UsersState) => {
+          state.users = state.users.map((user) =>
+            user.id === userId ? user : user
+          );
+        });
+        return user;
+      } catch (error) {
+        set((state: UsersState) => {
+          state.error =
+            error instanceof Error ? error.message : 'Failed to update user';
+        });
+      }
     },
 
     reset: () => resetStore(initialState, set),

@@ -7,8 +7,39 @@ import type {
   User,
   UserResponse,
   UsersQueryParams,
-  UsersResponse,
 } from '@/types';
+
+export interface UpdateUserPayload {
+  username: string;
+  email: string;
+  fullName: string;
+  description: string;
+  avatarId: string;
+  updatedAt: string;
+}
+
+const mapUserResponseToUser = (userResponse: UserResponse): User => ({
+  id: userResponse.id,
+  fullName: userResponse.fullName,
+  email: userResponse.email,
+  username: userResponse.username,
+  emailVerified: userResponse.emailVerified,
+  createdAt: userResponse.createdAt,
+  enabled: userResponse.enabled,
+  description: userResponse.description,
+  avatarId: userResponse.avatarId,
+  roles: userResponse.roles
+    ? userResponse.roles.map((role: any) => ({
+        id: role.id,
+        name: role.name,
+        displayName: role.displayName,
+        description: role.description || '',
+        composite: role.composite || false,
+        clientRole: role.clientRole || false,
+        containerId: role.containerId || '',
+      }))
+    : [],
+});
 
 /**
  * Get multiple users by tenant ID with pagination and filtering
@@ -38,24 +69,7 @@ export async function getUsersByTenant(
     const response = await apiClient.get<ApiResponse<UserResponse[]>>(url);
     
     // Transform UserResponse[] to User[] by mapping the response data directly
-    const users: User[] = response.data.data.map((userResponse: UserResponse) => ({
-      id: userResponse.id,
-      fullName: userResponse.fullName,
-      email: userResponse.email,
-      username: userResponse.username,
-      emailVerified: userResponse.emailVerified,
-      createdAt: userResponse.createdAt, // Keep as number since API returns timestamp
-      enabled: userResponse.enabled,
-      roles: userResponse.roles ? userResponse.roles.map((role: any) => ({
-        id: role.id,
-        name: role.name,
-        displayName: role.displayName,
-        description: role.description || '',
-        composite: role.composite || false,
-        clientRole: role.clientRole || false,
-        containerId: role.containerId || '',
-      })) : [], // Transform role objects to Role objects
-    }));
+    const users: User[] = response.data.data.map(mapUserResponseToUser);
 
     return users;
   } catch (error) {
@@ -78,7 +92,7 @@ export async function getTeamMembers(teamId: string): Promise<User[]> {
       email: memberResponse.email,
       username: memberResponse.username,
       emailVerified: true, // Not provided in team members API, default to true
-      createdAt: new Date(memberResponse.createdAt).getTime(), // Convert to timestamp
+      createdAt: memberResponse.createdAt, // Convert to timestamp
       enabled: true, // Not provided in team members API, default to true
       avatarId: memberResponse.avatarId,
       description: memberResponse.description || '',
@@ -112,6 +126,24 @@ export async function getUserRoles(
     const response = await apiClient.get<{ data: Role[] }>(url);
     
     return response.data.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+}
+
+/**
+ * Update user by ID
+ */
+export async function updateUser(
+  userId: string,
+  payload: UpdateUserPayload
+): Promise<User> {
+  try {
+    console.log('🚀 Request: PUT /users/${userId}', payload);
+    const url = `/users/${userId}`;
+    const response = await apiClient.patch<ApiResponse<UserResponse>>(url, payload);
+    console.log('✅ Response: PUT /users/${userId}', response.data.data);
+    return mapUserResponseToUser(response.data.data);
   } catch (error) {
     throw handleApiError(error);
   }

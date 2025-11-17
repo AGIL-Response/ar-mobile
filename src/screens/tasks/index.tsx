@@ -124,11 +124,15 @@ export default function TasksScreen() {
     }
 
     const allTasks = tasksState.tasks;
-    const pendingTasks = allTasks.filter(
-      (task) => !task.status || task.status !== 'completed'
-    );
+    const pendingTasks = allTasks.filter((task) => task.status === 'pending');
     const completedTasks = allTasks.filter(
       (task) => task.status === 'completed'
+    );
+    const inProgressTasks = allTasks.filter(
+      (task) => task.status === 'in_progress'
+    );
+    const cancelledTasks = allTasks.filter(
+      (task) => task.status === 'cancelled'
     );
 
     if (allTasks.length === 0) {
@@ -236,7 +240,9 @@ export default function TasksScreen() {
             }
           >
             {renderTaskSection('Pending Tasks', pendingTasks)}
+            {renderTaskSection('In Progress Tasks', inProgressTasks)}
             {renderTaskSection('Completed Tasks', completedTasks)}
+            {renderTaskSection('Cancelled Tasks', cancelledTasks)}
           </ScrollView>
         );
     }
@@ -251,9 +257,7 @@ export default function TasksScreen() {
         activeTab={tasksState.activeTab}
         onTabChange={tasksState.actions.setActiveTab}
         pendingCount={
-          tasksState.tasks.filter(
-            (task) => !task.status || task.status !== 'completed'
-          ).length
+          tasksState.tasks.filter((task) => task.status === 'pending').length
         }
         completedCount={
           tasksState.tasks.filter((task) => task.status === 'completed').length

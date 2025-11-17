@@ -107,18 +107,14 @@ const notificationsStore: StateCreator<NotificationsState> = (set, get) => ({
           status,
         });
         // Update local state
-        set((state: NotificationsState) => {
-          const notificationIndex = state.notifications.findIndex(
-            (notification) => notification.notificationId === notificationId
-          );
-          if (notificationIndex !== -1) {
-            state.notifications[notificationIndex].status = status;
-          }
-          return {
-            ...state,
-            notifications: state.notifications,
-          };
-        });
+        set((state: NotificationsState) => ({
+          ...state,
+          notifications: state.notifications.map((notification) =>
+            notification.notificationId === notificationId
+              ? { ...notification, status }
+              : notification
+          ),
+        }));
         await get().actions.getUnreadCount();
         console.log('Notifications store - notification status updated');
       } catch (error: unknown) {

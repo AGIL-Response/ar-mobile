@@ -281,10 +281,12 @@ export default function IncidentDetailScreen() {
     icon,
     label,
     value,
+    onPress,
   }: {
     icon: string;
     label: string;
     value: string;
+    onPress?: () => void;
   }) => (
     <View
       style={{
@@ -316,7 +318,9 @@ export default function IncidentDetailScreen() {
           style={{
             color: theme.colors.text.secondary,
             textAlign: 'right',
+            textDecorationLine: onPress ? 'underline' : 'none',
           }}
+          onPress={onPress}
         >
           {value}
         </Text>
@@ -424,6 +428,48 @@ export default function IncidentDetailScreen() {
     );
   }
 
+  const pillFields = [
+    {
+      label: 'Type',
+      value: getTypeLabel(incident?.type),
+      backgroundColor: getTypeBackgroundColor(incident?.type),
+      textColor: getTypeColor(incident?.type),
+    },
+    {
+      label: 'Priority',
+      value: getPriorityLabel(displaySeverity),
+      backgroundColor: getPriorityBackgroundColor(displaySeverity),
+      textColor: getPriorityColor(displaySeverity),
+    },
+    {
+      label: 'Status',
+      value: getStatusLabel(incident?.status),
+      backgroundColor: getStatusBackgroundColor(incident?.status),
+      textColor: getStatusColor(incident?.status),
+    },
+  ];
+
+  const rowFields = [
+    {
+      icon: iconNames.user_plus,
+      label: 'Reported by',
+      value: getCreatedByName(),
+    },
+    {
+      icon: iconNames.location,
+      label: 'Location',
+      value: incident.location?.coordinates
+        ? `${incident.location.coordinates[1]?.toFixed(6)}, ${incident.location.coordinates[0]?.toFixed(6)}`
+        : 'Not specified',
+      onPress: handleViewLocation,
+    },
+    {
+      icon: iconNames.clock_fast_forward,
+      label: 'Reported at',
+      value: formatDate(incident.createdAt),
+    },
+  ];
+
   return (
     <Background>
       <AppBar
@@ -473,21 +519,14 @@ export default function IncidentDetailScreen() {
               marginBottom: 8,
             }}
           >
-            <Pill
-              label={getTypeLabel(incident.type)}
-              textColor={getTypeColor(incident.type)}
-              backgroundColor={getTypeBackgroundColor(incident.type)}
-            />
-            <Pill
-              label={getPriorityLabel(displaySeverity)}
-              textColor={getPriorityColor(displaySeverity)}
-              backgroundColor={getPriorityBackgroundColor(displaySeverity)}
-            />
-            <Pill
-              label={getStatusLabel(incident.status)}
-              textColor={getStatusColor(incident.status)}
-              backgroundColor={getStatusBackgroundColor(incident.status)}
-            />
+            {pillFields.map((field) => (
+              <Pill
+                key={field.label}
+                label={field.value}
+                backgroundColor={field.backgroundColor}
+                textColor={field.textColor}
+              />
+            ))}
           </View>
         </View>
 
@@ -498,29 +537,15 @@ export default function IncidentDetailScreen() {
           }}
         >
           {/* Reported by */}
-          <InfoRow
-            icon={iconNames.user_plus}
-            label="Reported by"
-            value={getCreatedByName()}
-          />
-
-          {/* Location */}
-          <InfoRow
-            icon={iconNames.location}
-            label="Location"
-            value={
-              incident.location?.coordinates
-                ? `${incident.location.coordinates[1]?.toFixed(6)}, ${incident.location.coordinates[0]?.toFixed(6)}`
-                : 'Not specified'
-            }
-          />
-
-          {/* Reported at */}
-          <InfoRow
-            icon={iconNames.clock_fast_forward}
-            label="Reported at"
-            value={formatDate(incident.createdAt)}
-          />
+          {rowFields.map((field) => (
+            <InfoRow
+              key={field.label}
+              icon={field.icon}
+              label={field.label}
+              value={field.value}
+              onPress={field.onPress}
+            />
+          ))}
         </View>
 
         {/* Action Section (if incident has tasks) */}

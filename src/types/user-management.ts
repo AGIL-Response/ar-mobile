@@ -4,7 +4,7 @@ export type User = {
   email: string;
   username: string;
   emailVerified: boolean;
-  createdAt: number;
+  createdAt: string;
   enabled: boolean;
   roles: Role[];
   avatarId?: string;
@@ -38,7 +38,11 @@ export type UserResponse = {
   enabled: boolean;
   emailVerified: boolean;
   createdAt: string;
+  updatedAt: string;
   attributes?: Record<string, string[]>;
+  description?: string;
+  avatarId?: string;
+  roles: Role[];
 };
 
 export type UsersQueryParams = {

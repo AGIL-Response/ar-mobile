@@ -61,6 +61,24 @@ export default function AppLayout() {
         }}
       />
       <Stack.Screen
+        name="profile/detail"
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="profile/change-password"
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="profile/create"
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
         name="notifications"
         options={{
           headerShown: false,

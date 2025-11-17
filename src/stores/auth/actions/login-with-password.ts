@@ -65,9 +65,8 @@ const loginWithPassword =
           id: profileResponse.data.id,
           username: profileResponse.data.username,
           email: profileResponse.data.email,
-          firstName: profileResponse.data.fullName?.split(' ')[0] || '',
-          lastName:
-            profileResponse.data.fullName?.split(' ').slice(1).join(' ') || '',
+          fullName: profileResponse.data.fullName,
+          description: profileResponse.data.description,
           tenantId: profileResponse.data.tenantId,
           realm: state.selectedTenant?.name || '',
           roles:
@@ -109,8 +108,8 @@ const loginWithPassword =
           id: userId,
           username: jwtPayload?.preferred_username || username,
           email: jwtPayload?.email || '',
-          firstName: jwtPayload?.given_name || '',
-          lastName: jwtPayload?.family_name || '',
+          fullName: jwtPayload?.given_name || '',
+          description: jwtPayload?.family_name || '',
           tenantId: tenantId || '',
           realm: state.selectedTenant?.name || '',
           roles: [],

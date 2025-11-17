@@ -216,7 +216,8 @@ export const Palette = {
   primary900: '#0b3756',
   primary1000: '#111827',
   primary1100: '#121c2e',
-  primary1200: '#0B355666',
+  primary1200: '#0B3556',
+  primary1300: '#1F2937',
 
   secondary50: '#eaeaea',
   secondary100: '#bfbfbf',
@@ -280,8 +281,6 @@ export const Palette = {
   red800: '#8c2121',
   red900: '#6b1919',
 
-  primary90030: '#0B3556',
-  toastStatusBg: '#0B355666',
   backgroundSecondary: '#1984CC66',
 
   brown50: '#374151',
@@ -303,8 +302,10 @@ const createColors = (isDark: boolean) => ({
     secondary: isDark ? Palette.secondary1000 : Palette.gray50,
     tertiary: isDark ? Palette.primary1100 : Palette.gray100,
     overlay: isDark ? Palette.primary900 : 'rgba(0, 0, 0, 0.05)',
-    input: isDark ? Palette.primary1200 : Palette.gray400,
+    input: isDark ? `${Palette.primary1200}66` : Palette.gray400,
+    border: isDark ? `${Palette.primary1200}33` : `${Palette.primary500}33`,
     qua: isDark ? `${Palette.primary50}0D` : `${Palette.primary1100}0D`, //alpha 5%
+    button: isDark ? Palette.primary1300 : Palette.white,
   },
 
   // Text colors
@@ -328,6 +329,7 @@ const createColors = (isDark: boolean) => ({
     disabled: isDark ? `${Palette.brown200}33` : `${Palette.brown200}`,
     border: isDark ? Palette.brown100 : Palette.primary500,
     borderPrimary: isDark ? Palette.blue1000 : Palette.blue1000,
+    borderSecondary: isDark ? `${Palette.brown100}33` : `${Palette.blue1000}33`,
   },
 
   // Status colors (same for both themes)
@@ -363,7 +365,7 @@ const createColors = (isDark: boolean) => ({
   // Surface colors
   surface: {
     card: isDark ? Palette.primary1000 : Palette.white,
-    input: isDark ? Palette.primary1200 : Palette.white,
+    input: isDark ? `${Palette.primary1200}66` : Palette.white,
     border: isDark ? `${Palette.primary600}66` : `${Palette.primary500}66`,
     activeBorder: isDark ? `${Palette.primary600}` : `${Palette.primary500}`,
     divider: isDark ? Palette.dimGray : Palette.gray300,

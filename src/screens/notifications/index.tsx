@@ -126,15 +126,15 @@ export default function NotificationsScreen() {
 
         // Handle navigation based on notification type and metadata
         const { type, metadata } = notification;
-        console.log('📬 Notification metadata:', type, metadata);
 
-        // TODO: Add navigation logic based on notification type
-        // Example:
-        // if (type === 'task_assigned' && metadata.entityType === 'task') {
-        //   router.push(`/task/${metadata.id}`);
-        // } else if (type === 'incident_assigned' && metadata.entityType === 'incident') {
-        //   router.push(`/incidents/${metadata.id}`);
-        // }
+        if (type.includes('task') && metadata.entityType === 'task') {
+          router.push(`/task/${metadata.id}`);
+        } else if (
+          type.includes('incident') &&
+          metadata.entityType === 'incident'
+        ) {
+          router.push(`/incidents/${metadata.id}`);
+        }
       } catch (error) {
         console.error('❌ Failed to handle notification press:', error);
         Alert.alert('Error', 'Failed to update notification');

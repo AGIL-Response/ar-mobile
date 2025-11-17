@@ -167,7 +167,7 @@ const createSelectTextStyles = createStyleCreator<SelectProps>(
     };
 
     return {
-      color: disabled ? colors.text.muted : colors.text.primary,
+      color: disabled ? colors.text.muted : colors.text.secondary,
       ...typographyVariants[size],
       lineHeight: sizeLineHeights[size],
       textAlignVertical: 'center', // Android-specific

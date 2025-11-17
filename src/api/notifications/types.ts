@@ -10,7 +10,8 @@ export type NotificationType =
   | 'task_completed'
   | 'incident_resolved'
   | 'team_update'
-  | 'system_maintenance';
+  | 'system_maintenance'
+  | 'incident_created';
 
 export interface NotificationActor {
   id: string;
