@@ -165,12 +165,32 @@ const saveCacheKeys = (keys: string[]): void => {
 };
 
 /**
+ * Validate if a file URI exists (for file:// URIs only)
+ * Returns true if file exists or if URI is not a file:// URI (e.g., data://)
+ */
+const validateFileUri = async (uri: string): Promise<boolean> => {
+  // Only validate file:// URIs, data URIs are always valid
+  if (!uri.startsWith('file://')) {
+    return true;
+  }
+
+  try {
+    const fileInfo = await FileSystem.getInfoAsync(uri);
+    return fileInfo.exists;
+  } catch (error) {
+    console.log('Failed to validate file URI:', uri, error);
+    return false;
+  }
+};
+
+/**
  * Get cached file URI for a fileId
  * Checks in-memory cache first, then persistent storage
+ * Validates file:// URIs to ensure they still exist
  */
-export const getCachedFileUri = (
+export const getCachedFileUri = async (
   fileId: string | null | undefined
-): FileCacheEntry | null => {
+): Promise<FileCacheEntry | null> => {
   if (!fileId) return null;
 
   // Initialize cache on first access
@@ -178,26 +198,20 @@ export const getCachedFileUri = (
     initializeCache();
   }
 
-  // Check in-memory cache first (fast)
-  if (fileUriCache.has(fileId)) {
-    return fileUriCache.get(fileId) || null;
+  // Get from in-memory cache (initialized from persistent storage on first access)
+  const cachedEntry = fileUriCache.get(fileId);
+  if (!cachedEntry) {
+    return null;
   }
 
-  // Check persistent storage
-  try {
-    const cacheKey = `${CACHE_KEY_PREFIX}${fileId}`;
-    const cachedValue = storage.getString(cacheKey);
-    if (cachedValue) {
-      const entry: FileCacheEntry = JSON.parse(cachedValue);
-      // Update in-memory cache for future fast access
-      fileUriCache.set(fileId, entry);
-      return entry;
-    }
-  } catch (error) {
-    console.log('Failed to get cached file URI from storage:', error);
+  const isValid = await validateFileUri(cachedEntry.uri);
+  if (!isValid) {
+    console.log('Cached file no longer exists, clearing cache:', fileId);
+    clearCachedFileUri(fileId);
+    return null;
   }
 
-  return null;
+  return cachedEntry;
 };
 
 /**

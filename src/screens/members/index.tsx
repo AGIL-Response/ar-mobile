@@ -1,3 +1,4 @@
+import icons, { iconNames } from '@assets/icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
@@ -8,23 +9,23 @@ import {
 } from 'react-native';
 
 import { AppBar, Avatar, Background, Icon, Text, View } from '@/components';
-import { NetworkSignalIcon } from '@/components/network-signal-icon';
 import { BatteryIcon } from '@/components/battery-icon';
-import icons, { iconNames } from '@assets/icons';
+import { X } from '@/components/icons';
+import { Modal, useModal } from '@/components/modal';
+import { NetworkSignalIcon } from '@/components/network-signal-icon';
+import { FontFamilies } from '@/lib/fonts';
 import { useAuthStore } from '@/stores/auth';
 import { useUsersStore } from '@/stores/users';
 import { useTheme } from '@/theme';
 import type { User } from '@/types';
-import { Modal, useModal } from '@/components/modal';
+
 import { MemberDetailModal } from './components/member-detail-modal';
-import { X } from '@/components/icons';
-import { FontFamilies } from '@/lib/fonts';
 
 export function MembersScreen(): React.JSX.Element {
   const router = useRouter();
   const authState = useAuthStore();
   const usersState = useUsersStore();
-  const { setMapFocusUserId } = usersState.actions;
+  const { setMapFocusUserId, setFlatViewFocusUserId } = usersState.actions;
   const theme = useTheme();
   const { ref, present } = useModal();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -37,6 +38,25 @@ export function MembersScreen(): React.JSX.Element {
   //     usersState.actions.fetchTeamMembers(teamId);
   //   }
   // }, [teamId]);
+
+  // Show member details when focused from map
+  useEffect(() => {
+    if (usersState.flatViewFocusUserId) {
+      const focusedUser = usersState.users.find(
+        (user) => user.id === usersState.flatViewFocusUserId
+      );
+      if (focusedUser) {
+        setSelectedUser(focusedUser);
+        present();
+        setFlatViewFocusUserId(null);
+      }
+    }
+  }, [
+    usersState.flatViewFocusUserId,
+    usersState.users,
+    present,
+    setFlatViewFocusUserId,
+  ]);
 
   const getInitials = (user: User) => {
     if (user.fullName) {

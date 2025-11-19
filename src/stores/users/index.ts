@@ -16,6 +16,7 @@ export interface UsersState extends IBaseState {
   error: string | null;
   searchQuery: string;
   mapFocusUserId: string | null;
+  flatViewFocusUserId: string | null;
 
   // Actions namespace
   actions: {
@@ -30,6 +31,7 @@ export interface UsersState extends IBaseState {
     ) => void;
     setSearchQuery: (query: string) => void;
     setMapFocusUserId: (userId: string | null) => void;
+    setFlatViewFocusUserId: (userId: string | null) => void;
     updateUser: (userId: string, payload: UpdateUserPayload) => Promise<User>;
     reset: () => void;
   };
@@ -41,6 +43,7 @@ const initialState: InitStateType<UsersState> = {
   error: null,
   searchQuery: '',
   mapFocusUserId: null,
+  flatViewFocusUserId: null,
 };
 
 const usersStore = (set: any, get: any) => ({
@@ -143,6 +146,12 @@ const usersStore = (set: any, get: any) => ({
       });
     },
 
+    setFlatViewFocusUserId: (userId: string | null) => {
+      set((state: UsersState) => {
+        state.flatViewFocusUserId = userId;
+      });
+    },
+
     setSearchQuery: (query: string) => {
       set((state: UsersState) => {
         state.searchQuery = query;
@@ -159,10 +168,7 @@ const usersStore = (set: any, get: any) => ({
         });
         return user;
       } catch (error) {
-        set((state: UsersState) => {
-          state.error =
-            error instanceof Error ? error.message : 'Failed to update user';
-        });
+        throw error;
       }
     },
 

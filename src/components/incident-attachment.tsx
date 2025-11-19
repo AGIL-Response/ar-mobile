@@ -157,21 +157,11 @@ const IncidentAttachmentBase = ({
           alignItems: 'center',
         }}
       >
-        <View
-          style={{
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <Icon
-            name={iconNames.play}
-            size={size * 0.3}
-            color={theme.colors.semantic.white}
-          />
-        </View>
+        <Icon
+          name={iconNames.play}
+          size={size * 0.3}
+          color={theme.colors.semantic.white}
+        />
       </View>
     );
   };

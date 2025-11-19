@@ -142,7 +142,7 @@ export default function EditProfileScreen() {
         username: formData.username,
         description: formData.description,
         avatarId: avatarUri ? avatarUri : user?.avatarId || '',
-        updatedAt: new Date().toISOString() as unknown as Date,
+        updatedAt: new Date().toISOString(),
       });
 
       if (updatedUser) {

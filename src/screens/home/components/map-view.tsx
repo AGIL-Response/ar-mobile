@@ -3,21 +3,20 @@
  * Contains map interface for the map view tab
  */
 
-import React, { useEffect, useMemo, useRef } from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
-
 import Mapbox, {
   Camera,
   MapView as MapboxMapView,
   MarkerView,
 } from '@rnmapbox/maps';
 import { router } from 'expo-router';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 
-import { Avatar, Icon, View, iconNames } from '@/components';
+import { Avatar, Icon, iconNames, View } from '@/components';
 import { getCoordinate } from '@/screens/incidents/utils';
 import { useIncidentsStore } from '@/stores/incidents';
-import { type Theme, useTheme } from '@/theme';
 import { useUsersStore } from '@/stores/users';
+import { type Theme, useTheme } from '@/theme';
 
 import type { IncidentCoordinate, UserCoordinate } from '../types';
 
@@ -34,7 +33,7 @@ export function MapView() {
   const { fetchIncidents, setMapFocusIncident } = incidentsState.actions;
   const mapFocusIncidentId = incidentsState.mapFocusIncidentId;
 
-  const { setMapFocusUserId } = usersState.actions;
+  const { setMapFocusUserId, setFlatViewFocusUserId } = usersState.actions;
   const mapFocusUserId = usersState.mapFocusUserId;
 
   const cameraRef = useRef<Camera>(null);
@@ -78,7 +77,8 @@ export function MapView() {
   };
 
   const handleUserMarkerPress = (userId: string) => {
-    console.log('handleUserMarkerPress', userId);
+    setFlatViewFocusUserId(userId);
+    router.push('/');
   };
 
   useEffect(() => {

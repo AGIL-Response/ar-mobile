@@ -74,8 +74,8 @@ export function withFileSource<
         return; // Already loaded or loading
       }
 
-      // Check cache first
-      const cached = getCachedFileUri(fileId);
+      // Check cache first (async validation for file:// URIs)
+      const cached = await getCachedFileUri(fileId);
       if (cached) {
         if (logErrors) {
           console.log('📦 Using cached file:', fileId);
@@ -124,7 +124,7 @@ export function withFileSource<
       } finally {
         setIsLoading(false);
       }
-    }, [fileId, fileDataUri, isLoading, logErrors]);
+    }, [fileId, fileDataUri, isLoading]);
 
     // Reset state when fileId changes
     useEffect(() => {
@@ -138,7 +138,7 @@ export function withFileSource<
       if (autoLoad && fileId) {
         loadFileContent();
       }
-    }, [fileId, autoLoad, loadFileContent]);
+    }, [fileId, loadFileContent]);
 
     // Convert data URI to ImageSourcePropType
     const sourceResult: ImageSourcePropType | null = fileDataUri

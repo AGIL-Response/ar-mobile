@@ -1,15 +1,15 @@
+import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
 
 import { Avatar, Text, View } from '@/components';
 import { Modal, useModal } from '@/components/modal';
+import { FontFamilies } from '@/lib/fonts';
+import { MembersScreen } from '@/screens/members';
 import { useAuthStore } from '@/stores/auth';
 import { useUsersStore } from '@/stores/users';
 import { useTheme } from '@/theme';
 import type { User } from '@/types';
-import { FontFamilies } from '@/lib/fonts';
-import { MembersScreen } from '@/screens/members';
 
 export function MembersSection(): React.JSX.Element {
   const router = useRouter();
@@ -27,6 +27,13 @@ export function MembersSection(): React.JSX.Element {
     }
   }, [teamId]);
 
+  // Open members modal when a user is focused from map
+  useEffect(() => {
+    if (usersState.flatViewFocusUserId) {
+      presentMembers();
+    }
+  }, [usersState.flatViewFocusUserId, presentMembers]);
+
   const displayUsers = usersState.users.slice(0, 4);
   const hasMore = usersState.users.length > 1;
   const moreCount = usersState.users.length - 1;
@@ -35,10 +42,6 @@ export function MembersSection(): React.JSX.Element {
     presentMembers();
   };
 
-  // console.log(
-  //   `\x1b[34m🐣️ members-section MembersSection`,
-  //   `${JSON.stringify(displayUsers, undefined, 2)}\x1b[0m`,
-  // );
 
   const getInitials = (user: User) => {
     if (user.fullName) {

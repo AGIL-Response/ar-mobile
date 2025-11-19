@@ -9,6 +9,7 @@ import { Background, View } from '@/components';
 import useAuthStore from '@/stores/auth';
 import { useIncidentsStore } from '@/stores/incidents';
 import { useTasksStore } from '@/stores/tasks';
+import { useUsersStore } from '@/stores/users';
 import { useTheme } from '@/theme';
 
 import { AppHeader } from './components/app-header';
@@ -17,7 +18,6 @@ import { FloatingActionButton } from './components/floating-action-button';
 import { LocationStatus } from './components/location-status';
 import { MapView } from './components/map-view';
 import { TabSelector } from './components/tab-selector';
-import { useUsersStore } from '@/stores/users';
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -56,7 +56,15 @@ export default function HomeScreen() {
     if (usersState.mapFocusUserId && activeTab !== 'map') {
       setActiveTab('map');
     }
-  }, [incidentsState.mapFocusIncidentId, usersState.mapFocusUserId, activeTab]);
+    if (usersState.flatViewFocusUserId && activeTab !== 'flat') {
+      setActiveTab('flat');
+    }
+  }, [
+    incidentsState.mapFocusIncidentId,
+    usersState.mapFocusUserId,
+    usersState.flatViewFocusUserId,
+    activeTab,
+  ]);
 
   const handleTabChange = (tab: 'flat' | 'map') => {
     setActiveTab(tab);
