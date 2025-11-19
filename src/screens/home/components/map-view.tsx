@@ -8,11 +8,14 @@ import Mapbox, {
   MapView as MapboxMapView,
   MarkerView,
 } from '@rnmapbox/maps';
-import { router } from 'expo-router';
-import React, { useEffect, useMemo, useRef } from 'react';
+import { router, type RelativePathString } from 'expo-router';
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
-
-import { Avatar, Icon, iconNames, View } from '@/components';
+import { Avatar, Center, Icon, Text, View, iconNames } from '@/components';
 import { getCoordinate } from '@/screens/incidents/utils';
 import { useIncidentsStore } from '@/stores/incidents';
 import { useUsersStore } from '@/stores/users';
@@ -67,7 +70,6 @@ export function MapView() {
       .filter((item) => Boolean(item.coordinates));
   }, [usersState.users]);
 
-  console.log('usersCoordinates', usersCoordinates, usersState);
   useEffect(() => {
     fetchIncidents({});
   }, [fetchIncidents]);
@@ -78,7 +80,7 @@ export function MapView() {
 
   const handleUserMarkerPress = (userId: string) => {
     setFlatViewFocusUserId(userId);
-    router.push('/');
+    router.push('/' as RelativePathString);
   };
 
   useEffect(() => {
@@ -148,6 +150,26 @@ export function MapView() {
     setMapFocusIncident,
     setMapFocusUserId,
   ]);
+
+  const isLoading =
+    incidentsState.isLoading ||
+    usersState.isLoading ||
+    (!coordinates.length && !usersCoordinates.length);
+
+  if (isLoading) {
+    return (
+      <Center style={{ flex: 1 }}>
+        <Text
+          variant="body"
+          style={{
+            color: theme.colors.text.secondary,
+          }}
+        >
+          Loading map...
+        </Text>
+      </Center>
+    );
+  }
 
   return (
     <View style={styles.container}>

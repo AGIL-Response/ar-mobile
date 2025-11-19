@@ -14,7 +14,11 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import {
+  Gesture,
+  GestureDetector,
+  GestureHandlerRootView,
+} from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 
 import { Text } from '@/components';
@@ -112,7 +116,7 @@ export function MediaViewerModal({
       onRequestClose={handleClose}
       statusBarTranslucent
     >
-      <View
+      <GestureHandlerRootView
         style={[
           styles.container,
           { backgroundColor: theme.colors.background.primary },
@@ -184,7 +188,7 @@ export function MediaViewerModal({
             ) : null}
           </View>
         </GestureDetector>
-      </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }

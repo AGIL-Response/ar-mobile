@@ -93,8 +93,8 @@ export function withFileSource<
           console.log('🚀 Loading file:', fileId);
         }
 
-        const blob = await filesApi.viewFile({ fileId });
-        const blobMimeType = blob.type || null;
+        const { blob, type } = await filesApi.viewFile({ fileId });
+        const blobMimeType = type || null;
 
         // Convert blob to appropriate URI based on mime type
         // Videos need file:// URI, images can use data:// URI

@@ -349,7 +349,7 @@ export const filesApi = {
    * View/download a file by ID
    * Returns the raw file content as blob
    */
-  viewFile: async (options: FileViewOptions): Promise<Blob> => {
+  viewFile: async (options: FileViewOptions): Promise<{ blob: Blob; type: string }> => {
     try {
       const { fileId } = options;
 
@@ -361,12 +361,10 @@ export const filesApi = {
         responseType: 'blob', // Important: Get raw binary data
       });
 
-      console.log('✅ File View Response:', {
-        size: response.data.size,
-        type: response.data.type,
-      });
-
-      return response.data;
+      return {
+        blob: response.data,
+        type: response.data.type || response.headers['content-type'],
+      };
     } catch (error) {
       console.error('❌ File View Error:', error);
       throw handleApiError(error);

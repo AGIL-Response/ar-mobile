@@ -18,9 +18,8 @@ import {
   Text,
   View,
 } from '@/components';
-import { useAuthStore } from '@/stores/auth';
 import { useIncidentsStore } from '@/stores/incidents';
-import { Palette, useTheme } from '@/theme';
+import { Palette, Theme, useTheme } from '@/theme';
 import { useUsersStore } from '@/stores/users';
 
 export const mapIncidentTypeToSeverity = (
@@ -55,8 +54,11 @@ export const getTypeLabel = (type: Incident['type']) => {
     case 'environmental':
       return 'Environmental';
     default:
-      const typeStr = String(type);
-      return typeStr.charAt(0).toUpperCase() + typeStr.slice(1);
+      if (!type) return '';
+      const typeStr = String(type)
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+      return typeStr;
   }
 };
 
@@ -125,37 +127,11 @@ export const getPriorityBackgroundColor = (severity?: IncidentSeverity) => {
 };
 
 export const getIncidentTypeIcon = (type: Incident['type']) => {
-  switch (type) {
-    case 'maintenance':
-      return iconNames.settings;
-    case 'emergency':
-      return iconNames.notification_badge;
-    case 'security':
-      return iconNames.list;
-    case 'health':
-      return iconNames.user;
-    case 'environmental':
-      return iconNames.clock;
-    default:
-      return iconNames.list;
-  }
+  return iconNames.incident;
 };
 
-export const getIncidentTypeColor = (type: Incident['type']) => {
-  switch (type) {
-    case 'maintenance':
-      return Palette.primary500;
-    case 'emergency':
-      return Palette.error;
-    case 'security':
-      return Palette.warning;
-    case 'health':
-      return Palette.primary500;
-    case 'environmental':
-      return Palette.primary500;
-    default:
-      return Palette.primary500;
-  }
+export const getIncidentTypeColor = (theme: Theme) => {
+  return theme.colors.semantic.white;
 };
 
 export const getStatusColor = (status: Incident['status']) => {
@@ -364,9 +340,11 @@ export default function IncidentDetailScreen() {
         style={{ flex: 1, backgroundColor: theme.colors.background.primary }}
       >
         <AppBar
-          title="Incidents Detail"
+          title="Incident Detail"
           showBackButton
           onBackPress={handleBackPress}
+          titleFontFamily={theme.fonts.goldmanRegular}
+          titleAlign="left"
         />
         <Center style={{ flex: 1 }}>
           <Text
@@ -386,9 +364,11 @@ export default function IncidentDetailScreen() {
     return (
       <Background>
         <AppBar
-          title="Incidents Detail"
+          title="Incident Detail"
           showBackButton
           onBackPress={handleBackPress}
+          titleFontFamily={theme.fonts.goldmanRegular}
+          titleAlign="left"
         />
         <Center style={{ flex: 1 }}>
           <Text
@@ -409,9 +389,11 @@ export default function IncidentDetailScreen() {
     return (
       <Background>
         <AppBar
-          title="Incidents Detail"
+          title="Incident Detail"
           showBackButton
           onBackPress={handleBackPress}
+          titleFontFamily={theme.fonts.goldmanRegular}
+          titleAlign="left"
         />
         <Center style={{ flex: 1 }}>
           <Text
@@ -473,7 +455,7 @@ export default function IncidentDetailScreen() {
   return (
     <Background>
       <AppBar
-        title="Incidents Detail"
+        title="Incident Detail"
         showBackButton
         onBackPress={handleBackPress}
         testID="back-button"
@@ -494,11 +476,22 @@ export default function IncidentDetailScreen() {
               marginBottom: 12,
             }}
           >
-            <Icon
-              name={getIncidentTypeIcon(incident.type)}
-              size={20}
-              color={getIncidentTypeColor(incident.type)}
-            />
+            <View
+              style={{
+                width: 28,
+                height: 28,
+                backgroundColor: theme.colors.semantic.error,
+                borderRadius: 14,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              <Icon
+                name={getIncidentTypeIcon(incident.type)}
+                size={16}
+                color={getIncidentTypeColor(theme)}
+              />
+            </View>
             <Text
               variant="h4"
               style={{

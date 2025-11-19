@@ -258,6 +258,8 @@ export default function TaskDetailScreen() {
           title="Task Detail"
           showBackButton
           onBackPress={handleBackPress}
+          titleAlign="left"
+          titleFontFamily={theme.fonts.goldmanRegular}
         />
         <Center style={{ flex: 1 }}>
           <Text
@@ -280,6 +282,8 @@ export default function TaskDetailScreen() {
           title="Task Detail"
           showBackButton
           onBackPress={handleBackPress}
+          titleAlign="left"
+          titleFontFamily={theme.fonts.goldmanRegular}
         />
         <Center style={{ flex: 1 }}>
           <Text
