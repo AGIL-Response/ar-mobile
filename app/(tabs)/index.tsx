@@ -6,6 +6,7 @@ import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Link } from 'expo-router';
+import { Env } from '@/constants/env';
 
 export default function HomeScreen() {
   return (
@@ -74,6 +75,26 @@ export default function HomeScreen() {
           <ThemedText type="defaultSemiBold">app-example</ThemedText>.
         </ThemedText>
       </ThemedView>
+      <ThemedView style={styles.stepContainer}>
+        <ThemedText type="subtitle">Environment Values</ThemedText>
+        <ThemedView style={styles.envContainer}>
+          <ThemedText style={styles.envLabel}>App Name:</ThemedText>
+          <ThemedText style={styles.envValue}>{Env.APP_NAME}</ThemedText>
+        </ThemedView>
+        <ThemedView style={styles.envContainer}>
+          <ThemedText style={styles.envLabel}>Variant:</ThemedText>
+          <ThemedText style={styles.envValue}>{Env.APP_VARIANT}</ThemedText>
+        </ThemedView>
+        <ThemedView style={styles.envContainer}>
+          <ThemedText style={styles.envLabel}>Package Name:</ThemedText>
+          <ThemedText style={styles.envValue}>{Env.PACKAGE_NAME}</ThemedText>
+        </ThemedView>
+        <ThemedView style={styles.envContainer}>
+          <ThemedText style={styles.envLabel}>Base url:</ThemedText>
+          <ThemedText style={styles.envValue}>{Env.BASE_URL}</ThemedText>
+        </ThemedView>
+        <ThemedText style={styles.envSectionTitle}>All Environment Variables:</ThemedText>
+      </ThemedView>
     </ParallaxScrollView>
   );
 }
@@ -94,5 +115,22 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     position: 'absolute',
+  },
+  envContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginVertical: 4,
+  },
+  envLabel: {
+    fontWeight: '600',
+    minWidth: 120,
+  },
+  envValue: {
+    flex: 1,
+  },
+  envSectionTitle: {
+    fontWeight: '600',
+    marginTop: 8,
+    marginBottom: 4,
   },
 });
