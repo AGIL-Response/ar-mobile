@@ -67,7 +67,7 @@ export default function TasksScreen() {
   };
 
   const handleTaskPress = (taskId: string) => {
-    router.push(`/task/${taskId}`);
+    router.navigate(`/task/${taskId}`);
   };
 
   const renderTaskSection = (title: string, tasks: any[], showCount = true) => {

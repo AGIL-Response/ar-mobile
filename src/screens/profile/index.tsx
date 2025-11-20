@@ -43,11 +43,11 @@ export default function ProfileScreen() {
   };
 
   const handleProfileDetailsPress = () => {
-    router.push('/(app)/profile/detail' as any);
+    router.navigate('/(app)/profile/detail' as any);
   };
 
   const handleChangePasswordPress = () => {
-    router.push('/(app)/profile/change-password' as any);
+    router.navigate('/(app)/profile/change-password' as any);
   };
 
   const handleAccountSettingsPress = () => {

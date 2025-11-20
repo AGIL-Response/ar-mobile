@@ -31,12 +31,12 @@ export function IncidentsSection() {
   }, []);
 
   const handleViewAll = () => {
-    router.push('/incidents');
+    router.navigate('/incidents');
   };
 
   const handleIncidentPress = (incident: Incident) => {
     incidentsState.actions.setSelectedIncident(incident);
-    router.push(`/incidents/${incident.id}`);
+    router.navigate(`/incidents/${incident.id}`);
   };
 
   if (incidentsState.isLoading && incidentsState.incidents.length === 0) {

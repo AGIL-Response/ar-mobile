@@ -75,12 +75,12 @@ export function MapView() {
   }, [fetchIncidents]);
 
   const handleMarkerPress = (incidentId: string) => {
-    router.push(`/incidents/${incidentId}` as any);
+    router.navigate(`/incidents/${incidentId}` as any);
   };
 
   const handleUserMarkerPress = (userId: string) => {
     setFlatViewFocusUserId(userId);
-    router.push('/' as RelativePathString);
+    router.navigate('/' as RelativePathString);
   };
 
   useEffect(() => {

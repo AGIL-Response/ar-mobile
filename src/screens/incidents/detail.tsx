@@ -233,7 +233,7 @@ export default function IncidentDetailScreen() {
     }
 
     incidentsState.actions.setMapFocusIncident(incident.id);
-    router.push('/' as any);
+    router.navigate('/' as any);
   };
 
   const getCreatedByName = () => {

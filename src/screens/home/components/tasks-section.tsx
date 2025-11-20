@@ -22,11 +22,11 @@ export function TasksSection() {
 
   const handleViewAll = () => {
     tasksState.actions.setActiveTab('pending');
-    router.push('/tasks');
+    router.navigate('/tasks');
   };
 
   const handleTaskPress = (taskId: string) => {
-    router.push(`/task/${taskId}`);
+    router.navigate(`/task/${taskId}`);
   };
 
   if (tasksState.isLoading && tasksState.tasks.length === 0) {

@@ -135,6 +135,6 @@ describe('Home MapView', () => {
     markerProps.onSelected?.();
 
     expect(setSelectedIncidentMock).not.toHaveBeenCalled();
-    expect(router.push).toHaveBeenCalledWith('/incidents/incident-3');
+    expect(router.navigate).toHaveBeenCalledWith('/incidents/incident-3');
   });
 });

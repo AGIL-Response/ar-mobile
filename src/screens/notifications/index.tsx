@@ -128,12 +128,12 @@ export default function NotificationsScreen() {
         const { type, metadata } = notification;
 
         if (type.includes('task') && metadata.entityType === 'task') {
-          router.push(`/task/${metadata.id}`);
+          router.navigate(`/task/${metadata.id}`);
         } else if (
           type.includes('incident') &&
           metadata.entityType === 'incident'
         ) {
-          router.push(`/incidents/${metadata.id}`);
+          router.navigate(`/incidents/${metadata.id}`);
         }
       } catch (error) {
         console.error('❌ Failed to handle notification press:', error);

@@ -15,7 +15,7 @@ export function FloatingActionButton() {
 
   const handlePress = () => {
     // Navigate to create incident screen (location permission will be handled there)
-    router.push('/incidents/create');
+    router.navigate('/incidents/create');
   };
   return (
     <TouchableOpacity

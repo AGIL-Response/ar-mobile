@@ -61,7 +61,7 @@ export function AppHeader({ title }) {
           flexDirection: 'row',
         }}
       >
-        <TouchableOpacity onPress={() => router.push('/notifications')}>
+        <TouchableOpacity onPress={() => router.navigate('/notifications')}>
           <View
             style={{
               width: 32,
@@ -95,7 +95,7 @@ export function AppHeader({ title }) {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => router.push('/profile')}>
+        <TouchableOpacity onPress={() => router.navigate('/profile')}>
           <View
             style={{
               width: 32,

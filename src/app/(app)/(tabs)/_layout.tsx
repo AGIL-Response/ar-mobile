@@ -81,7 +81,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <TouchableOpacity
               activeOpacity={0.7}
-              onPress={() => router.push('/incidents/create' as any)}
+              onPress={() => router.navigate('/incidents/create' as any)}
               accessibilityRole="button"
               accessibilityLabel="Create Incident"
               style={{

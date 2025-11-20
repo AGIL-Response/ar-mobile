@@ -43,7 +43,7 @@ export const useLoginHandlers = ({
     console.log('Login screen: Starting login process for username:', username);
     try {
       await authState.actions.loginWithPassword(username, password);
-      router.push('/');
+      router.navigate('/');
     } catch (error: any) {
       const errorMessage =
         error?.message ||

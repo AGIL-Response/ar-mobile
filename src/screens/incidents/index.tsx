@@ -40,7 +40,7 @@ export default function IncidentsScreen() {
 
   const handleIncidentPress = (incident: Incident) => {
     incidentsState.actions.setSelectedIncident(incident);
-    router.push(`/incidents/${incident.id}`);
+    router.navigate(`/incidents/${incident.id}`);
   };
 
   const handleRefresh = useCallback(async () => {

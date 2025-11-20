@@ -69,7 +69,7 @@ export default function ProfileDetailScreen() {
   };
 
   const handleEditPress = () => {
-    router.push('/(app)/profile/create' as any);
+    router.navigate('/(app)/profile/create' as any);
   };
 
   const profileFields = [

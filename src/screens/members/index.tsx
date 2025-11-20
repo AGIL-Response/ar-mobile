@@ -108,7 +108,7 @@ export function MembersScreen(): React.JSX.Element {
 
   const handleMapFocus = (userId: string) => {
     setMapFocusUserId(userId);
-    router.push('/');
+    router.navigate('/');
   };
 
   const renderUserCard = (user: User) => {
