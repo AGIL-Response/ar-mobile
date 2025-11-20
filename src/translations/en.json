@@ -1,0 +1,68 @@
+{
+  "onboarding": {
+    "message": "Welcome to obytes app site"
+  },
+  "settings": {
+    "about": "About",
+    "username": "Username",
+    "app_name": "App Name",
+    "arabic": "Arabic",
+    "english": "English",
+    "generale": "General",
+    "github": "Github",
+    "language": "Language",
+    "links": "Links",
+    "logout": "Logout",
+    "more": "More",
+    "privacy": "Privacy Policy",
+    "rate": "Rate",
+    "share": "Share",
+    "support": "Support",
+    "support_us": "Support Us",
+    "terms": "Terms of Service",
+    "theme": {
+      "dark": "Dark",
+      "light": "Light",
+      "system": "System",
+      "title": "Theme"
+    },
+    "title": "Settings",
+    "version": "Version",
+    "website": "Website"
+  },
+  "location": {
+    "title": "Location Data",
+    "current": "Current Location",
+    "additional": "Additional Info",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "accuracy": "Accuracy",
+    "altitude": "Altitude",
+    "speed": "Speed",
+    "heading": "Heading",
+    "last_updated": "Last Updated",
+    "altitude_accuracy": "Altitude Accuracy",
+    "waiting": "Waiting for location..."
+  },
+  "welcome": "Welcome to obytes app site",
+  "home": {
+    "title": "Home"
+  },
+  "incident": {
+    "name": "Name",
+    "description": "Description",
+    "type": "Type",
+    "severity": "Severity",
+    "create": "Create Incident",
+    "types": {
+      "incident": "Incident",
+      "alert": "Alert",
+      "warning": "Warning"
+    },
+    "severities": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    }
+  }
+}
