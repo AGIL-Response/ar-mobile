@@ -345,7 +345,7 @@ export default function CreateIncidentScreen() {
             Attachments
           </Text>
 
-          {/* Take Photo and Upload Photo Buttons */}
+          {/* Take Photo/Video and Choose from Gallery Buttons */}
           <View
             style={{
               flexDirection: 'row',
@@ -356,7 +356,7 @@ export default function CreateIncidentScreen() {
             <Button
               variant="solid"
               size="medium"
-              title="Take a Photo"
+              title="Take Photo/Video"
               onPress={handleTakePhoto}
               disabled={isSubmitting}
               style={{
@@ -378,7 +378,7 @@ export default function CreateIncidentScreen() {
             <Button
               variant="solid"
               size="medium"
-              title="Upload a Photo"
+              title="Choose from Gallery"
               onPress={handleUploadPhoto}
               disabled={isSubmitting}
               style={{

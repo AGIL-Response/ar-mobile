@@ -35,8 +35,7 @@ export const IncidentUploadModel = React.forwardRef<
     }
     const result = await launchCameraAsync({
       mediaTypes: MediaTypeOptions.All, // Allow both images and videos
-      allowsEditing: true,
-      aspect: [16, 9],
+      allowsEditing: true, // Allow free-form cropping (no fixed aspect ratio)
       quality: 1,
       videoQuality: 1,
     });
@@ -55,8 +54,7 @@ export const IncidentUploadModel = React.forwardRef<
     }
     const result = await launchImageLibraryAsync({
       mediaTypes: MediaTypeOptions.All, // Allow both images and videos
-      allowsEditing: true,
-      aspect: [16, 9],
+      allowsEditing: true, // Allow free-form cropping (no fixed aspect ratio)
       quality: 1,
       videoQuality: 1,
     });
