@@ -9,6 +9,7 @@
     "android:pro": "APP_VARIANT=production expo run:android",
     "ios": "APP_VARIANT=development expo run:ios",
     "ios:pro": "APP_VARIANT=production expo run:ios",
+    "clean": "rm -rf ios && rm -rf android && npx expo prebuild",
     "lint": "expo lint",
     "generate:env-types": "node scripts/generate-env-types.js"
   },

@@ -48,3 +48,6 @@ app-example
 
 # Env files
 .env.*
+
+# Test
+/coverage
