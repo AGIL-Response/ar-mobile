@@ -21,3 +21,12 @@ export type RegisterResponse = {
   success: boolean;
   message: string;
 };
+
+export type UpdateUserRequest = {
+  username: string;
+  email: string;
+  fullName: string;
+  description: string;
+  avatarId: string;
+  updatedAt: string;
+};

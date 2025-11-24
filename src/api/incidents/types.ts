@@ -1,7 +1,7 @@
 import type { BaseApiResponse } from '@/types/api';
 
-export type IncidentType = 'fire' | 'emergency' | 'maintenance' | 'security' | 'health' | 'environmental';
-export type IncidentStatus = 'reported' | 'NEW' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+export type IncidentType = 'fire' | 'sos' | 'intrusion' | 'hazardous_material' | 'natural_disaster' | 'technical_failure' | 'other';
+export type IncidentStatus = 'reported' | 'acknowledged' | 'in_progress' | 'resolved' | 'closed';
 export type IncidentSeverity = 'high' | 'medium' | 'low';
 
 export interface IncidentAssignee {

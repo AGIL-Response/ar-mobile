@@ -3,7 +3,7 @@
  * Type definitions for task-related API requests and responses
  */
 
-export type TaskType = 'Test' | 'maintenance' | 'emergency' | 'inspection' | 'training' | 'other';
+export type TaskType = 'investigation' | 'evacuation' | 'rescue' | 'mitigation' | 'reporting' | 'support' | 'sos' | 'other';
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
 
@@ -99,13 +99,24 @@ export interface GetTaskResponse {
 }
 
 export interface CreateTaskRequest {
+  type: TaskType;
   name: string;
   description: string;
-  type: TaskType;
   priority: TaskPriority;
+  status: TaskStatus;
+  assigneeId?: string;
+  teamId?: string;
   startTime?: string;
   deadline?: string;
-  assigneeIds?: string[];
+  zoneId?: string;
+  incidentId?: string;
+  location?: {
+    type: string;
+    coordinates: number[];
+  };
+  checklist?: {
+    description: string;
+  }[];
 }
 
 export interface UpdateTaskRequest {

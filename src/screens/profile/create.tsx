@@ -26,7 +26,6 @@ import {
 } from '@/components';
 import { useAuthStore } from '@/stores/auth';
 import { useTheme } from '@/theme';
-import { useUsersStore } from '@/stores/users';
 
 const genderOptions = [
   { label: 'Male', value: 'male' },
@@ -45,7 +44,6 @@ const formatDate = (date: Date) =>
 export default function EditProfileScreen() {
   const theme = useTheme();
   const authState = useAuthStore();
-  const usersStore = useUsersStore();
   const user = authState.user;
 
   const [formData, setFormData] = useState({
@@ -90,7 +88,7 @@ export default function EditProfileScreen() {
       if (!result.canceled && result.assets[0]) {
         setAvatarUri(result.assets[0].uri);
       }
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to pick image');
     }
   };
@@ -136,13 +134,13 @@ export default function EditProfileScreen() {
 
     setIsSaving(true);
     try {
-      const updatedUser = await usersStore.actions.updateUser(user?.id || '', {
+      const updatedUser = await authState.actions.updateUser(user?.id || '', {
         fullName: formData.fullName,
         email: formData.email,
         username: formData.username,
         description: formData.description,
         avatarId: avatarUri ? avatarUri : user?.avatarId || '',
-        updatedAt: new Date().toISOString(),
+        updatedAt: user?.updatedAt || '',
       });
 
       if (updatedUser) {
@@ -159,7 +157,7 @@ export default function EditProfileScreen() {
       } else {
         Alert.alert('Error', 'Failed to update profile');
       }
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to update profile');
     } finally {
       setIsSaving(false);

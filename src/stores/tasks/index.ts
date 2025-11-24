@@ -6,7 +6,7 @@
 import type { StateCreator } from 'zustand';
 
 import { taskApi } from '@/api';
-import type { ChecklistItem, Task, TasksQueryParams } from '@/api/tasks/types';
+import type { CreateTaskRequest, Task, TasksQueryParams } from '@/api/tasks/types';
 import { showErrorMessage } from '@/components/utils';
 import { TaskTab } from '@/screens/tasks/components/task-tab-selector';
 import type { IBaseState, InitStateType } from '@/stores/interfaces/IBaseState';
@@ -29,6 +29,7 @@ export interface TasksState extends IBaseState {
   actions: {
     fetchTasks: (params?: TasksQueryParams) => Promise<void>;
     fetchTask: (taskId: string, silent?: boolean) => Promise<void>;
+    createTask: (data: CreateTaskRequest) => Promise<Task>;
     updateTaskStatus: (taskId: string, status: Task['status']) => Promise<void>;
     updateChecklistItem: (checklistId: string, isCompleted: boolean, description: string) => Promise<void>;
     setActiveTab: (tab: TaskTab) => void;
@@ -122,6 +123,27 @@ const tasksStore: StateCreator<TasksState> = (set, get) => ({
           // Silent fetch failed, just log it without showing error
           console.error('Silent fetch task failed:', error);
         }
+      }
+    },
+
+    createTask: async (data: CreateTaskRequest) => {
+      set((state: TasksState) => {
+        state.isLoading = true;
+        state.error = null;
+      });
+      try {
+        const response = await taskApi.createTask(data);
+        set((state: TasksState) => {
+          state.tasks = [response.data, ...state.tasks];
+          state.isLoading = false;
+        });
+        return response.data;
+      } catch (error: unknown) {
+        set((state: TasksState) => {
+          state.error = error instanceof Error ? error.message : 'Failed to create task';
+          state.isLoading = false;
+        });
+        throw error;
       }
     },
 

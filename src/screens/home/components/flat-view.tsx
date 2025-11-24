@@ -6,10 +6,9 @@
 import React from 'react';
 import { ScrollView } from 'react-native';
 
-import { View } from '@/components';
-
 import { TasksSection } from './tasks-section';
 import { MembersSection } from './members-section';
+import { SosSection } from './sos-section';
 
 export function FlatView() {
   return (
@@ -24,6 +23,9 @@ export function FlatView() {
     >
       {/* Members Section */}
       <MembersSection />
+
+      {/* SOS Section */}
+      <SosSection />
 
       {/* Tasks Section */}
       <TasksSection />

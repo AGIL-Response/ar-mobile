@@ -1,4 +1,5 @@
-import { type RegisterRequest } from '@/api/auth/types';
+import { authApi } from '@/api';
+import { UpdateUserRequest, type RegisterRequest } from '@/api/auth/types';
 // eslint-disable-next-line import/no-cycle
 import checkUsername from '@/stores/auth/actions/check-username';
 // eslint-disable-next-line import/no-cycle
@@ -58,6 +59,7 @@ export interface IUser {
   roles: string[];
   permissions: string[];
   teamRoles?: any[];
+  updatedAt: string;
 }
 
 export interface AuthState extends IBaseState {
@@ -90,6 +92,7 @@ export interface AuthState extends IBaseState {
     clearUsernameError: () => void;
     createGeoEntityIfNeeded: () => Promise<void>;
     updateGeoEntityLocation: (lat: number, lon: number) => Promise<void>;
+    updateUser: (userId: string, payload: UpdateUserRequest) => Promise<IUser>;
   };
 }
 
@@ -182,6 +185,26 @@ const authStore = (set: any, get: any) => ({
     },
     createGeoEntityIfNeeded: createGeoEntityIfNeeded(set, get),
     updateGeoEntityLocation: updateGeoEntityLocation(set, get),
+    updateUser: async (userId: string, payload: UpdateUserRequest) => {
+      const response = await authApi.updateUser(userId, payload);
+
+      const normalizedUpdatedUser = {
+        username: response.data.username,
+        email: response.data.email,
+        fullName: response.data.fullName,
+        description: response.data.description,
+        avatarId: response.data.avatarId,
+        updatedAt: response.data.updatedAt,
+      };
+      debugger
+      set((state: AuthState) => {
+        state.user = {
+          ...state.user,
+          ...normalizedUpdatedUser,
+        };
+      });
+      return normalizedUpdatedUser;
+    },
   },
   reset: () => resetStore(initialState, set),
 });

@@ -5,7 +5,7 @@
 
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { ScrollView, TouchableOpacity } from 'react-native';
+import { ScrollView } from 'react-native';
 
 import type { Incident, IncidentSeverity } from '@/api/incidents/types';
 import {
@@ -40,44 +40,30 @@ export const mapIncidentTypeToSeverity = (
 };
 
 export const getTypeLabel = (type: Incident['type']) => {
-  switch (type) {
-    case 'fire':
-      return 'Fire';
-    case 'emergency':
-      return 'Emergency';
-    case 'maintenance':
-      return 'Maintenance';
-    case 'security':
-      return 'Security';
-    case 'health':
-      return 'Health';
-    case 'environmental':
-      return 'Environmental';
-    default:
-      if (!type) return '';
       const typeStr = String(type)
         .replace(/_/g, ' ')
         .replace(/\b\w/g, (char) => char.toUpperCase());
       return typeStr;
-  }
 };
 
 export const getTypeColor = (type: Incident['type']) => {
   switch (type) {
     case 'fire':
       return Palette.error;
-    case 'emergency':
+    case 'sos':
       return Palette.warning;
-    case 'maintenance':
+    case 'intrusion':
       return Palette.primary500;
-    case 'security':
-      return Palette.warning;
-    case 'health':
+    case 'hazardous_material':
       return Palette.primary500;
-    case 'environmental':
+    case 'natural_disaster':
+      return Palette.primary500;
+    case 'technical_failure':
+      return Palette.primary500;
+    case 'other':
       return Palette.primary500;
     default:
-      return Palette.primary500;
+      return Palette.warning;
   }
 };
 
@@ -85,18 +71,20 @@ export const getTypeBackgroundColor = (type: Incident['type']) => {
   switch (type) {
     case 'fire':
       return Palette.errorAlt;
-    case 'emergency':
+    case 'sos':
       return Palette.warningAlt;
-    case 'maintenance':
+    case 'intrusion':
       return Palette.backgroundSecondary;
-    case 'security':
-      return Palette.warningAlt;
-    case 'health':
+    case 'hazardous_material':
       return Palette.backgroundSecondary;
-    case 'environmental':
+    case 'natural_disaster':
+      return Palette.backgroundSecondary;
+    case 'technical_failure':
+      return Palette.backgroundSecondary;
+    case 'other':
       return Palette.backgroundSecondary;
     default:
-      return Palette.backgroundSecondary;
+      return Palette.warningAlt;
   }
 };
 
@@ -136,13 +124,14 @@ export const getIncidentTypeColor = (theme: Theme) => {
 
 export const getStatusColor = (status: Incident['status']) => {
   switch (status) {
-    case 'RESOLVED':
+    case 'resolved':
       return Palette.success;
-    case 'IN_PROGRESS':
+    case 'in_progress':
       return Palette.primary500;
-    case 'CLOSED':
+    case 'closed':
       return Palette.primary500;
-    case 'NEW':
+    case 'reported':
+    case 'acknowledged':
     default:
       return Palette.warning;
   }
@@ -150,13 +139,14 @@ export const getStatusColor = (status: Incident['status']) => {
 
 export const getStatusBackgroundColor = (status: Incident['status']) => {
   switch (status) {
-    case 'RESOLVED':
+    case 'resolved':
       return Palette.successAlt;
-    case 'IN_PROGRESS':
+    case 'in_progress':
       return Palette.backgroundSecondary;
-    case 'CLOSED':
+    case 'closed':
       return Palette.backgroundSecondary;
-    case 'NEW':
+    case 'reported':
+    case 'acknowledged':
     default:
       return Palette.warningAlt;
   }
@@ -164,16 +154,16 @@ export const getStatusBackgroundColor = (status: Incident['status']) => {
 
 export const getStatusLabel = (status: Incident['status']) => {
   switch (status) {
-    case 'NEW':
-      return 'Reported';
-    case 'IN_PROGRESS':
-      return 'In Progress';
-    case 'RESOLVED':
-      return 'Resolved';
-    case 'CLOSED':
-      return 'Closed';
     case 'reported':
       return 'Reported';
+    case 'in_progress':
+      return 'In Progress';
+    case 'resolved':
+      return 'Resolved';
+    case 'closed':
+      return 'Closed';
+    case 'acknowledged':
+      return 'Acknowledged';
     default:
       return String(status).replace('_', ' ');
   }

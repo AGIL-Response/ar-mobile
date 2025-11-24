@@ -6,6 +6,7 @@ export type User = {
   emailVerified: boolean;
   createdAt: string;
   enabled: boolean;
+  updatedAt: string;
   roles: Role[];
   avatarId?: string;
   description?: string;

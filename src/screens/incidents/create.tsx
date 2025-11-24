@@ -238,7 +238,7 @@ export default function CreateIncidentScreen() {
           title="New Incident"
           showBackButton={true}
           onBackPress={() => router.back()}
-          safeArea={false}
+          safeArea={true}
           titleAlign="left"
           style={{ borderBottomWidth: 0 }}
         />

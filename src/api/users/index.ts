@@ -9,15 +9,6 @@ import type {
   UsersQueryParams,
 } from '@/types';
 
-export interface UpdateUserPayload {
-  username: string;
-  email: string;
-  fullName: string;
-  description: string;
-  avatarId: string;
-  updatedAt: string;
-}
-
 const mapUserResponseToUser = (userResponse: UserResponse): User => ({
   id: userResponse.id,
   fullName: userResponse.fullName,
@@ -28,6 +19,7 @@ const mapUserResponseToUser = (userResponse: UserResponse): User => ({
   enabled: userResponse.enabled,
   description: userResponse.description,
   avatarId: userResponse.avatarId,
+  updatedAt: userResponse.updatedAt,
   roles: userResponse.roles
     ? userResponse.roles.map((role: any) => ({
         id: role.id,
@@ -106,6 +98,7 @@ export async function getTeamMembers(teamId: string): Promise<User[]> {
         clientRole: false,
         containerId: '',
       })) : [],
+      updatedAt: memberResponse.updatedAt || '',
     }));
 
     return users;
@@ -126,24 +119,6 @@ export async function getUserRoles(
     const response = await apiClient.get<{ data: Role[] }>(url);
     
     return response.data.data;
-  } catch (error) {
-    throw handleApiError(error);
-  }
-}
-
-/**
- * Update user by ID
- */
-export async function updateUser(
-  userId: string,
-  payload: UpdateUserPayload
-): Promise<User> {
-  try {
-    console.log('🚀 Request: PUT /users/${userId}', payload);
-    const url = `/users/${userId}`;
-    const response = await apiClient.patch<ApiResponse<UserResponse>>(url, payload);
-    console.log('✅ Response: PUT /users/${userId}', response.data.data);
-    return mapUserResponseToUser(response.data.data);
   } catch (error) {
     throw handleApiError(error);
   }

@@ -5,6 +5,7 @@ import type {
   LoginResponse,
   RegisterRequest,
   RegisterResponse,
+  UpdateUserRequest,
 } from './types';
 
 export const authApi = {
@@ -132,6 +133,21 @@ export const authApi = {
   login: async (data: LoginRequest): Promise<LoginResponse> => {
     try {
       const response = await apiClient.post<LoginResponse>('auth', data);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+  /**
+   * Update user profile information
+   */
+  updateUser: async (
+    userId: string,
+    payload: UpdateUserRequest
+  ): Promise<any> => {
+    try {
+      const url = `/users/${userId}`;
+      const response = await apiClient.patch<any>(url, payload);
       return response.data;
     } catch (error) {
       throw handleApiError(error);

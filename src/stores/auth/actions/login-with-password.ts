@@ -75,6 +75,7 @@ const loginWithPassword =
           permissions: [], // Extract from roles if needed
           teamRoles: profileResponse.data.teamRoles || [],
           avatarId: profileResponse.data.avatarId || '',
+          updatedAt: profileResponse.data.updatedAt || '',
         };
 
         // Set the selected tenant from the API response
@@ -116,6 +117,7 @@ const loginWithPassword =
           permissions: [],
           teamRoles: [],
           avatarId: '',
+          updatedAt: '',
         };
       }
 
