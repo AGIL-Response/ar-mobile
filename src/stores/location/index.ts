@@ -5,13 +5,13 @@ import { Alert } from 'react-native';
 import type IBaseState from '@/stores/interfaces/IBaseState';
 import { type InitStateType } from '@/stores/interfaces/IBaseState';
 import { createStore, resetStore } from '@/stores/utils';
-import { 
-  initMapSocket, 
-  handleListenMapSocket, 
-  sendLocationToSocket, 
+import {
+  initMapSocket,
+  handleListenMapSocket,
+  sendLocationToSocket,
   disconnectMapSocket,
   type LocationCoordinates,
-  type SocketLocationUpdateEvent 
+  type SocketLocationUpdateEvent
 } from '@/lib/socket';
 import { useDeviceInfoStore } from '@/stores/device-info';
 import { useUsersStore } from '@/stores/users';
@@ -20,19 +20,19 @@ export interface LocationState extends IBaseState {
   // Location data
   currentLocation: Location.LocationObject | null;
   coordinates: LocationCoordinates | null;
-  
+
   // Permission status
   hasLocationPermission: boolean | null; // null = not checked, true = granted, false = denied
-  
+
   // WebSocket connection
   socket: Socket | null;
   isSocketConnected: boolean;
-  
+
   // Monitoring state
   isMonitoring: boolean;
   monitoringInterval: NodeJS.Timeout | null;
   locationUpdateIntervalMs: number; // Interval time in milliseconds
-  
+
   // Error handling
   error: string | null;
   isLoading: boolean;
@@ -41,13 +41,13 @@ export interface LocationState extends IBaseState {
     // Permission management
     requestLocationPermission: () => Promise<boolean>;
     checkLocationPermission: () => Promise<boolean>;
-    
+
     // Location management
     getCurrentLocation: () => Promise<void>;
     startLocationMonitoring: () => Promise<void>;
     stopLocationMonitoring: () => void;
     setLocationUpdateIntervalMs: (intervalMs: number) => void;
-    
+
     // WebSocket management
     connectToWebSocket: (accessToken: string) => void;
     disconnectFromWebSocket: () => void;
@@ -55,7 +55,7 @@ export interface LocationState extends IBaseState {
       networkMbps?: number | null,
       batteryPercentage?: number | null
     ) => void;
-    
+
     // Utility actions
     clearError: () => void;
     reset: () => void;
@@ -77,7 +77,7 @@ const initialState: InitStateType<LocationState> = {
 
 const locationStore = (set: any, get: any) => ({
   ...initialState,
-  
+
   actions: {
     requestLocationPermission: async (): Promise<boolean> => {
       try {
@@ -88,7 +88,7 @@ const locationStore = (set: any, get: any) => ({
 
         const { status } = await Location.requestForegroundPermissionsAsync();
         const hasPermission = status === Location.PermissionStatus.GRANTED;
-        
+
         set((state: LocationState) => {
           state.hasLocationPermission = hasPermission;
           state.isLoading = false;
@@ -98,7 +98,7 @@ const locationStore = (set: any, get: any) => ({
           set((state: LocationState) => {
             state.error = 'Location permission denied';
           });
-          
+
           Alert.alert(
             'Location Permission Required',
             'This app needs location permission to track your position and share it with your team. Please enable location access in your device settings.',
@@ -130,7 +130,7 @@ const locationStore = (set: any, get: any) => ({
 
         const { status } = await Location.getForegroundPermissionsAsync();
         const hasPermission = status === Location.PermissionStatus.GRANTED;
-        
+
         set((state: LocationState) => {
           state.hasLocationPermission = hasPermission;
           state.isLoading = false;
@@ -150,7 +150,7 @@ const locationStore = (set: any, get: any) => ({
 
     getCurrentLocation: async (): Promise<void> => {
       const state = get() as LocationState;
-      
+
       if (!state.hasLocationPermission) {
         set((state: LocationState) => {
           state.error = 'Location permission not granted';
@@ -196,7 +196,7 @@ const locationStore = (set: any, get: any) => ({
 
     startLocationMonitoring: async (): Promise<void> => {
       const state = get() as LocationState;
-      
+
       if (state.isMonitoring) {
         console.log('📍 Location monitoring already active');
         return;
@@ -218,13 +218,13 @@ const locationStore = (set: any, get: any) => ({
       const currentState = get() as LocationState;
       const interval = setInterval(async () => {
         await get().actions.getCurrentLocation();
-        
+
         // Get network speed and battery from device info store
         const deviceInfoState = useDeviceInfoStore.getState();
         // Pass values directly (null or number) - attributes will only be sent if at least one is not null
         const networkSpeed = deviceInfoState.networkSpeed;
         const batteryPercentage = deviceInfoState.batteryPercentage;
-        
+
         console.log('📍 Device info state:', {
           networkSpeed: deviceInfoState.networkSpeed,
           batteryPercentage: deviceInfoState.batteryPercentage,
@@ -233,7 +233,7 @@ const locationStore = (set: any, get: any) => ({
           batteryError: deviceInfoState.batteryError,
         });
         console.log('📍 Sending location update with:', { networkSpeed, batteryPercentage });
-        
+
         // Send location update - attributes will be included if networkSpeed or batteryPercentage is not null
         get().actions.sendLocationUpdate(networkSpeed, batteryPercentage);
       }, currentState.locationUpdateIntervalMs); // Use interval from state
@@ -248,7 +248,7 @@ const locationStore = (set: any, get: any) => ({
 
     stopLocationMonitoring: (): void => {
       const state = get() as LocationState;
-      
+
       if (state.monitoringInterval) {
         clearInterval(state.monitoringInterval);
       }
@@ -275,7 +275,7 @@ const locationStore = (set: any, get: any) => ({
 
     connectToWebSocket: (accessToken: string): void => {
       const state = get() as LocationState;
-      
+
       if (state.socket?.connected) {
         console.log('🔌 WebSocket already connected');
         return;
@@ -283,10 +283,10 @@ const locationStore = (set: any, get: any) => ({
 
       try {
         const socket = initMapSocket(accessToken);
-        
+
         handleListenMapSocket(socket, (event: SocketLocationUpdateEvent) => {
-          console.log('📩 Received location update from other user:', event);
-          
+          // console.log('📩 Received location update from other user:', event);
+
           // Update users in users store when location updates are received
           if (event.features && Array.isArray(event.features)) {
             event.features.forEach((feature) => {
@@ -294,7 +294,7 @@ const locationStore = (set: any, get: any) => ({
               const coordinates = feature.geometry?.coordinates;
               const attributes = feature.properties?.attributes;
               const status = feature.properties?.status;
-              
+
               if (userId && coordinates) {
                 const usersStore = useUsersStore.getState();
                 usersStore.actions.updateUserLocation(
@@ -306,7 +306,7 @@ const locationStore = (set: any, get: any) => ({
                   attributes,
                   status
                 );
-                
+
                 console.log(`✅ Updated location for user ${userId}:`, {
                   coordinates,
                   attributes,
@@ -355,7 +355,7 @@ const locationStore = (set: any, get: any) => ({
 
     disconnectFromWebSocket: (): void => {
       const state = get() as LocationState;
-      
+
       if (state.socket) {
         disconnectMapSocket(state.socket);
       }
@@ -373,7 +373,7 @@ const locationStore = (set: any, get: any) => ({
       batteryPercentage?: number | null
     ): void => {
       const state = get() as LocationState;
-      
+
       if (!state.socket || !state.isSocketConnected) {
         console.warn('⚠️ Cannot send location: WebSocket not connected');
         return;
@@ -395,17 +395,17 @@ const locationStore = (set: any, get: any) => ({
 
     reset: (): void => {
       const state = get() as LocationState;
-      
+
       // Stop monitoring
       if (state.monitoringInterval) {
         clearInterval(state.monitoringInterval);
       }
-      
+
       // Disconnect WebSocket
       if (state.socket) {
         disconnectMapSocket(state.socket);
       }
-      
+
       resetStore(initialState, set);
     },
   },

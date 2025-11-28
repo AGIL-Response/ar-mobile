@@ -1,8 +1,5 @@
 import axios from 'axios';
 
-// eslint-disable-next-line import/no-cycle
-import useAuthStore from '@/stores/auth';
-
 // Create axios instance with default config
 export const apiClient = axios.create({
   baseURL: 'https://dev.agilres.net/be',
@@ -13,13 +10,22 @@ export const apiClient = axios.create({
   withCredentials: false,
 });
 
+/**
+ * Lazy getter for auth store to avoid circular dependency
+ */
+function getAuthStore() {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require('@/stores/auth').default;
+}
+
 const getTimestamp = () => {
   const now = new Date();
   return `[${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}]`;
 };
 
 const requestSuccessInterceptor = (config: any) => {
-  const accessToken = useAuthStore.getState().token?.accessToken;
+  const authStore = getAuthStore();
+  const accessToken = authStore.getState().token?.accessToken;
 
   // Log request details
   console.log(
@@ -87,9 +93,10 @@ const responseFailedInterceptor = (error: any) => {
   if (error.response?.status === 401) {
     // Handle unauthorized access for mobile
     // Clear auth state and let router handle redirect
-    const authStore = useAuthStore.getState();
-    if (authStore.actions.logout) {
-      authStore.actions.logout();
+    const authStore = getAuthStore();
+    const storeState = authStore.getState();
+    if (storeState.actions.logout) {
+      storeState.actions.logout();
     }
   }
   return Promise.reject(error);

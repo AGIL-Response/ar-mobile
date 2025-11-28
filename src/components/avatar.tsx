@@ -136,6 +136,13 @@ const createAvatarStyles = (theme: Theme, props: AvatarProps) => {
 
   const { colors, borderRadius } = theme;
 
+  // Normalize size - map common aliases to standard sizes
+  const normalizedSize = 
+    size === 'md' ? 'medium' :
+    size === 'sm' ? 'small' :
+    size === 'lg' ? 'large' :
+    size;
+
   // Size variants
   const sizeStyles = {
     xs: { width: 24, height: 24 },
@@ -144,6 +151,9 @@ const createAvatarStyles = (theme: Theme, props: AvatarProps) => {
     large: { width: 64, height: 64 },
     xl: { width: 96, height: 96 },
   };
+
+  // Get size style with fallback to medium if size is invalid
+  const sizeStyle = sizeStyles[normalizedSize as keyof typeof sizeStyles] || sizeStyles.medium;
 
   // Variant styles (only apply if status is not provided)
   const variantStyles = status
@@ -165,7 +175,7 @@ const createAvatarStyles = (theme: Theme, props: AvatarProps) => {
       }[variant];
 
   return {
-    ...sizeStyles[size],
+    ...sizeStyle,
     borderRadius: borderRadius.full,
     overflow: 'hidden' as const,
     alignItems: 'center' as const,
@@ -180,6 +190,13 @@ const createStatusIndicatorStyles = (theme: Theme, props: AvatarProps) => {
 
   const { colors, borderRadius } = theme;
 
+  // Normalize size - map common aliases to standard sizes
+  const normalizedSize = 
+    size === 'md' ? 'medium' :
+    size === 'sm' ? 'small' :
+    size === 'lg' ? 'large' :
+    size;
+
   // Status indicator sizes based on avatar size
   const statusSizes = {
     xs: { width: 6, height: 6, right: -1, bottom: -1 },
@@ -189,7 +206,8 @@ const createStatusIndicatorStyles = (theme: Theme, props: AvatarProps) => {
     xl: { width: 20, height: 20, right: 6, bottom: 6 },
   };
 
-  const statusSize = statusSizes[size];
+  // Get status size with fallback to medium if size is invalid
+  const statusSize = statusSizes[normalizedSize as keyof typeof statusSizes] || statusSizes.medium;
 
   return {
     position: 'absolute' as const,
@@ -212,6 +230,13 @@ const createFallbackTextStyles = (theme: Theme, props: AvatarProps) => {
 
   const { colors } = theme;
 
+  // Normalize size - map common aliases to standard sizes
+  const normalizedSize = 
+    size === 'md' ? 'medium' :
+    size === 'sm' ? 'small' :
+    size === 'lg' ? 'large' :
+    size;
+
   // Typography variants based on size
   const typographyVariants = {
     xs: 'overline' as const,
@@ -221,9 +246,12 @@ const createFallbackTextStyles = (theme: Theme, props: AvatarProps) => {
     xl: 'h2' as const,
   };
 
+  // Get typography variant with fallback to medium if size is invalid
+  const typographyVariant = typographyVariants[normalizedSize as keyof typeof typographyVariants] || 'label';
+
   return {
     color: colors.text.primary,
-    ...(theme.typography[typographyVariants[size]] || theme.typography.label),
+    ...(theme.typography[typographyVariant] || theme.typography.label),
     fontWeight: '600' as const,
   };
 };

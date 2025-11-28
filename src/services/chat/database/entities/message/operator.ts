@@ -1,0 +1,217 @@
+import { getDatabase } from '../../index';
+import type Message from '../../models/Message';
+import type { ChatMessage } from '../../../types';
+import { Q } from '@nozbe/watermelondb';
+import { switchMap, of } from 'rxjs';
+import { chatMessageToMessageData } from './transformer';
+import { upsertUser } from '../user/operator';
+
+const db = getDatabase();
+
+/**
+ * Upsert a message (create or update)
+ */
+export async function upsertMessage(messageData: ChatMessage, roomId: string): Promise<Message> {
+  const messageDataTransformed = chatMessageToMessageData(messageData, roomId);
+  const messageId = messageDataTransformed.messageId;
+
+  // Upsert sender user if sender data is available
+  if (messageData.sender) {
+    try {
+      console.log('👤 [MessageOperator] Upserting sender for message:', {
+        messageId,
+        senderId: messageData.senderId,
+        sender: {
+          id: messageData.sender.id,
+          username: messageData.sender.username,
+          displayName: messageData.sender.displayName,
+          avatarUrl: messageData.sender.avatarUrl,
+        },
+      });
+      await upsertUser(messageData.sender);
+      console.log('✅ [MessageOperator] Sender upserted successfully for message:', messageId);
+    } catch (error) {
+      console.error('❌ [MessageOperator] Failed to upsert sender user:', error, {
+        messageId,
+        senderId: messageData.senderId,
+        sender: messageData.sender,
+      });
+      // Continue with message save even if user upsert fails
+    }
+  } else {
+    console.warn('⚠️ [MessageOperator] No sender data in message:', {
+      messageId,
+      senderId: messageData.senderId,
+      messageData: {
+        id: messageData.id,
+        content: messageData.content,
+        hasSender: !!messageData.sender,
+      },
+    });
+  }
+
+  // Check if message exists
+  const existingMessages = await db
+    .get<Message>('messages')
+    .query(Q.where('message_id', messageId))
+    .fetch();
+  
+  const existingMessage = existingMessages.length > 0 ? existingMessages[0] : null;
+
+  if (existingMessage) {
+    return await db.write(async () => {
+      await existingMessage.update((message) => {
+        message.content = messageDataTransformed.content;
+        message.type = messageDataTransformed.type;
+        message.replyToId = messageDataTransformed.replyToId;
+        if (messageDataTransformed.editedAt !== undefined) {
+          message.editedAt = messageDataTransformed.editedAt;
+        }
+        message.isSynced = messageDataTransformed.isSynced;
+        message.serverUpdatedAt = messageDataTransformed.serverUpdatedAt;
+      });
+      return existingMessage;
+    });
+  } else {
+    return await db.write(async () => {
+      return await db.get<Message>('messages').create((message) => {
+        message.messageId = messageDataTransformed.messageId;
+        message.roomId = messageDataTransformed.roomId;
+        message.senderId = messageDataTransformed.senderId;
+        message.content = messageDataTransformed.content;
+        message.type = messageDataTransformed.type;
+        message.replyToId = messageDataTransformed.replyToId;
+        if (messageDataTransformed.editedAt !== undefined) {
+          message.editedAt = messageDataTransformed.editedAt;
+        }
+        message.isSynced = messageDataTransformed.isSynced;
+        message.serverCreatedAt = messageDataTransformed.serverCreatedAt;
+        message.serverUpdatedAt = messageDataTransformed.serverUpdatedAt;
+      });
+    });
+  }
+}
+
+/**
+ * Get observable for messages in a room
+ */
+export function observeMessages(
+  roomId: string,
+  limit: number,
+  messageToChatMessageFn: (message: Message) => Promise<ChatMessage>
+) {
+  // Validate roomId
+  if (roomId === undefined || roomId === null || typeof roomId !== 'string') {
+    return of([]);
+  }
+  
+  const validRoomId = String(roomId).trim();
+  if (validRoomId === '' || validRoomId === 'undefined' || validRoomId === 'null' || validRoomId === '[object Object]') {
+    return of([]);
+  }
+  
+  if (!validRoomId || validRoomId.length === 0) {
+    return of([]);
+  }
+  
+  try {
+    const query = db
+      .get<Message>('messages')
+      .query(
+        Q.where('room_id', validRoomId),
+        Q.where('deleted_at', null),
+        Q.sortBy('created_at', Q.asc),
+        Q.take(limit)
+      );
+    
+    return query.observe().pipe(
+      switchMap((messages) => {
+        if (!messages || messages.length === 0) {
+          return Promise.resolve([]);
+        }
+        // Sort messages by created_at ascending (oldest first, newest last)
+        // Ensure we sort by timestamp to guarantee correct order
+        const sortedMessages = [...messages].sort((a, b) => {
+          const timeA = a.createdAt?.getTime() || a.serverCreatedAt ? new Date(a.serverCreatedAt).getTime() : 0;
+          const timeB = b.createdAt?.getTime() || b.serverCreatedAt ? new Date(b.serverCreatedAt).getTime() : 0;
+          // Ascending: smaller time (older) comes first
+          return timeA - timeB;
+        });
+        
+        // Debug: log first and last message to verify sort order
+        if (sortedMessages.length > 0) {
+          const first = sortedMessages[0];
+          const last = sortedMessages[sortedMessages.length - 1];
+          console.log('📋 [MessageOperator] Message sort order:', {
+            total: sortedMessages.length,
+            first: { id: first.messageId, content: first.content?.substring(0, 20), time: first.createdAt?.toISOString() },
+            last: { id: last.messageId, content: last.content?.substring(0, 20), time: last.createdAt?.toISOString() },
+          });
+        }
+        
+        return Promise.all(sortedMessages.map((message) => messageToChatMessageFn(message)));
+      })
+    );
+  } catch (error) {
+    console.error('Error creating messages observable:', error, { roomId, validRoomId });
+    return of([]);
+  }
+}
+
+/**
+ * Get messages for a room (non-observable)
+ */
+export async function getMessages(
+  roomId: string,
+  limit: number,
+  messageToChatMessageFn: (message: Message) => Promise<ChatMessage>
+): Promise<ChatMessage[]> {
+  // Validate roomId
+  const validRoomId = typeof roomId === 'string' && roomId.trim() !== '' ? roomId.trim() : null;
+  if (!validRoomId || validRoomId === 'undefined' || validRoomId === 'null') {
+    return [];
+  }
+  
+  // Query for messages where deleted_at is null (not deleted)
+  const messages = await db
+    .get<Message>('messages')
+    .query(
+      Q.where('room_id', validRoomId),
+      Q.where('deleted_at', null),
+      Q.sortBy('created_at', Q.asc),
+      Q.take(limit)
+    )
+    .fetch();
+
+  // Sort messages by created_at ascending (oldest first, newest last)
+  // Ensure we sort by timestamp to guarantee correct order
+  const sortedMessages = [...messages].sort((a, b) => {
+    const timeA = a.createdAt?.getTime() || a.serverCreatedAt ? new Date(a.serverCreatedAt).getTime() : 0;
+    const timeB = b.createdAt?.getTime() || b.serverCreatedAt ? new Date(b.serverCreatedAt).getTime() : 0;
+    // Ascending: smaller time (older) comes first
+    return timeA - timeB;
+  });
+
+  return Promise.all(sortedMessages.map((message) => messageToChatMessageFn(message)));
+}
+
+/**
+ * Delete a message (soft delete)
+ */
+export async function deleteMessage(messageId: string): Promise<void> {
+  const messages = await db
+    .get<Message>('messages')
+    .query(Q.where('message_id', messageId))
+    .fetch();
+
+  const message = messages.length > 0 ? messages[0] : null;
+
+  if (message) {
+    await db.write(async () => {
+      await message.update((m) => {
+        m.deletedAt = Date.now();
+      });
+    });
+  }
+}
+
