@@ -12,6 +12,7 @@ import * as AttachmentEntity from './database/entities/attachment';
 import * as RoomMemberEntity from './database/entities/room-member';
 import { messageToChatMessage } from './database/entities/message/transformer';
 import { getUser } from './database/entities/user/operator';
+import useAuthStore from '@/stores/auth';
 
 export class ChatDbService {
   /**
@@ -98,6 +99,7 @@ export class ChatDbService {
       const lastMessage = room.lastMessageId
         ? await this.getMessageById(room.lastMessageId)
         : undefined;
+      const currentUserId = useAuthStore.getState().user?.id;
 
       return RoomEntity.roomToChatRoom(
         room,
@@ -111,6 +113,7 @@ export class ChatDbService {
             lastSeen: m.lastSeen,
           })),
           lastMessage,
+          currentUserId,
         },
         async (messageId: string) => {
           return await this.getMessageById(messageId);
@@ -128,6 +131,7 @@ export class ChatDbService {
       const lastMessage = room.lastMessageId
         ? await this.getMessageById(room.lastMessageId)
         : undefined;
+      const currentUserId = useAuthStore.getState().user?.id;
 
       return RoomEntity.roomToChatRoom(
         room,
@@ -141,6 +145,7 @@ export class ChatDbService {
             lastSeen: m.lastSeen,
           })),
           lastMessage,
+          currentUserId,
         },
         async (messageId: string) => {
           return await this.getMessageById(messageId);
@@ -196,6 +201,7 @@ export class ChatDbService {
       const lastMessage = room.lastMessageId
         ? await this.getMessageById(room.lastMessageId)
         : undefined;
+      const currentUserId = useAuthStore.getState().user?.id;
 
       return RoomEntity.roomToChatRoom(
         room,
@@ -209,6 +215,7 @@ export class ChatDbService {
             lastSeen: m.lastSeen,
           })),
           lastMessage,
+          currentUserId,
         },
         async (messageId: string) => {
           return await this.getMessageById(messageId);
@@ -226,6 +233,7 @@ export class ChatDbService {
       const lastMessage = room.lastMessageId
         ? await this.getMessageById(room.lastMessageId)
         : undefined;
+      const currentUserId = useAuthStore.getState().user?.id;
 
       return RoomEntity.roomToChatRoom(
         room,
@@ -239,6 +247,7 @@ export class ChatDbService {
             lastSeen: m.lastSeen,
           })),
           lastMessage,
+          currentUserId,
         },
         async (messageId: string) => {
           return await this.getMessageById(messageId);

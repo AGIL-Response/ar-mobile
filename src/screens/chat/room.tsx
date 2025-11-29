@@ -205,6 +205,39 @@ export default function ChatRoomScreen() {
     paddingBottom: theme.spacing.gap.xl,
   }), [theme.spacing.gap.md, theme.spacing.gap.xl]);
 
+  // Helper function to check if two dates are on different days
+  const isDifferentDay = (date1: Date, date2: Date): boolean => {
+    const d1 = new Date(date1);
+    const d2 = new Date(date2);
+    d1.setHours(0, 0, 0, 0);
+    d2.setHours(0, 0, 0, 0);
+    return d1.getTime() !== d2.getTime();
+  };
+
+  // Helper function to format date separator text
+  const formatDateSeparator = (date: Date): string => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const messageDate = new Date(date);
+    const messageDateStr = messageDate.toDateString();
+    const todayStr = today.toDateString();
+    const yesterdayStr = yesterday.toDateString();
+
+    if (messageDateStr === todayStr) {
+      return 'Today';
+    } else if (messageDateStr === yesterdayStr) {
+      return 'Yesterday';
+    } else {
+      return messageDate.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: messageDate.getFullYear() !== today.getFullYear() ? 'numeric' : undefined,
+      });
+    }
+  };
+
   // Memoize render item callback
   const renderItem = useCallback(({ item, index }: { item: ChatMessage; index: number }) => {
     const previousMessage = index > 0 ? messages[index - 1] : null;
@@ -223,12 +256,18 @@ export default function ChatRoomScreen() {
       nextMessage?.senderId === item.senderId &&
       new Date(nextMessage.timestamp).getTime() - new Date(item.timestamp).getTime() < 60000; // Within 1 minute
 
+    // Check if we need to show date separator
+    const showDateSeparator = !previousMessage || isDifferentDay(previousMessage.timestamp, item.timestamp);
+    const dateSeparatorText = showDateSeparator ? formatDateSeparator(item.timestamp) : undefined;
+
     return (
       <Message
         message={item}
         showAvatar={showAvatar}
         showSenderName={showSenderName}
         compact={!showAvatar && isGrouped}
+        showDateSeparator={showDateSeparator}
+        dateSeparatorText={dateSeparatorText}
       />
     );
   }, [messages, room?.type]);
@@ -251,7 +290,7 @@ export default function ChatRoomScreen() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       <Background>
-        <AppHeader title={roomName} showRightSection={false} />
+        <AppHeader title={roomName} showBackButton showRightSection={false} />
         <View style={{ flex: 1, paddingBottom: insets.bottom }}>
 
           <FlatList

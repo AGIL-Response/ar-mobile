@@ -16,9 +16,10 @@ import { useNotificationsStore } from '@/stores/notifications';
 interface AppHeaderProps {
   title: string;
   showRightSection?: boolean;
+  showBackButton?: boolean;
 }
 
-export function AppHeader({ title, showRightSection = true }: AppHeaderProps) {
+export function AppHeader({ title, showRightSection = true, showBackButton = false }: AppHeaderProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const authState = useAuthStore();
@@ -45,6 +46,26 @@ export function AppHeader({ title, showRightSection = true }: AppHeaderProps) {
         backgroundColor: theme.colors.background.secondary,
       }}
     >
+      {/* Back Button */}
+      {showBackButton && (
+        <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 8 }}>
+          <View
+            style={{
+              width: 32,
+              height: 32,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Icon
+              name={iconNames.chevron_left}
+              size={24}
+              color={theme.colors.text.primary}
+            />
+          </View>
+        </TouchableOpacity>
+      )}
+
       {/* Title Section */}
       <View style={{ flex: 1 }}>
         <Text

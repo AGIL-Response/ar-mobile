@@ -80,9 +80,19 @@ export async function roomToChatRoom(
     lastMessage = await getLastMessageFn(room.lastMessageId);
   }
 
+  // For DM rooms, set the room name to the opposite member's name
+  let roomName = room.name;
+  if (room.type === 'direct' && context.currentUserId && context.members.length > 0) {
+    // Find the opposite member (not the current user)
+    const oppositeMember = context.members.find((member) => member.id !== context.currentUserId);
+    if (oppositeMember) {
+      roomName = oppositeMember.displayName || oppositeMember.username || room.name;
+    }
+  }
+
   return {
     id: room.roomId,
-    name: room.name,
+    name: roomName,
     description: room.description,
     type: room.type,
     avatar: room.avatarUrl,

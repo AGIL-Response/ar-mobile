@@ -138,5 +138,6 @@ export type RoomToChatRoomContext = {
     lastSeen?: Date;
   }>;
   lastMessage?: ChatMessage;
+  currentUserId?: string;
 };
 
