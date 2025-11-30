@@ -17,7 +17,7 @@ export interface SocketLocationPayload {
 export interface SocketLocationUpdateEvent {
   event: string;
   type: string;
-  features: Array<{
+  features: {
     type: string;
     geometry: {
       coordinates: [number, number, number];
@@ -30,7 +30,7 @@ export interface SocketLocationUpdateEvent {
         batteryPercentage?: number;
       };
     };
-  }>;
+  }[];
 }
 
 /**

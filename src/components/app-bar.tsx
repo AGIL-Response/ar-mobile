@@ -5,7 +5,8 @@
 
 import React from 'react';
 import type { ViewProps } from 'react-native';
-import { SafeAreaView, TouchableOpacity } from 'react-native';
+import { TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import type { Theme } from '@/theme';
 

@@ -1,10 +1,10 @@
 import * as Location from 'expo-location';
 import { type Socket } from 'socket.io-client';
-import { Alert } from 'react-native';
+import { Alert, Linking } from 'react-native';
 
 import type IBaseState from '@/stores/interfaces/IBaseState';
 import { type InitStateType } from '@/stores/interfaces/IBaseState';
-import { createStore, resetStore } from '@/stores/utils';
+import { createStore, resetStore, coordinatesChanged, attributesChanged } from '@/stores/utils';
 import { 
   initMapSocket, 
   handleListenMapSocket, 
@@ -30,8 +30,11 @@ export interface LocationState extends IBaseState {
   
   // Monitoring state
   isMonitoring: boolean;
-  monitoringInterval: NodeJS.Timeout | null;
+  monitoringInterval: ReturnType<typeof setInterval> | null;
   locationUpdateIntervalMs: number; // Interval time in milliseconds
+
+  lastSentCoordinates: LocationCoordinates | null;
+  lastSentAttributes: { networkMbps?: number | null; batteryPercentage?: number | null } | null;
   
   // Error handling
   error: string | null;
@@ -71,13 +74,16 @@ const initialState: InitStateType<LocationState> = {
   isMonitoring: false,
   monitoringInterval: null,
   locationUpdateIntervalMs: 10000, // 10 seconds default
+  lastSentCoordinates: null,
+  lastSentAttributes: null,
   error: null,
   isLoading: false,
 };
 
 const locationStore = (set: any, get: any) => ({
   ...initialState,
-  
+  lastSentCoordinates: null,
+  lastSentAttributes: null,
   actions: {
     requestLocationPermission: async (): Promise<boolean> => {
       try {
@@ -104,7 +110,7 @@ const locationStore = (set: any, get: any) => ({
             'This app needs location permission to track your position and share it with your team. Please enable location access in your device settings.',
             [
               { text: 'Cancel', style: 'cancel' },
-              { text: 'Open Settings', onPress: () => Location.openSettings() }
+              { text: 'Open Settings', onPress: () => Linking.openSettings() }
             ]
           );
         }
@@ -176,14 +182,20 @@ const locationStore = (set: any, get: any) => ({
           altitude: location.coords.altitude || undefined,
         };
 
-        set((state: LocationState) => {
-          state.currentLocation = location;
-          state.coordinates = coordinates;
-          state.isLoading = false;
-          state.error = null;
-        });
-
-        console.log('📍 Current location updated:', coordinates);
+        if (coordinatesChanged(state.lastSentCoordinates, coordinates)) {
+          set((state: LocationState) => {
+            state.currentLocation = location;
+            state.coordinates = coordinates;
+            state.isLoading = false;
+            state.error = null;
+          });
+          console.log('📍 Current location updated:', coordinates);
+        } else {
+          set((state: LocationState) => {
+            state.isLoading = false;
+            state.error = null;
+          });
+        }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to get current location';
         set((state: LocationState) => {
@@ -306,12 +318,6 @@ const locationStore = (set: any, get: any) => ({
                   attributes,
                   status
                 );
-                
-                console.log(`✅ Updated location for user ${userId}:`, {
-                  coordinates,
-                  attributes,
-                  status,
-                });
               }
             });
           }
@@ -384,7 +390,38 @@ const locationStore = (set: any, get: any) => ({
         return;
       }
 
-      sendLocationToSocket(state.socket, state.coordinates, networkMbps, batteryPercentage);
+      const newAttributes = {
+        networkMbps: networkMbps ?? null,
+        batteryPercentage: batteryPercentage ?? null,
+      };
+
+      // Check if coordinates or attributes have changed
+      const coordsChanged = coordinatesChanged(
+        state.lastSentCoordinates,
+        state.coordinates
+      );
+      const attrsChanged = attributesChanged(
+        state.lastSentAttributes,
+        newAttributes
+      );
+
+      // Only send if something actually changed
+      if (coordsChanged || attrsChanged) {
+        sendLocationToSocket(state.socket, state.coordinates, networkMbps, batteryPercentage);
+        
+        // Update last sent values
+        set((state: LocationState) => {
+          state.lastSentCoordinates = { ...state.coordinates! };
+          state.lastSentAttributes = { ...newAttributes };
+        });
+        
+        console.log('📤 Sent location update (changed):', {
+          coordinates: state.coordinates,
+          attributes: newAttributes,
+        });
+      } else {
+        console.log('⏭️ Socket emit: skipping location update (no changes detected)');
+      }
     },
 
     clearError: (): void => {

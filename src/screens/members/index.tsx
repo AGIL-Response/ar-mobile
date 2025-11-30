@@ -1,21 +1,19 @@
-import icons, { iconNames } from '@assets/icons';
+import { iconNames } from '@assets/icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Pressable,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
 
-import { AppBar, Avatar, Background, Icon, Text, View } from '@/components';
+import { Avatar, Background, Icon, Text, View } from '@/components';
 import { BatteryIcon } from '@/components/battery-icon';
-import { X } from '@/components/icons';
-import { Modal, useModal } from '@/components/modal';
+import { useModal } from '@/components/modal';
 import { NetworkSignalIcon } from '@/components/network-signal-icon';
 import { FontFamilies } from '@/lib/fonts';
-import { useAuthStore } from '@/stores/auth';
 import { useUsersStore } from '@/stores/users';
+import { useMapStore } from '@/stores/map';
 import { useTheme } from '@/theme';
 import type { User } from '@/types';
 
@@ -23,14 +21,16 @@ import { MemberDetailModal } from './components/member-detail-modal';
 
 export function MembersScreen(): React.JSX.Element {
   const router = useRouter();
-  const authState = useAuthStore();
-  const usersState = useUsersStore();
-  const { setMapFocusUserId, setFlatViewFocusUserId } = usersState.actions;
+  const users = useUsersStore((state) => state.users);
+  const isLoading = useUsersStore((state) => state.isLoading);
+  const error = useUsersStore((state) => state.error);
+  const setMapFocusUserId = useMapStore((state) => state.actions.setMapFocusUserId);
+  const setFlatViewFocusUserId = useMapStore((state) => state.actions.setFlatViewFocusUserId);
   const theme = useTheme();
   const { ref, present } = useModal();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  const teamId = authState.selectedTeam?.id;
+  const flatViewFocusUserId = useMapStore((state) => state.flatViewFocusUserId);
 
   // Temp skip fetch because it will override the value from socket
   // useEffect(() => {
@@ -41,9 +41,9 @@ export function MembersScreen(): React.JSX.Element {
 
   // Show member details when focused from map
   useEffect(() => {
-    if (usersState.flatViewFocusUserId) {
-      const focusedUser = usersState.users.find(
-        (user) => user.id === usersState.flatViewFocusUserId
+    if (flatViewFocusUserId) {
+      const focusedUser = users.find(
+        (user) => user.id === flatViewFocusUserId
       );
       if (focusedUser) {
         setSelectedUser(focusedUser);
@@ -51,12 +51,7 @@ export function MembersScreen(): React.JSX.Element {
         setFlatViewFocusUserId(null);
       }
     }
-  }, [
-    usersState.flatViewFocusUserId,
-    usersState.users,
-    present,
-    setFlatViewFocusUserId,
-  ]);
+  }, [flatViewFocusUserId]);
 
   const getInitials = (user: User) => {
     if (user.fullName) {
@@ -80,7 +75,7 @@ export function MembersScreen(): React.JSX.Element {
   const groupedUsers = useMemo(() => {
     const groups: { [key: string]: User[] } = {};
 
-    usersState.users.forEach((user) => {
+    users.forEach((user) => {
       if (user.roles && user.roles.length > 0) {
         // Use the last role for grouping
         const lastRole = user.roles[user.roles.length - 1];
@@ -99,7 +94,7 @@ export function MembersScreen(): React.JSX.Element {
     });
 
     return groups;
-  }, [usersState.users]);
+  }, [users]);
 
   const handleViewRoles = (user: User) => {
     setSelectedUser(user);
@@ -107,8 +102,8 @@ export function MembersScreen(): React.JSX.Element {
   };
 
   const handleMapFocus = (userId: string) => {
-    setMapFocusUserId(userId);
     router.navigate('/');
+    setMapFocusUserId(userId);
   };
 
   const renderUserCard = (user: User) => {
@@ -196,13 +191,13 @@ export function MembersScreen(): React.JSX.Element {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {usersState.isLoading && usersState.users.length === 0 ? (
+          {isLoading && users.length === 0 ? (
             <View style={styles.emptyState}>
               <Text variant="body" style={styles.loadingText}>
                 Loading members...
               </Text>
             </View>
-          ) : usersState.users.length === 0 ? (
+          ) : users.length === 0 ? (
             <View style={styles.emptyState}>
               <Text variant="h3" style={styles.noMembersText}>
                 No members found
@@ -215,17 +210,23 @@ export function MembersScreen(): React.JSX.Element {
                 renderGroupSection('Commander', groupedUsers['Commander'])}
 
               {Object.entries(groupedUsers)
-                .filter(([groupName]) => groupName !== 'Commander')
+                .filter(([groupName]) => groupName === 'Members')
                 .map(([groupName, users]) =>
                   renderGroupSection('Members', users)
+                )}
+
+              {Object.entries(groupedUsers)
+                .filter(([groupName]) => groupName === 'Responder')
+                .map(([groupName, users]) =>
+                  renderGroupSection('Responder', users)
                 )}
             </>
           )}
 
-          {usersState.error && (
+          {error && (
             <View style={styles.errorContainer}>
               <Text variant="body" style={styles.errorText}>
-                {usersState.error}
+                {error}
               </Text>
             </View>
           )}

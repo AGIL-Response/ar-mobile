@@ -7,7 +7,7 @@ import React from 'react';
 import { TouchableOpacity } from 'react-native';
 
 import { Text, View } from '@/components';
-import { Palette, useTheme } from '@/theme';
+import { useTheme } from '@/theme';
 
 interface TabSelectorProps {
   activeTab: 'flat' | 'map';

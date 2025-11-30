@@ -8,23 +8,21 @@ import React, { useEffect } from 'react';
 import { Avatar, Icon, iconNames, Text, View } from '@/components';
 import { useTheme } from '@/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import useAuthStore from '@/stores/auth';
-import { TouchableOpacity } from 'react-native-gesture-handler';
+import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'expo-router';
 import { useNotificationsStore } from '@/stores/notifications';
+import { TouchableOpacity } from 'react-native';
 
 export function AppHeader({ title }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const authState = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const router = useRouter();
-  const notificationsState = useNotificationsStore();
-
-  const { unreadCount } = notificationsState;
-  const user = authState.user;
+  const getUnreadCount = useNotificationsStore((state) => state.actions.getUnreadCount);
+  const unreadCount = useNotificationsStore((state) => state.unreadCount);
 
   useEffect(() => {
-    notificationsState.actions.getUnreadCount();
+    getUnreadCount();
   }, []);
 
   return (

@@ -24,9 +24,8 @@ import {
 import { Select } from '@/components/select';
 import { TextArea } from '@/components/textarea';
 import { useLocation } from '@/lib/hooks/use-location';
-import { useAuthStore } from '@/stores/auth';
 import { useIncidentsStore } from '@/stores/incidents';
-import { Palette, useTheme } from '@/theme';
+import { useTheme } from '@/theme';
 
 import { LocationPermissionScreen } from './components';
 import { IncidentUploadModel } from './components/incident-upload-model';
@@ -57,7 +56,7 @@ export const getMimeTypeFromUri = (uri: string) => {
 export default function CreateIncidentScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const incidentsState = useIncidentsStore();
+  const createIncident = useIncidentsStore((state) => state.actions.createIncident);
   const location = useLocation();
   const ref = React.useRef<any>(null);
   const [form, setForm] = useState<CreateIncidentForm>({
@@ -95,7 +94,7 @@ export default function CreateIncidentScreen() {
       // Permission granted but no location yet, get it
       location.actions.getCurrentLocation();
     }
-  }, [location.hasPermission, location.coordinates, location.actions]);
+  }, [location.hasPermission]);
 
   const handleInputChange = (
     field: keyof CreateIncidentForm,
@@ -141,7 +140,7 @@ export default function CreateIncidentScreen() {
       };
 
       const createdIncident =
-        await incidentsState.actions.createIncident(incidentData);
+        await createIncident(incidentData);
 
       // Step 2: Upload image if selected
 

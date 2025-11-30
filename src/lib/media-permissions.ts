@@ -3,6 +3,7 @@ import {
   useCameraPermissions,
   useMediaLibraryPermissions,
 } from 'expo-image-picker';
+import * as Location from 'expo-location';
 
 export function useCameraPermission() {
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
@@ -26,5 +27,16 @@ export function useMediaLibraryPermission() {
       return response.granted;
     }
     return mediaLibraryPermission?.status === PermissionStatus.GRANTED;
+  };
+}
+
+export function useLocationPermission() {
+  const [status, requestPermission] = Location.useForegroundPermissions();
+  return async () => {
+    if (status?.status === PermissionStatus.UNDETERMINED) {
+      const response = await requestPermission();
+      return response.granted;
+    }
+    return status?.status === Location.PermissionStatus.GRANTED;
   };
 }

@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 
 import { FocusAwareStatusBar, Text, ThemeToggle, View } from '@/components';
-import useAuthStore from '@/stores/auth';
+import { useAuthStore } from '@/stores/auth';
 import { type Theme, useTheme } from '@/theme';
 
 import { PasswordStep } from './components/password-step';

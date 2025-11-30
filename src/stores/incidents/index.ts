@@ -23,7 +23,6 @@ export interface IncidentsState extends IBaseState {
     type?: string;
     severity?: string;
   };
-  mapFocusIncidentId: string | null;
 
   // Actions namespace
   actions: {
@@ -36,7 +35,6 @@ export interface IncidentsState extends IBaseState {
     setSearchQuery: (query: string) => void;
     setFilters: (filters: Partial<IncidentsState['filters']>) => void;
     clearError: () => void;
-    setMapFocusIncident: (incidentId: string | null) => void;
     reset: () => void;
   };
 }
@@ -49,7 +47,6 @@ const initialState: InitStateType<IncidentsState> = {
   error: null,
   searchQuery: '',
   filters: {},
-  mapFocusIncidentId: null,
 };
 
 const incidentsStore: StateCreator<IncidentsState> = (set, get) => ({
@@ -222,12 +219,6 @@ const incidentsStore: StateCreator<IncidentsState> = (set, get) => ({
     clearError: () => {
       set((state: IncidentsState) => {
         state.error = null;
-      });
-    },
-
-    setMapFocusIncident: (incidentId: string | null) => {
-      set((state: IncidentsState) => {
-        state.mapFocusIncidentId = incidentId;
       });
     },
 

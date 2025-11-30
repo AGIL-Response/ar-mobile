@@ -3,20 +3,14 @@
  * Task management and list view with tab functionality
  */
 
-import images from '@assets/images';
 import { router } from 'expo-router';
 import React, { useEffect } from 'react';
 import { RefreshControl, ScrollView } from 'react-native';
 
 import {
-  AppBar,
-  Avatar,
   Background,
   Center,
-  Icon,
-  iconNames,
   Text,
-  TouchableOpacity,
   View,
 } from '@/components';
 import { useAuthStore } from '@/stores/auth';
@@ -24,19 +18,21 @@ import { useTasksStore } from '@/stores/tasks';
 import { useTheme } from '@/theme';
 
 import { TaskCard } from './components/task-card';
-import { type TaskTab, TaskTabSelector } from './components/task-tab-selector';
+import { TaskTabSelector } from './components/task-tab-selector';
 import { AppHeader } from '../home/components/app-header';
 
 export default function TasksScreen() {
   const theme = useTheme();
-  const authState = useAuthStore();
-  const tasksState = useTasksStore();
-  const selectedTenant = authState.selectedTenant;
+  const userId = useAuthStore((state) => state.user?.id);
+  const teamId = useAuthStore((state) => state.selectedTeam?.id);
+  const tasks = useTasksStore((state) => state.tasks);
+  const isLoading = useTasksStore((state) => state.isLoading);
+  const activeTab = useTasksStore((state) => state.activeTab);
+  const fetchTasks = useTasksStore((state) => state.actions.fetchTasks);
+  const setActiveTab = useTasksStore((state) => state.actions.setActiveTab);
 
   // Fetch tasks on mount
   useEffect(() => {
-    const userId = authState.user?.id;
-    const teamId = authState.selectedTeam?.id;
 
     console.log('Tasks screen - userId:', userId, 'teamId:', teamId);
 
@@ -45,21 +41,18 @@ export default function TasksScreen() {
         assigneeId: userId,
         teamId,
       });
-      tasksState.actions.fetchTasks({
+      fetchTasks({
         assigneeId: userId,
         teamId: teamId,
       });
     } else {
       console.log('Missing userId or teamId, not fetching tasks');
     }
-  }, [authState.user?.id, authState.selectedTeam?.id]);
+  }, [userId, teamId, fetchTasks]);
 
   const handleRefresh = () => {
-    const userId = authState.user?.id;
-    const teamId = authState.selectedTeam?.id;
-
     if (userId && teamId) {
-      tasksState.actions.fetchTasks({
+      fetchTasks({
         assigneeId: userId,
         teamId: teamId,
       });
@@ -108,7 +101,7 @@ export default function TasksScreen() {
   };
 
   const renderContent = () => {
-    if (tasksState.isLoading) {
+    if (isLoading) {
       return (
         <Center style={{ flex: 1 }}>
           <Text
@@ -123,7 +116,7 @@ export default function TasksScreen() {
       );
     }
 
-    const allTasks = tasksState.tasks;
+    const allTasks = tasks;
     const pendingTasks = allTasks.filter((task) => task.status === 'pending');
     const completedTasks = allTasks.filter(
       (task) => task.status === 'completed'
@@ -163,7 +156,7 @@ export default function TasksScreen() {
     }
 
     // Render based on active tab
-    switch (tasksState.activeTab) {
+    switch (activeTab) {
       case 'pending':
         if (pendingTasks.length === 0) {
           return (
@@ -186,7 +179,7 @@ export default function TasksScreen() {
             contentContainerStyle={{ paddingBottom: 24 }}
             refreshControl={
               <RefreshControl
-                refreshing={tasksState.isLoading}
+                refreshing={isLoading}
                 onRefresh={handleRefresh}
               />
             }
@@ -217,7 +210,7 @@ export default function TasksScreen() {
             contentContainerStyle={{ paddingBottom: 24 }}
             refreshControl={
               <RefreshControl
-                refreshing={tasksState.isLoading}
+                refreshing={isLoading}
                 onRefresh={handleRefresh}
               />
             }
@@ -234,7 +227,7 @@ export default function TasksScreen() {
             contentContainerStyle={{ paddingBottom: 24 }}
             refreshControl={
               <RefreshControl
-                refreshing={tasksState.isLoading}
+                refreshing={isLoading}
                 onRefresh={handleRefresh}
               />
             }
@@ -254,13 +247,13 @@ export default function TasksScreen() {
 
       {/* Tab Selector */}
       <TaskTabSelector
-        activeTab={tasksState.activeTab}
-        onTabChange={tasksState.actions.setActiveTab}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
         pendingCount={
-          tasksState.tasks.filter((task) => task.status === 'pending').length
+          tasks.filter((task) => task.status === 'pending').length
         }
         completedCount={
-          tasksState.tasks.filter((task) => task.status === 'completed').length
+          tasks.filter((task) => task.status === 'completed').length
         }
       />
 

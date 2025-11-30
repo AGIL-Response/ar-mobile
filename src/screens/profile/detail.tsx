@@ -61,8 +61,7 @@ const ProfileField = ({ label, value }: ProfileFieldProps) => {
 
 export default function ProfileDetailScreen() {
   const theme = useTheme();
-  const authState = useAuthStore();
-  const user = authState.user;
+  const user = useAuthStore((state) => state.user);
 
   const handleBackPress = () => {
     router.back();

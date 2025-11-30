@@ -4,7 +4,7 @@ import {
   getUsersByTenant,
 } from '@/api/users';
 import type { IBaseState, InitStateType } from '@/stores/interfaces/IBaseState';
-import { createStore, resetStore } from '@/stores/utils';
+import { createStore, resetStore, attributesChanged, coordinatesChanged, arrayToCoordinates } from '@/stores/utils';
 import type { User, UsersQueryParams } from '@/types';
 
 export interface UsersState extends IBaseState {
@@ -13,8 +13,6 @@ export interface UsersState extends IBaseState {
   isLoading: boolean;
   error: string | null;
   searchQuery: string;
-  mapFocusUserId: string | null;
-  flatViewFocusUserId: string | null;
 
   // Actions namespace
   actions: {
@@ -28,8 +26,6 @@ export interface UsersState extends IBaseState {
       status?: string
     ) => void;
     setSearchQuery: (query: string) => void;
-    setMapFocusUserId: (userId: string | null) => void;
-    setFlatViewFocusUserId: (userId: string | null) => void;
     reset: () => void;
   };
 }
@@ -39,8 +35,6 @@ const initialState: InitStateType<UsersState> = {
   isLoading: false,
   error: null,
   searchQuery: '',
-  mapFocusUserId: null,
-  flatViewFocusUserId: null,
 };
 
 const usersStore = (set: any, get: any) => ({
@@ -121,31 +115,50 @@ const usersStore = (set: any, get: any) => ({
       set((state: UsersState) => {
         const userIndex = state.users.findIndex((user) => user.id === userId);
         if (userIndex !== -1) {
-          // Update location
-          state.users[userIndex].location = location;
+          const user = state.users[userIndex];
+          let hasChanges = false;
 
-          // Update attributes if provided
+          // Check if location changed
+          const currentCoords = arrayToCoordinates(user.location?.coordinates);
+          const newCoords = arrayToCoordinates(location.coordinates);
+          const locationChanged = coordinatesChanged(currentCoords, newCoords);
+
+          if (locationChanged) {
+            user.location = location;
+            hasChanges = true;
+          }
+
+          // Check if attributes changed
           if (attributes) {
-            state.users[userIndex].attributes = attributes;
+            const currentAttrs = user.attributes || null;
+            const attrsChanged = attributesChanged(currentAttrs, attributes);
+
+            if (attrsChanged) {
+              user.attributes = attributes;
+              hasChanges = true;
+            }
           }
 
-          // Update status if provided
-          if (status !== undefined) {
-            state.users[userIndex].status = status;
+          // Check if status changed
+          if (status !== undefined && user.status !== status) {
+            user.status = status;
+            hasChanges = true;
           }
+
+          // Only trigger re-render if something actually changed
+          if (hasChanges) {
+            console.log(`✅ Updated location for user ${userId}:`, {
+              location,
+              attributes,
+              status,
+            });
+            state.users = [...state.users];
+          } else {
+            console.log(`⏭️ Received socket: skip location update for user ${userId} (no changes detected)`);
+          }
+        } else {
+          console.log(`⏭️ Received socket: skip location update for user ${userId} (user not found)`);
         }
-      });
-    },
-
-    setMapFocusUserId: (userId: string | null) => {
-      set((state: UsersState) => {
-        state.mapFocusUserId = userId;
-      });
-    },
-
-    setFlatViewFocusUserId: (userId: string | null) => {
-      set((state: UsersState) => {
-        state.flatViewFocusUserId = userId;
       });
     },
 

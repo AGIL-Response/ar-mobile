@@ -19,10 +19,8 @@ export function SosSection() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalState, setModalState] = useState<ModalState>("confirm");
   const [countdown, setCountdown] = useState(5);
-  const { coordinates } = useLocationStore();
-  const {
-    actions: { createTask },
-  } = useTasksStore();
+  const coordinates = useLocationStore((state) => state.coordinates);
+  const createTask = useTasksStore((state) => state.actions.createTask);
   const handleConfirm = useCallback(async () => {
     if (coordinates) {
       try {
@@ -51,7 +49,7 @@ export function SosSection() {
       Alert.alert("Error", "Location not found");
     }
     setModalState("success");
-  }, [createTask]);
+  }, [createTask, coordinates]);
 
   // Countdown timer for cancel button
   useEffect(() => {
@@ -61,7 +59,6 @@ export function SosSection() {
       }, 1000);
       return () => clearTimeout(timer);
     } else if (modalVisible && modalState === "confirm" && countdown === 0) {
-      // Auto-confirm after countdown
       handleConfirm();
     }
   }, [modalVisible, modalState, countdown, handleConfirm]);
@@ -78,7 +75,6 @@ export function SosSection() {
 
   const handleClose = () => {
     setModalVisible(false);
-    // Reset state after a delay to allow animation
     setTimeout(() => {
       setModalState("confirm");
       setCountdown(5);

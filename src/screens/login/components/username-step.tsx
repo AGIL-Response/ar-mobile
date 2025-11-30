@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TextInput } from 'react-native';
+import { Platform, StyleSheet, TextInput } from 'react-native';
 
 import { Button, ErrorText, Text, View } from '@/components';
 import { type Theme, useTheme } from '@/theme';
@@ -39,6 +39,7 @@ export function UsernameStep({
             autoCorrect={false}
             returnKeyType="done"
             onSubmitEditing={onSubmit}
+            textAlignVertical="center"
           />
         </View>
       </View>
@@ -81,6 +82,8 @@ const createStyles = (theme: Theme) => {
     },
     inputText: {
       ...typography.body,
+      lineHeight: Platform.OS === 'ios' ? 26 : 22,
+      paddingVertical: 0, // Remove default padding for proper centering on Android
       color: colors.text.primary,
       flex: 1,
     },
