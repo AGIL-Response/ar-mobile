@@ -357,17 +357,24 @@ export const AppBar = React.forwardRef<any, AppBarProps & ViewProps>(
       );
     };
 
-    const Container = safeArea ? SafeAreaView : View;
+    if (safeArea) {
+      return (
+        <SafeAreaView
+          ref={ref}
+          style={finalStyle}
+          edges={['top']}
+          {...accessibilityProps}
+          {...props}
+        >
+          {renderContent()}
+        </SafeAreaView>
+      );
+    }
 
     return (
-      <Container
-        ref={ref}
-        style={finalStyle}
-        {...accessibilityProps}
-        {...props}
-      >
+      <View ref={ref} style={finalStyle} {...accessibilityProps} {...props}>
         {renderContent()}
-      </Container>
+      </View>
     );
   }
 );

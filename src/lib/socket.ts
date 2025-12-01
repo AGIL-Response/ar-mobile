@@ -41,8 +41,8 @@ export interface SocketLocationUpdateEvent {
 export const initMapSocket = (accessToken: string): Socket => {
   const baseUrl = 'https://dev.agilres.net';
 
-  return io(`${baseUrl}`, {
-    path: '/be/ws',
+  return io(baseUrl, {
+    path: '/api/be/ws',
     withCredentials: true,
     auth: {
       authorization: `Bearer ${accessToken}`,

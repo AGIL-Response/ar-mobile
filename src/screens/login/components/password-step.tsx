@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TextInput } from 'react-native';
+import { Platform, StyleSheet, TextInput } from 'react-native';
 
 import { Button, Text, View } from '@/components';
 import { type ITenant } from '@/stores/auth';
@@ -132,6 +132,8 @@ const createStyles = (theme: Theme) => {
     },
     inputText: {
       ...typography.body,
+      lineHeight: Platform.OS === 'ios' ? 26 : 22,
+      paddingVertical: 0,
       color: colors.text.primary,
       flex: 1,
     },
