@@ -98,7 +98,7 @@ export default function IncidentsScreen() {
 
   return (
     <Background>
-      <AppHeader title={"Incidents"}/>
+      <AppHeader />
 
       {/* Content */}
       <View style={{ flex: 1 }}>

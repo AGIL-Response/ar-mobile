@@ -69,7 +69,7 @@ const tasksStore: StateCreator<TasksState> = (set, get) => ({
 
   actions: {
     fetchTasks: async (params?: TasksQueryParams) => {
-      console.log('Tasks store - fetchTasks called with params:', params);
+      // console.log('Tasks store - fetchTasks called with params:', params);
       
       set((state: TasksState) => {
         state.isLoading = true;
@@ -78,7 +78,7 @@ const tasksStore: StateCreator<TasksState> = (set, get) => ({
 
       try {
         const response = await taskApi.getTasks(params);
-        console.log('Tasks store - API response:', response);
+        // console.log('Tasks store - API response:', response);
         
         set((state: TasksState) => {
           state.tasks = response.data;
@@ -87,7 +87,7 @@ const tasksStore: StateCreator<TasksState> = (set, get) => ({
         // Update computed properties
         get()._updateComputedProperties();
         
-        console.log('Tasks store - tasks updated, count:', response.data.length);
+        // console.log('Tasks store - tasks updated, count:', response.data.length);
       } catch (error: unknown) {
         console.error('Tasks store - fetch error:', error);
         set((state: TasksState) => {

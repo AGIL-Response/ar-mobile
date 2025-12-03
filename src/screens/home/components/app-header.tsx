@@ -12,8 +12,9 @@ import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'expo-router';
 import { useNotificationsStore } from '@/stores/notifications';
 import { TouchableOpacity } from 'react-native';
+import { SosSection } from './sos-section';
 
-export function AppHeader({ title }) {
+export function AppHeader() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
@@ -38,17 +39,10 @@ export function AppHeader({ title }) {
         backgroundColor: theme.colors.background.secondary,
       }}
     >
-      {/* Title Section */}
-      <View style={{ flex: 1 }}>
-        <Text
-          variant="h3"
-          style={{
-            color: theme.colors.text.primary,
-            fontFamily: theme.fonts.goldmanRegular,
-          }}
-        >
-          {title}
-        </Text>
+      <View style={{ flex: 1, gap: 8 }}>
+        <View style={{ maxWidth: 55, borderRadius: 100, overflow: 'hidden' }}>
+          <SosSection />
+        </View>
       </View>
 
       {/* Right Section */}

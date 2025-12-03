@@ -3,7 +3,7 @@
  * Detailed view of a specific incident
  */
 
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { RelativePathString, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { ScrollView, TouchableOpacity } from 'react-native';
 
@@ -226,7 +226,7 @@ export default function IncidentDetailScreen() {
       return;
     }
 
-    router.replace('/' as any);
+    router.dismissTo('/(app)/map' as RelativePathString);
     setMapFocusIncident(selectedIncident.id);
   };
 

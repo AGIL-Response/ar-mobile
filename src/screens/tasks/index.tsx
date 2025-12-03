@@ -243,7 +243,7 @@ export default function TasksScreen() {
 
   return (
     <Background>
-      <AppHeader title={'Tasks'} />
+      <AppHeader />
 
       {/* Tab Selector */}
       <TaskTabSelector

@@ -23,7 +23,7 @@ import { useUsersStore } from '@/stores/users';
 import { useMapStore } from '@/stores/map';
 import { type Theme, useTheme } from '@/theme';
 import { Pressable } from 'react-native-gesture-handler';
-import type { IncidentCoordinate, UserCoordinate } from '../types';
+import type { IncidentCoordinate, UserCoordinate } from '../../map/types';
 
 Mapbox.setAccessToken(
   'sk.eyJ1IjoibGFpem4iLCJhIjoiY21lamxqZzh4MDQ0bjJrcXZ0dWRiZHAzNyJ9.NU6sHZrIkDuDpHCEManSJQ'
@@ -32,7 +32,6 @@ Mapbox.setAccessToken(
 export function MapView() {
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  console.log('MapView');
   const incidents = useIncidentsStore((state) => state.incidents);
   const users = useUsersStore((state) => state.users);
   const incidentsLoading = useIncidentsStore((state) => state.isLoading);
@@ -80,10 +79,11 @@ export function MapView() {
   }, []);
 
   const handleMarkerPress = useCallback((incidentId: string) => {
-    router.navigate(`/incidents/${incidentId}` as RelativePathString);
+    router.replace(`/incidents/${incidentId}` as RelativePathString);
   }, []);
 
   const handleUserMarkerPress = useCallback((userId: string) => {
+    router.replace('/' as RelativePathString);
     setFlatViewFocusUserId(userId);
   }, [setFlatViewFocusUserId]);
 

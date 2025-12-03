@@ -336,7 +336,6 @@ export const filesApi = {
         }
       );
 
-      console.log('✅ File Upload Response:', response.data);
       return response.data;
     } catch (error) {
       console.error('❌ File Upload Error:', error);

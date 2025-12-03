@@ -1,5 +1,5 @@
 import { iconNames } from '@assets/icons';
-import { useRouter } from 'expo-router';
+import { RelativePathString, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ScrollView,
@@ -28,7 +28,7 @@ export function MembersScreen(): React.JSX.Element {
   const theme = useTheme();
   const { ref, present } = useModal();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-
+  const router = useRouter();
   const flatViewFocusUserId = useMapStore((state) => state.flatViewFocusUserId);
 
   // Temp skip fetch because it will override the value from socket
@@ -101,6 +101,7 @@ export function MembersScreen(): React.JSX.Element {
   };
 
   const handleMapFocus = (userId: string) => {
+    router.dismissTo('/(app)/map' as RelativePathString);
     setMapFocusUserId(userId);
   };
 

@@ -82,22 +82,16 @@ const requestSuccessInterceptor = (config: any) => {
 };
 
 const responseSuccessInterceptor = (response: any) => {
-  // Log successful response
-  console.log(
-    `\x1b[32m${getTimestamp()} ✅ Response [${response.status}]: ${response.config.method?.toUpperCase()} ${response.config.url}\x1b[0m`
-  );
-  console.log(
-    `\x1b[32m${getTimestamp()} 📦 Response Data: ${JSON.stringify(response.data, undefined, 2)}\x1b[0m`
-  );
+
   return response;
 };
 
 const responseFailedInterceptor = (error: any) => {
   // Log error response
-  console.log(
-    `\x1b[31m${getTimestamp()} ❌ Error [${error.response?.status || 'No Status'}]: ${error.config?.method?.toUpperCase()} ${error.config?.url}\x1b[0m`
-  );
   if (error.response?.data) {
+    console.log(
+      `\x1b[31m${getTimestamp()} ❌ Error [${error.response?.status || 'No Status'}]: ${error.config?.method?.toUpperCase()} ${error.config?.url}\x1b[0m`
+    );
     console.log(
       `\x1b[31m${getTimestamp()} 📦 Error Data: ${JSON.stringify(error.response.data, undefined, 2)}\x1b[0m`
     );

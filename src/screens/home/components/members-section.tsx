@@ -19,7 +19,6 @@ export function MembersSection(): React.JSX.Element {
   const flatViewFocusUserId = useMapStore((state) => state.flatViewFocusUserId);
   const styles = createStyles(theme);
   const { ref: membersModalRef, present: presentMembers } = useModal();
-
   useEffect(() => {
     if (teamId) {
       fetchTeamMembers(teamId);
@@ -38,7 +37,6 @@ export function MembersSection(): React.JSX.Element {
   const handleViewAll = () => {
     presentMembers();
   };
-
 
   const getInitials = (user: User) => {
     if (user.fullName) {

@@ -1,9 +1,8 @@
 import React from 'react';
-import { View } from 'react-native';
 
 import { reactNativeRender as render, screen, waitFor } from '@/lib/test-utils';
 
-import { MapView } from './map-view';
+import MapScreen from './index';
 import { createIncident } from '@/lib/mock-data-tests';
 
 const pointAnnotationCalls: any[] = [];
@@ -42,7 +41,7 @@ jest.mock('@rnmapbox/maps', () => {
   return {
     __esModule: true,
     default: defaultExport,
-    MapView: ({ children }: any) => (
+    MapScreen: ({ children }: any) => (
       <View testID="mapbox-view">{children}</View>
     ),
     PointAnnotation: MockPointAnnotation,
@@ -55,7 +54,7 @@ const authStoreModule = require('@/stores/auth');
 const incidentsStoreModule = require('@/stores/incidents');
 const { router } = require('expo-router');
 
-describe('Home MapView', () => {
+describe('Home MapScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     pointAnnotationCalls.length = 0;
@@ -79,7 +78,7 @@ describe('Home MapView', () => {
   });
 
   it('fetches incidents for the selected tenant on mount', async () => {
-    render(<MapView />);
+    render(<MapScreen />);
 
     await waitFor(() => {
       expect(mockIncidentsState.actions.fetchIncidents).toHaveBeenCalledWith(
@@ -107,7 +106,7 @@ describe('Home MapView', () => {
       },
     }));
 
-    render(<MapView />);
+    render(<MapScreen />);
 
     expect(await screen.findAllByTestId(/map-marker-/)).toHaveLength(2);
   });
@@ -129,7 +128,7 @@ describe('Home MapView', () => {
       },
     }));
 
-    render(<MapView />);
+    render(<MapScreen />);
 
     const markerProps = pointAnnotationCalls[0];
     markerProps.onSelected?.();

@@ -39,9 +39,7 @@ export const getTasks = async (params: TasksQueryParams = {}): Promise<GetTasksR
     const queryString = queryParams.toString();
     const url = `/tasks${queryString ? `?${queryString}` : ''}`;
     
-    console.log(`🚀 Request: GET ${url}`);
     const response = await apiClient.get(url);
-    console.log(`✅ Response: GET ${url}`, response.data);
     return response.data;
   } catch (error) {
     console.error(`❌ Error: GET /tasks`, error);
@@ -54,9 +52,7 @@ export const getTasks = async (params: TasksQueryParams = {}): Promise<GetTasksR
  */
 export const getTask = async (taskId: string): Promise<GetTaskResponse> => {
   try {
-    console.log(`🚀 Request: GET /tasks/${taskId}`);
     const response = await apiClient.get(`/tasks/${taskId}`);
-    console.log(`✅ Response: GET /tasks/${taskId}`, response.data);
     return response.data;
   } catch (error) {
     console.error(`❌ Error: GET /tasks/${taskId}`, error);
@@ -69,10 +65,7 @@ export const getTask = async (taskId: string): Promise<GetTaskResponse> => {
  */
 export const createTask = async (data: CreateTaskRequest): Promise<CreateTaskResponse> => {
   try {
-    console.log(`🚀 Request: POST /tasks`);
-    console.log(`📦 Request Body:`, data);
     const response = await apiClient.post(`/tasks`, data);
-    console.log(`✅ Response: POST /tasks`, response.data);
     return response.data;
   } catch (error) {
     console.error(`❌ Error: POST /tasks`, error);
@@ -88,10 +81,7 @@ export const updateTask = async (
   data: UpdateTaskRequest
 ): Promise<UpdateTaskResponse> => {
   try {
-    console.log(`🚀 Request: PATCH /tasks/${taskId}`);
-    console.log(`📦 Request Body:`, data);
     const response = await apiClient.patch(`/tasks/${taskId}`, data);
-    console.log(`✅ Response: PATCH /tasks/${taskId}`, response.data);
     return response.data;
   } catch (error) {
     console.error(`❌ Error: PATCH /tasks/${taskId}`, error);
@@ -107,10 +97,7 @@ export const updateChecklistItem = async (
   data: UpdateChecklistItemRequest
 ): Promise<UpdateChecklistItemResponse> => {
   try {
-    console.log(`🚀 Request: PATCH /checklists/${checklistId}`);
-    console.log(`📦 Request Body:`, data);
     const response = await apiClient.patch(`/checklists/${checklistId}`, data);
-    console.log(`✅ Response: PATCH /checklists/${checklistId}`, response.data);
     return response.data;
   } catch (error) {
     console.error(`❌ Error: PATCH /checklists/${checklistId}`, error);
@@ -123,9 +110,7 @@ export const updateChecklistItem = async (
  */
 export const deleteTask = async (taskId: string): Promise<void> => {
   try {
-    console.log(`🚀 Request: DELETE /tasks/${taskId}`);
     await apiClient.delete(`/tasks/${taskId}`);
-    console.log(`✅ Response: DELETE /tasks/${taskId}`);
   } catch (error) {
     console.error(`❌ Error: DELETE /tasks/${taskId}`, error);
     throw handleApiError(error);

@@ -63,8 +63,6 @@ export const handleListenMapSocket = (
   // Listen for location updates from other users
   socket.on('maps', (data: any) => {
     try {
-      console.log('📩 Received socket data:', data);
-
       // Handle the data directly as an object (like web app)
       if (
         data &&

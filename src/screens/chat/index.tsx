@@ -16,7 +16,7 @@ export default function ChatScreen() {
   return (
     <Background>
       {/* Header */}
-      <AppHeader title={'Chat'} />
+      <AppHeader />
 
       {/* Content */}
       <View style={{ flex: 1 }}>
