@@ -20,7 +20,6 @@ import type { User } from '@/types';
 import { MemberDetailModal } from './components/member-detail-modal';
 
 export function MembersScreen(): React.JSX.Element {
-  const router = useRouter();
   const users = useUsersStore((state) => state.users);
   const isLoading = useUsersStore((state) => state.isLoading);
   const error = useUsersStore((state) => state.error);
@@ -102,7 +101,6 @@ export function MembersScreen(): React.JSX.Element {
   };
 
   const handleMapFocus = (userId: string) => {
-    router.navigate('/');
     setMapFocusUserId(userId);
   };
 

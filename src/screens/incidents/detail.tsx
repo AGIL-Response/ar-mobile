@@ -226,7 +226,7 @@ export default function IncidentDetailScreen() {
       return;
     }
 
-    router.navigate('/' as any);
+    router.replace('/' as any);
     setMapFocusIncident(selectedIncident.id);
   };
 

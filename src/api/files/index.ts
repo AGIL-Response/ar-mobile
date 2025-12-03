@@ -1,8 +1,8 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystemLegacy from 'expo-file-system/legacy';
 
 import { storage } from '@/lib/storage';
 
-import { apiClient, handleApiError } from '../api-client';
+import { handleApiError, mediaApiClient } from '../api-client';
 
 export interface FileUploadOptions {
   incidentId: string;
@@ -52,7 +52,7 @@ export const blobToFileUri = async (
 
     // Create temporary file path
     const fileName = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}.${extension}`;
-    const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
+    const fileUri = `${FileSystemLegacy.cacheDirectory}${fileName}`;
 
     // Convert blob to base64
     const base64 = await new Promise<string>((resolve, reject) => {
@@ -67,8 +67,8 @@ export const blobToFileUri = async (
     });
 
     // Write to file system
-    await FileSystem.writeAsStringAsync(fileUri, base64, {
-      encoding: FileSystem.EncodingType.Base64,
+    await FileSystemLegacy.writeAsStringAsync(fileUri, base64, {
+      encoding: FileSystemLegacy.EncodingType.Base64,
     });
 
     return fileUri;
@@ -175,7 +175,7 @@ const validateFileUri = async (uri: string): Promise<boolean> => {
   }
 
   try {
-    const fileInfo = await FileSystem.getInfoAsync(uri);
+    const fileInfo = await FileSystemLegacy.getInfoAsync(uri);
     return fileInfo.exists;
   } catch (error) {
     console.log('Failed to validate file URI:', uri, error);
@@ -254,7 +254,7 @@ export const clearCachedFileUri = (fileId: string): void => {
   // Remove from persistent storage
   try {
     const cacheKey = `${CACHE_KEY_PREFIX}${fileId}`;
-    storage.delete(cacheKey);
+    storage.remove(cacheKey);
 
     // Update cache keys list
     const keys = getCacheKeys().filter((key) => key !== fileId);
@@ -276,9 +276,9 @@ export const clearAllCachedFileUris = (): void => {
     const keys = getCacheKeys();
     keys.forEach((fileId) => {
       const cacheKey = `${CACHE_KEY_PREFIX}${fileId}`;
-      storage.delete(cacheKey);
+      storage.remove(cacheKey);
     });
-    storage.delete(CACHE_KEYS_KEY);
+    storage.remove(CACHE_KEYS_KEY);
   } catch (error) {
     console.log('Failed to clear all cached file URIs from storage:', error);
   }
@@ -294,7 +294,6 @@ export const filesApi = {
   ): Promise<FileUploadResponse> => {
     try {
       const { incidentId, fileUri, fileName, mimeType } = options;
-
       console.log('🚀 File Upload Request:', {
         incidentId,
         fileName,
@@ -305,8 +304,8 @@ export const filesApi = {
       // Read file as base64 to match web app's raw binary approach
       // The web app sends File object directly as body with Content-Type header
       // In React Native, we read the file and convert to a format axios can send
-      const fileBase64 = await FileSystem.readAsStringAsync(fileUri, {
-        encoding: FileSystem.EncodingType.Base64,
+      const fileBase64 = await FileSystemLegacy.readAsStringAsync(fileUri, {
+        encoding: FileSystemLegacy.EncodingType.Base64,
       });
 
       // Convert base64 to binary string (Uint8Array) to match web app's File object
@@ -324,8 +323,8 @@ export const filesApi = {
 
       // Send raw binary data matching web app's approach
       // Web app sends: body: file with Content-Type: file.type
-      const response = await apiClient.post<FileUploadResponse>(
-        '/files/upload',
+      const response = await mediaApiClient.post<FileUploadResponse>(
+        '/files',
         bytes,
         {
           headers: {
@@ -355,9 +354,9 @@ export const filesApi = {
 
       console.log('🚀 File View Request:', { fileId });
 
-      const url = `/files/view/${fileId}`;
+      const url = `/files/${fileId}`;
 
-      const response = await apiClient.get(url, {
+      const response = await mediaApiClient.get(url, {
         responseType: 'blob', // Important: Get raw binary data
       });
 

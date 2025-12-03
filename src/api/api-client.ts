@@ -13,6 +13,25 @@ export const apiClient = axios.create({
   withCredentials: false,
 });
 
+export const mediaApiClient = axios.create({
+  baseURL: 'https://dev.agilres.net/api/media',
+  headers: {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  },
+  withCredentials: false,
+});
+
+export const chatApiClient = axios.create({
+  baseURL: 'https://dev.agilres.net/api/chat',
+  headers: {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  },
+  withCredentials: false,
+});
+
+
 const getTimestamp = () => {
   const now = new Date();
   return `[${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}]`;
@@ -97,13 +116,22 @@ const responseFailedInterceptor = (error: any) => {
 
 // Add request interceptor for auth token and logging
 apiClient.interceptors.request.use(requestSuccessInterceptor);
+mediaApiClient.interceptors.request.use(requestSuccessInterceptor);
+chatApiClient.interceptors.request.use(requestSuccessInterceptor);
 
 // Add response interceptor for error handling and logging
 apiClient.interceptors.response.use(
   responseSuccessInterceptor,
   responseFailedInterceptor
 );
-
+mediaApiClient.interceptors.response.use(
+  responseSuccessInterceptor,
+  responseFailedInterceptor
+);
+chatApiClient.interceptors.response.use(
+  responseSuccessInterceptor,
+  responseFailedInterceptor
+);
 // API response type
 export type ApiResponse<T> = {
   data: T;

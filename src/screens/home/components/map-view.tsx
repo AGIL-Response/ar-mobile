@@ -15,14 +15,14 @@ import React, {
   useMemo,
   useRef,
 } from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { Avatar, Center, Icon, Text, View, iconNames } from '@/components';
 import { getCoordinate } from '@/screens/incidents/utils';
 import { useIncidentsStore } from '@/stores/incidents';
 import { useUsersStore } from '@/stores/users';
 import { useMapStore } from '@/stores/map';
 import { type Theme, useTheme } from '@/theme';
-
+import { Pressable } from 'react-native-gesture-handler';
 import type { IncidentCoordinate, UserCoordinate } from '../types';
 
 Mapbox.setAccessToken(
@@ -32,7 +32,7 @@ Mapbox.setAccessToken(
 export function MapView() {
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  
+  console.log('MapView');
   const incidents = useIncidentsStore((state) => state.incidents);
   const users = useUsersStore((state) => state.users);
   const incidentsLoading = useIncidentsStore((state) => state.isLoading);
@@ -77,23 +77,22 @@ export function MapView() {
 
   useEffect(() => {
     fetchIncidents({});
-  }, [fetchIncidents]);
+  }, []);
 
   const handleMarkerPress = useCallback((incidentId: string) => {
-    router.navigate(`/incidents/${incidentId}` as any);
+    router.navigate(`/incidents/${incidentId}` as RelativePathString);
   }, []);
 
   const handleUserMarkerPress = useCallback((userId: string) => {
-    router.navigate('/' as RelativePathString);
     setFlatViewFocusUserId(userId);
-  }, []);
+  }, [setFlatViewFocusUserId]);
 
   useEffect(() => {
     if (!isMapReady) {
       return;
     }
 
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       if (!cameraRef.current) {
         return;
       }
@@ -109,7 +108,7 @@ export function MapView() {
         if (target && cameraRef.current) {
           cameraRef.current.setCamera({
             centerCoordinate: target.coordinates,
-            zoomLevel: 15,
+            zoomLevel: 20,
             animationDuration: 500,
           });
         }
@@ -124,7 +123,7 @@ export function MapView() {
         if (target && cameraRef.current) {
           cameraRef.current.setCamera({
             centerCoordinate: target.coordinates,
-            zoomLevel: 15,
+            zoomLevel: 20,
             animationDuration: 500,
           });
         }
@@ -138,20 +137,19 @@ export function MapView() {
         if (defaultCoordinate && cameraRef.current) {
           cameraRef.current.setCamera({
             centerCoordinate: defaultCoordinate,
-            zoomLevel: 15,
+            zoomLevel: 20,
             animationDuration: 500,
           });
         }
       }
     }, 100);
+    return () => clearTimeout(timeout);
   }, [
     isMapReady,
     coordinates,
     usersCoordinates,
     mapFocusIncidentId,
     mapFocusUserId,
-    setMapFocusIncident,
-    setMapFocusUserId,
   ]);
 
   useEffect(() => {
@@ -194,13 +192,13 @@ export function MapView() {
               key={`incident-marker-${coordinate.id}`}
               coordinate={coordinate.coordinates}
               allowOverlapWithPuck={false}
+              allowOverlap
             >
-              <TouchableOpacity
+              <Pressable
                 onPress={() => handleMarkerPress(coordinate.id)}
-                activeOpacity={0.8}
               >
-                <View style={styles.incidentMarker} collapsable={false}>
-                  <View style={styles.incidentOuterRing} />
+                <View style={styles.incidentMarker}>
+                  <View style={styles.incidentOuterRing}/>
                   <View style={styles.incidentInnerCircle}>
                     <Icon
                       name={iconNames.incident}
@@ -209,7 +207,7 @@ export function MapView() {
                     />
                   </View>
                 </View>
-              </TouchableOpacity>
+              </Pressable>
             </MarkerView>
           ))}
 
@@ -218,8 +216,9 @@ export function MapView() {
               key={`user-marker-${coordinate.id}`}
               coordinate={coordinate.coordinates}
               allowOverlapWithPuck={false}
+              allowOverlap
             >
-              <TouchableOpacity
+              <Pressable
                 onPress={() => handleUserMarkerPress(coordinate.id)}
               >
                 <Avatar
@@ -228,7 +227,7 @@ export function MapView() {
                   size="small"
                   isMapAvatar={true}
                 />
-              </TouchableOpacity>
+              </Pressable>
             </MarkerView>
           ))}
         </MapboxMapView>

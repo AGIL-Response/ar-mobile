@@ -31,7 +31,7 @@ export function MembersSection(): React.JSX.Element {
     if (flatViewFocusUserId) {
       presentMembers();
     }
-  }, [flatViewFocusUserId, presentMembers]);
+  }, [flatViewFocusUserId]);
 
   const displayUsers = users.slice(0, 4);
 

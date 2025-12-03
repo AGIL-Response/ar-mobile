@@ -3,7 +3,7 @@
  * Main dashboard with tab-based view switching
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import { Background, View } from '@/components';
 import { useAuthStore } from '@/stores/auth';
@@ -53,19 +53,12 @@ export default function HomeScreen() {
   useEffect(() => {
     if (mapFocusIncidentId && activeTab !== 'map') {
       setActiveTab('map');
-    }
-    if (mapFocusUserId && activeTab !== 'map') {
+    } else if (mapFocusUserId && activeTab !== 'map') {
       setActiveTab('map');
-    }
-    if (flatViewFocusUserId && activeTab !== 'flat') {
+    } else if (flatViewFocusUserId && activeTab !== 'flat') {
       setActiveTab('flat');
     }
-  }, [
-    mapFocusIncidentId,
-    mapFocusUserId,
-    flatViewFocusUserId,
-    activeTab,
-  ]);
+  }, [mapFocusIncidentId, mapFocusUserId, flatViewFocusUserId]);
 
   const handleTabChange = (tab: 'flat' | 'map') => {
     clearAllFocus();

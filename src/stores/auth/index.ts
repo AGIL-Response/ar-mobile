@@ -196,7 +196,6 @@ const authStore = (set: any, get: any) => ({
         avatarId: response.data.avatarId,
         updatedAt: response.data.updatedAt,
       };
-      debugger
       set((state: AuthState) => {
         state.user = {
           ...state.user,
