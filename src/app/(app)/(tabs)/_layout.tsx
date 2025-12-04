@@ -1,8 +1,3 @@
-/**
- * Bottom Tab Navigation Layout
- * Expo Router tabs configuration matching Figma design
- */
-
 import { Tabs, useRouter } from 'expo-router';
 import React from 'react';
 import { TouchableOpacity, View } from 'react-native';

@@ -5,7 +5,7 @@ import type { ConfigContext, ExpoConfig } from '@expo/config';
 const IS_DEV = process.env.APP_VARIANT === 'development';
 const IS_PRO = process.env.APP_VARIANT === 'production';
 
-const envFile = IS_PRO ? '.env.pro' : '.env.dev'
+const envFile = IS_PRO ? '.env.prod' : '.env.dev'
 const envFilePath = path.resolve(__dirname, envFile);
 
 require('dotenv').config({
@@ -41,11 +41,12 @@ const getAllEnvVars = () => {
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: process.env.APP_NAME,
+  name: process.env.APP_NAME || '[?] AgilResponse ',
+  slug: 'agil-response',
   ios: {
     ...config.ios,
     bundleIdentifier: process.env.PACKAGE_NAME,
-    supportsTablet: true,
+    googleServicesFile: process.env.GOOGLE_SERVICES_PLIST,
     config: {
       usesNonExemptEncryption: false,
     },
@@ -53,26 +54,17 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     ...config.android,
     package: process.env.PACKAGE_NAME,
+    googleServicesFile: process.env.GOOGLE_SERVICES_JSON,
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#2E3C4B',
     },
   },
-  web: {
-    favicon: './assets/favicon.png',
-    bundler: 'metro',
-  },
-  orientation: 'portrait',
   icon: './assets/icon.png',
-  userInterfaceStyle: 'automatic',
-  newArchEnabled: true,
   updates: {
     fallbackToCacheTimeout: 0,
   },
   assetBundlePatterns: ['**/*'],
-  experiments: {
-    typedRoutes: true,
-  },
   plugins: [
     [
       'expo-splash-screen',
@@ -100,6 +92,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-router',
     ['react-native-edge-to-edge'],
     'expo-video',
+    "@react-native-firebase/app",
+    [
+      "expo-build-properties",
+      {
+        "ios": {
+          "useFrameworks": "static",
+        },
+      }
+    ]
   ],
   extra: {
     env: getAllEnvVars(),
