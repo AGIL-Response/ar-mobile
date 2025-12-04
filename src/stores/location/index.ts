@@ -4,12 +4,7 @@ import { Alert, Linking } from 'react-native';
 
 import type IBaseState from '@/stores/interfaces/IBaseState';
 import { type InitStateType } from '@/stores/interfaces/IBaseState';
-import { createStore, resetStore } from '@/stores/utils';
-import {
-  initMapSocket,
-  handleListenMapSocket,
-  sendLocationToSocket,
-import { createStore, resetStore, coordinatesChanged, attributesChanged } from '@/stores/utils';
+import { createStore, resetStore , coordinatesChanged, attributesChanged } from '@/stores/utils';
 import {
   initMapSocket,
   handleListenMapSocket,
