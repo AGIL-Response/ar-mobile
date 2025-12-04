@@ -7,18 +7,22 @@ import React from 'react';
 
 import { Text, View } from '@/components';
 import { useTheme } from '@/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export function ChatHeader() {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <View
       style={{
-        height: 56,
+        paddingTop: insets.top,
+        minHeight: 56 + insets.top,
         backgroundColor: theme.colors.background.primary,
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 16,
+        paddingBottom: 12,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.surface.border,
       }}

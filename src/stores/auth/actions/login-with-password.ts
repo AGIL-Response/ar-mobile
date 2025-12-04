@@ -131,6 +131,7 @@ const loginWithPassword =
       try {
         console.log('Fetching user teams...');
         const teamsResponse = await authApi.getUserTeams(userId);
+
         if (
           teamsResponse?.data &&
           Array.isArray(teamsResponse.data) &&
@@ -143,16 +144,10 @@ const loginWithPassword =
             teamsResponse.data[0].name
           );
         } else {
-          get().actions.setSelectedTeam(null);
-          console.log('No teams found for user');
+          throw new Error('No teams found for user');
         }
       } catch (teamsError) {
-        console.warn(
-          'Failed to fetch user teams, continuing with login:',
-          teamsError
-        );
-        // Don't block login if teams fetch fails
-        get().actions.setSelectedTeam(null);
+        throw new Error('Failed to fetch user teams', { cause: teamsError });
       }
 
       // Note: Tenants are already fetched and stored during username check
@@ -162,11 +157,7 @@ const loginWithPassword =
       try {
         await get().actions.createGeoEntityIfNeeded();
       } catch (geoError) {
-        console.warn(
-          'Geo entity creation failed, continuing with login:',
-          geoError
-        );
-        // Don't block login if geo entity creation fails
+        throw new Error('Failed to create geo entity', { cause: geoError });
       }
 
       // Initialize location monitoring after successful login (non-blocking)

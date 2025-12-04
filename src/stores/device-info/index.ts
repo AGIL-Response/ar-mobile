@@ -21,7 +21,7 @@ export interface DeviceInfoState extends IBaseState {
   // Network speed config
   networkSpeedConfig: NetworkSpeedConfig;
   networkSpeedIntervalMs: number; // Interval time in milliseconds
-  
+
   // Network speed
   networkSpeed: number | null; // Speed in Mbps
   networkSpeedText: string;
@@ -29,10 +29,10 @@ export interface DeviceInfoState extends IBaseState {
   networkSpeedError: string | null;
   networkSpeedInterval: NodeJS.Timeout | null;
   checkNetworkSpeedCallback: (() => void) | null; // Callback to trigger network speed check
-  
+
   // Battery config
   batteryIntervalMs: number; // Interval time in milliseconds
-  
+
   // Battery
   batteryPercentage: number | null;
   isCharging: boolean;
@@ -161,7 +161,7 @@ const deviceInfoStore: StateCreator<DeviceInfoState> = (set, get) => ({
 
     startNetworkSpeedMonitoring: () => {
       const state = get() as DeviceInfoState;
-      
+
       // Clear existing interval if any
       if (state.networkSpeedInterval) {
         clearInterval(state.networkSpeedInterval);
@@ -180,7 +180,7 @@ const deviceInfoStore: StateCreator<DeviceInfoState> = (set, get) => ({
 
     stopNetworkSpeedMonitoring: () => {
       const state = get() as DeviceInfoState;
-      
+
       if (state.networkSpeedInterval) {
         clearInterval(state.networkSpeedInterval);
         set((state: DeviceInfoState) => {
@@ -201,22 +201,11 @@ const deviceInfoStore: StateCreator<DeviceInfoState> = (set, get) => ({
         const isCharging = batteryState === Battery.BatteryState.CHARGING;
 
         const batteryPercent = batteryLevel * 100; // Convert to percentage
-        
-        console.log('🔋 Battery check result:', {
-          batteryLevel,
-          batteryPercent,
-          batteryState,
-          isCharging,
-        });
 
         set((state: DeviceInfoState) => {
           state.batteryPercentage = batteryPercent;
           state.isCharging = isCharging;
           state.isCheckingBattery = false;
-          console.log('✅ Battery updated in store:', {
-            percentage: state.batteryPercentage,
-            isCharging: state.isCharging,
-          });
         });
       } catch (error) {
         console.error('❌ Battery check error:', error);
@@ -241,12 +230,12 @@ const deviceInfoStore: StateCreator<DeviceInfoState> = (set, get) => ({
 
     startBatteryMonitoring: () => {
       const state = get() as DeviceInfoState;
-      
+
       // Clear existing interval if any
       if (state.batteryInterval) {
         clearInterval(state.batteryInterval);
       }
-      
+
       // Clear existing listeners if any
       if (state.batteryLevelSubscription) {
         state.batteryLevelSubscription.remove();
@@ -286,7 +275,7 @@ const deviceInfoStore: StateCreator<DeviceInfoState> = (set, get) => ({
 
     stopBatteryMonitoring: () => {
       const state = get() as DeviceInfoState;
-      
+
       // Clear interval
       if (state.batteryInterval) {
         clearInterval(state.batteryInterval);
@@ -294,7 +283,7 @@ const deviceInfoStore: StateCreator<DeviceInfoState> = (set, get) => ({
           state.batteryInterval = null;
         });
       }
-      
+
       // Clear listeners
       if (state.batteryLevelSubscription) {
         state.batteryLevelSubscription.remove();
@@ -320,7 +309,7 @@ const deviceInfoStore: StateCreator<DeviceInfoState> = (set, get) => ({
 
     reset: () => {
       const state = get() as DeviceInfoState;
-      
+
       // Stop monitoring
       get().actions.stopNetworkSpeedMonitoring();
       get().actions.stopBatteryMonitoring();

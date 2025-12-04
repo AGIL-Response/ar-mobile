@@ -14,7 +14,13 @@ import { useNotificationsStore } from '@/stores/notifications';
 import { TouchableOpacity } from 'react-native';
 import { SosSection } from './sos-section';
 
-export function AppHeader() {
+interface AppHeaderProps {
+  title: string;
+  showRightSection?: boolean;
+  showBackButton?: boolean;
+}
+
+export function AppHeader({showRightSection = true, showBackButton = false }: AppHeaderProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);

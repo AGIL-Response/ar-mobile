@@ -26,7 +26,8 @@ export const useTheme = (): Theme => {
     systemColorScheme
   );
 
-  return effectiveTheme === 'dark' ? darkTheme : lightTheme;
+  // return effectiveTheme === 'dark' ? darkTheme : lightTheme;
+  return darkTheme;
 };
 
 /**

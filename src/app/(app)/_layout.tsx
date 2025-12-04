@@ -90,6 +90,12 @@ export default function AppLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="chat/[roomId]"
+        options={{
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }

@@ -27,8 +27,8 @@ export function SosSection() {
     if (coordinates) {
       try {
         await createTask({
-          name: "Help!!!",
-          description: "description Alice.Dare",
+          name: "Immediate Backup",
+          description: "Immediate backup requested",
           type: "sos",
           priority: "urgent",
           status: "pending",
@@ -61,6 +61,7 @@ export function SosSection() {
       }, 1000);
       return () => clearTimeout(timer);
     } else if (modalVisible && modalState === "confirm" && countdown === 0) {
+      // Auto-confirm after countdown
       handleConfirm();
     }
   }, [modalVisible, modalState, countdown, handleConfirm]);
@@ -77,6 +78,7 @@ export function SosSection() {
 
   const handleClose = () => {
     setModalVisible(false);
+    // Reset state after a delay to allow animation
     setTimeout(() => {
       setModalState("confirm");
       setCountdown(5);
