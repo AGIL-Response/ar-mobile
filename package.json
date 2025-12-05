@@ -5,6 +5,7 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "start": "APP_VARIANT=development npx expo start",
+    "start:clear": "APP_VARIANT=development npx expo start --clear",
     "android": "APP_VARIANT=development expo run:android",
     "android:pro": "APP_VARIANT=production expo run:android",
     "ios": "APP_VARIANT=development expo run:ios",
