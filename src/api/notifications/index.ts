@@ -10,6 +10,8 @@ import type {
   NotificationsQueryParams,
   NotificationsResponse,
   NotificationsUnreadCountResponse,
+  RegisterFcmTokenRequest,
+  RegisterFcmTokenResponse,
 } from './types';
 
 export const notificationsApi = {
@@ -112,6 +114,26 @@ export const notificationsApi = {
       console.log('✅ Response: PUT mark all notifications read');
     } catch (error) {
       console.error('❌ Error: PUT mark all notifications read', error);
+      throw handleApiError(error);
+    }
+  },
+
+  /**
+   * Register FCM token with backend
+   */
+  registerFcmToken: async (
+    data: RegisterFcmTokenRequest
+  ): Promise<RegisterFcmTokenResponse> => {
+    try {
+      console.log('🚀 Request: POST /notifications/tokens', data);
+      const response = await apiClient.post<RegisterFcmTokenResponse>(
+        '/notifications/tokens',
+        data
+      );
+      console.log('✅ Response: POST /notifications/tokens', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error: POST /notifications/tokens', error);
       throw handleApiError(error);
     }
   },

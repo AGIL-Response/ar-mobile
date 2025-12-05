@@ -126,3 +126,20 @@ export interface MarkNotificationReadResponse {
   };
   message: string;
 }
+
+export interface RegisterFcmTokenRequest {
+  fcmToken: string;
+  deviceType: 'android' | 'ios';
+}
+
+export interface RegisterFcmTokenResponse {
+  code: string;
+  data: {
+    fcmToken: string;
+    deviceType: 'android' | 'ios';
+    userId: string;
+    createdAt: string;
+    updatedAt: string | null;
+  };
+  message: string;
+}

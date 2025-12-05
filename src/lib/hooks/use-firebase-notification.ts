@@ -4,6 +4,16 @@ import messaging, {
   FirebaseMessagingTypes,
 } from '@react-native-firebase/messaging';
 
+import { notificationsApi } from '@/api/notifications';
+
+/**
+ * Lazy getter for auth store to avoid circular dependency
+ */
+function getAuthStore() {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require('@/stores/auth').default;
+}
+
 export type NotificationPermissionStatus =
   | 'not-determined'
   | 'denied'
@@ -80,6 +90,10 @@ export function useFirebaseNotification(
   // Use refs to store callbacks to avoid recreating listeners
   const callbacksRef = useRef(callbacks);
   callbacksRef.current = callbacks;
+
+  // Track last sent token to prevent duplicate sends
+  const lastSentTokenRef = useRef<string | null>(null);
+  const isSendingRef = useRef(false);
 
   // Check permission status
   const checkPermission = useCallback(async (): Promise<boolean> => {
@@ -366,6 +380,110 @@ export function useFirebaseNotification(
     }
   }, [autoRequestPermission, checkPermission, requestPermission]);
 
+  // Send FCM token to backend
+  const sendFcmTokenToBackend = useCallback(
+    async (token: string): Promise<void> => {
+      // Prevent duplicate sends of the same token
+      if (lastSentTokenRef.current === token || isSendingRef.current) {
+        console.log(
+          `🔥 Skipping FCM token registration: Already sent or sending (${token.substring(0, 20)}...)`
+        );
+        return;
+      }
+
+      try {
+        const authStore = getAuthStore();
+        const authState = authStore.getState();
+        const accessToken = authState.token?.accessToken;
+
+        // Only send if user is authenticated
+        if (!accessToken) {
+          console.log(
+            '🔥 Skipping FCM token registration: User not authenticated'
+          );
+          return;
+        }
+
+        isSendingRef.current = true;
+        const deviceType: 'android' | 'ios' =
+          Platform.OS === 'ios' ? 'ios' : 'android';
+
+        console.log(`🔥 Sending FCM token to backend: ${token.substring(0, 20)}...`);
+        await notificationsApi.registerFcmToken({
+          fcmToken: token,
+          deviceType,
+        });
+        console.log('✅ FCM token successfully registered with backend');
+        
+        // Mark as sent
+        lastSentTokenRef.current = token;
+      } catch (error) {
+        console.error('❌ Failed to register FCM token with backend:', error);
+        // Don't throw - we don't want to break the app if token registration fails
+      } finally {
+        isSendingRef.current = false;
+      }
+    },
+    []
+  );
+
+  // Watch for FCM token changes and send to backend when user is authenticated
+  useEffect(() => {
+    if (!state.fcmToken) {
+      return;
+    }
+
+    // Skip if this token was already sent
+    if (lastSentTokenRef.current === state.fcmToken) {
+      return;
+    }
+
+    const authStore = getAuthStore();
+    const authState = authStore.getState();
+    const accessToken = authState.token?.accessToken;
+
+    // Only send if user is authenticated
+    if (accessToken) {
+      console.log('🔥 FCM token available and user authenticated, sending to backend...');
+      sendFcmTokenToBackend(state.fcmToken);
+    } else {
+      console.log('🔥 FCM token available but user not authenticated, will send after login');
+    }
+  }, [state.fcmToken, sendFcmTokenToBackend]);
+
+  // Watch for auth token changes (login) and send FCM token if available
+  useEffect(() => {
+    const authStore = getAuthStore();
+    let previousAccessToken: string | undefined = authStore.getState().token?.accessToken;
+    
+    // Subscribe to auth store changes - specifically watch for accessToken
+    const unsubscribe = authStore.subscribe(
+      (authState) => {
+        const accessToken = authState.token?.accessToken;
+        const fcmToken = state.fcmToken;
+
+        // Only send if:
+        // 1. Access token changed from undefined/null to a value (actual login)
+        // 2. FCM token exists
+        // 3. This FCM token hasn't been sent yet
+        if (
+          accessToken &&
+          !previousAccessToken &&
+          fcmToken &&
+          lastSentTokenRef.current !== fcmToken
+        ) {
+          console.log('🔥 User authenticated, sending FCM token to backend...');
+          sendFcmTokenToBackend(fcmToken);
+        }
+        
+        previousAccessToken = accessToken;
+      },
+      (state) => state.token?.accessToken // Only subscribe to accessToken changes
+    );
+
+    return unsubscribe;
+  }, [state.fcmToken, sendFcmTokenToBackend]);
+
   // Setup listeners on mount
   useEffect(() => {
     console.log('🔥 useFirebaseNotification hook mounted - initializing...');
@@ -408,6 +526,13 @@ export function useFirebaseNotification(
         tokenError: null,
       }));
       callbacksRef.current.onTokenRefresh?.(token);
+      
+      // Send refreshed token to backend if user is authenticated
+      const authStore = getAuthStore();
+      const authState = authStore.getState();
+      if (authState.token?.accessToken) {
+        sendFcmTokenToBackend(token);
+      }
     });
 
     // Listen for notifications that open app from background
@@ -427,7 +552,7 @@ export function useFirebaseNotification(
       unsubscribeTokenRefresh();
       unsubscribeNotificationOpened();
     };
-  }, [checkPermission, requestPermission, autoRequestPermission]);
+  }, [checkPermission, requestPermission, autoRequestPermission, sendFcmTokenToBackend]);
 
   // Note: Background message handler must be registered outside React lifecycle
   // Call messaging().setBackgroundMessageHandler() in your root index.js file
