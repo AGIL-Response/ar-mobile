@@ -3,26 +3,26 @@
  * Displays SOS button and handles immediate backup request
  */
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, StyleSheet, TouchableOpacity } from "react-native";
 
-import { Button, Text, View } from "@/components";
+import { Button, Icon, Text, View, iconNames } from "@/components";
 import { CenteredModal } from "@/components/centered-modal";
-import { useTheme } from "@/theme";
+import { Theme, useTheme } from "@/theme";
 import { useTasksStore } from "@/stores/tasks";
 import { useLocationStore } from "@/stores/location";
+import { Check } from "@/components/icons";
 
 type ModalState = "confirm" | "success" | "cancel";
 
 export function SosSection() {
   const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalState, setModalState] = useState<ModalState>("confirm");
   const [countdown, setCountdown] = useState(5);
-  const { coordinates } = useLocationStore();
-  const {
-    actions: { createTask },
-  } = useTasksStore();
+  const coordinates = useLocationStore((state) => state.coordinates);
+  const createTask = useTasksStore((state) => state.actions.createTask);
   const handleConfirm = useCallback(async () => {
     if (coordinates) {
       try {
@@ -51,7 +51,7 @@ export function SosSection() {
       Alert.alert("Error", "Location not found");
     }
     setModalState("success");
-  }, [coordinates, createTask]);
+  }, [createTask, coordinates]);
 
   // Countdown timer for cancel button
   useEffect(() => {
@@ -89,6 +89,43 @@ export function SosSection() {
     handleClose();
   };
 
+  const renderTitle = () => {
+    if (modalState === "confirm") {
+      return "Immediate Backup";
+    } else if (modalState === "success") {
+      return (
+        <View style={[styles.statusIconCircle, styles.statusIconSuccess]}>
+          <Check
+            width={28}
+            height={28}
+            strokeWidth={3}
+            color={theme.colors.semantic.white}
+          />
+        </View>
+      );
+    } else if (modalState === "cancel") {
+      return (
+        <View style={[styles.statusIconCircle, styles.statusIconError]}>
+          <Icon
+            name={iconNames.incident}
+            size={28}
+            color={theme.colors.semantic.white}
+          />
+        </View>
+      );
+    }
+  };
+
+  const renderTitleAlign = () => {
+    if (modalState === "confirm") {
+      return "left";
+    } else if (modalState === "success") {
+      return "center";
+    } else if (modalState === "cancel") {
+      return "center";
+    }
+  };
+
   return (
     <View style={styles.container}>
       <TouchableOpacity
@@ -113,7 +150,8 @@ export function SosSection() {
       <CenteredModal
         visible={modalVisible}
         onClose={handleClose}
-        title="Immediate Backup"
+        title={renderTitle()}
+        titleAlign={renderTitleAlign()}
         showCloseButton={true}
       >
         {modalState === "confirm" && (
@@ -143,15 +181,19 @@ export function SosSection() {
         {modalState === "success" && (
           <View style={styles.modalContent}>
             <Text
-              variant="body"
+              variant="h4"
               style={{
-                color: theme.colors.text.secondary,
+                color: theme.colors.text.primary,
+                fontFamily: theme.fonts.goldmanRegular,
               }}
             >
+              Immediate Backup
+            </Text>
+            <Text variant="bodyMedium" style={styles.modalSubtitle}>
               Backup is On the Way!
             </Text>
 
-            <View style={{ paddingTop: 24, alignItems: "center" }}>
+            <View style={styles.modalButtonContainer}>
               <Button
                 variant="solid"
                 size="medium"
@@ -167,22 +209,30 @@ export function SosSection() {
         {modalState === "cancel" && (
           <View style={styles.modalContent}>
             <Text
-              variant="body"
+              variant="h4"
               style={{
-                color: theme.colors.text.secondary,
+                color: theme.colors.text.primary,
+                fontFamily: theme.fonts.goldmanRegular,
               }}
+            >
+              Immediate Backup
+            </Text>
+
+            <Text
+              variant="bodyMedium"
+              style={styles.modalSubtitle}
             >
               Backup has been cancelled
             </Text>
 
-            <View style={{ paddingTop: 24, alignItems: "center" }}>
+            <View style={styles.modalButtonContainer}>
               <Button
                 variant="solid"
                 size="medium"
                 title="Okay"
                 onPress={handleOkay}
                 colorVariant="secondary"
-                style={{ width: 100 }}
+                style={{ width: "100%" }}
               />
             </View>
           </View>
@@ -192,20 +242,47 @@ export function SosSection() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sosButton: {
-    width: "100%",
-    height: 40,
-    borderRadius: 2,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContent: {
-    width: "100%",
-  },
-});
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      width: "100%",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    sosButton: {
+      width: "100%",
+      height: 32,
+      borderRadius: 2,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    modalContent: {
+      width: "100%",
+      alignItems: "center",
+      paddingTop: 8,
+      paddingBottom: 8,
+    },
+    statusIconCircle: {
+      flex: 1,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 16,
+    },
+    statusIconSuccess: {
+      backgroundColor: theme.colors.semantic.success,
+    },
+    statusIconError: {
+      backgroundColor: theme.colors.semantic.error,
+    },
+    modalSubtitle: {
+      color: theme.colors.text.secondary,
+      paddingVertical: 16,
+    },
+    modalButtonContainer: {
+      width: "100%",
+      alignItems: "center",
+    },
+  });

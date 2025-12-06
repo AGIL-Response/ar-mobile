@@ -43,8 +43,8 @@ const formatDate = (date: Date) =>
 
 export default function EditProfileScreen() {
   const theme = useTheme();
-  const authState = useAuthStore();
-  const user = authState.user;
+  const user = useAuthStore((state) => state.user);
+  const updateUser = useAuthStore((state) => state.actions.updateUser);
 
   const [formData, setFormData] = useState({
     fullName: user?.fullName || '',
@@ -134,7 +134,7 @@ export default function EditProfileScreen() {
 
     setIsSaving(true);
     try {
-      const updatedUser = await authState.actions.updateUser(user?.id || '', {
+      const updatedUser = await updateUser(user?.id as string, {
         fullName: formData.fullName,
         email: formData.email,
         username: formData.username,

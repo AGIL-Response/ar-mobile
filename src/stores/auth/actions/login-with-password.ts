@@ -29,8 +29,8 @@ const loginWithPassword =
 
       // Use Keycloak token endpoint
       const tokenData = await authApi.loginWithKeycloak(
-        username,
-        password,
+        username.trim(),
+        password.trim(),
         state.selectedTenant.name
       );
 

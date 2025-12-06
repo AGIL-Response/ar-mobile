@@ -6,13 +6,12 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Background, View, Text } from '@/components';
+import { Background, View, Text, AppBar } from '@/components';
 import { useTheme } from '@/theme';
 import { chatService } from '@/services/chat';
 import { Message, Composer } from './components';
-import type { ChatMessage, ChatRoom, SendMessageData } from '@/services/chat';
+import type { ChatMessage, SendMessageData } from '@/services/chat';
 import { useObservable } from '@/lib/hooks/use-observable';
-import { AppHeader } from '@/screens/home/components/app-header';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ChatRoomScreen() {
@@ -288,7 +287,14 @@ export default function ChatRoomScreen() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       <Background>
-        <AppHeader title={roomName} showBackButton showRightSection={false} />
+        <AppBar
+          title={roomName}
+          showBackButton={true}
+          onBackPress={() => router.back()}
+          safeArea={true}
+          titleAlign="left"
+          style={{ borderBottomWidth: 0 }}
+        />
         <View style={{ flex: 1, paddingBottom: insets.bottom }}>
 
           <FlatList

@@ -244,6 +244,7 @@ export const Palette = {
   blue900: '#003b6b',
   blue1000: '#5DA9DC',
   blue1100: '#1778BA66',
+  blue1200: '#e8f1fa',
 
   // Yellow color palette
   yellow50: '#fdf6e6',
@@ -313,6 +314,7 @@ const createColors = (isDark: boolean) => ({
     primary: isDark ? Palette.primary200 : Palette.charcoal950,
     secondary: isDark ? Palette.primary500 : Palette.blue500,
     tertiary: isDark ? Palette.primary400 : Palette.gray900,
+    quaternary: isDark ? Palette.blue1200 : Palette.blue1200,
     muted: isDark ? Palette.primary800 : Palette.gray600,
     disabled: isDark ? `${Palette.blue1000}66` : `${Palette.blue1000}66`,
     placeholder: isDark ? `${Palette.blue1000}66` : `${Palette.gray500}66`,

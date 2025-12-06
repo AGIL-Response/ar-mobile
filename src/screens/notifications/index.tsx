@@ -32,13 +32,18 @@ import { useTheme } from '@/theme';
 
 export default function NotificationsScreen() {
   const theme = useTheme();
-  const authState = useAuthStore();
-  const notificationsState = useNotificationsStore();
+  const user = useAuthStore((state) => state.user);
+  const userId = user?.id;
+  const fetchNotifications = useNotificationsStore((state) => state.actions.fetchNotifications);
+  const markNotificationRead = useNotificationsStore((state) => state.actions.markNotificationRead);
+  const markAllNotificationsRead = useNotificationsStore((state) => state.actions.markAllNotificationsRead);
   const router = useRouter();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const { notifications, isLoading, error, actions } = notificationsState;
+  const notifications = useNotificationsStore((state) => state.notifications);
+  const isLoading = useNotificationsStore((state) => state.isLoading);
+  const error = useNotificationsStore((state) => state.error);
 
   // Reverse notifications to show latest first
   const reversedNotifications = useMemo(() => {
@@ -65,13 +70,12 @@ export default function NotificationsScreen() {
 
   // Fetch notifications on mount
   useEffect(() => {
-    const userId = authState.user?.id;
     if (userId) {
-      actions.fetchNotifications({
+      fetchNotifications({
         userId,
       });
     }
-  }, [authState.user?.id, actions]);
+  }, [userId, fetchNotifications]);
 
   // Get notification type icon
   const getNotificationIcon = (type: NotificationType) => {
@@ -117,7 +121,7 @@ export default function NotificationsScreen() {
       try {
         // Mark as read if it's unread (case-insensitive check)
         if (notification.status?.toLowerCase() === 'unread') {
-          await actions.markNotificationRead(
+          await markNotificationRead(
             notification.notificationId,
             'read'
           );
@@ -140,17 +144,16 @@ export default function NotificationsScreen() {
         Alert.alert('Error', 'Failed to update notification');
       }
     },
-    [actions]
+    [markNotificationRead, router]
   );
 
   // Handle refresh
   const handleRefresh = useCallback(async () => {
-    const userId = authState.user?.id;
     if (!userId) return;
 
     setIsRefreshing(true);
     try {
-      await actions.fetchNotifications({
+      await fetchNotifications({
         userId,
       });
     } catch (error) {
@@ -158,20 +161,19 @@ export default function NotificationsScreen() {
     } finally {
       setIsRefreshing(false);
     }
-  }, [authState.user?.id, actions]);
+  }, [userId, fetchNotifications]);
 
   // Mark all as read
   const markAllAsRead = useCallback(async () => {
-    const userId = authState.user?.id;
     if (!userId) return;
 
     try {
-      await actions.markAllNotificationsRead(userId);
+      await markAllNotificationsRead(userId);
     } catch (error) {
       console.error('Failed to mark all notifications as read:', error);
       Alert.alert('Error', 'Failed to mark all notifications as read');
     }
-  }, [authState.user?.id, actions]);
+  }, [userId, markAllNotificationsRead]);
 
   // Render notification item
   const renderNotificationItem = ({ item }: { item: UserNotification }) => {
@@ -384,7 +386,7 @@ export default function NotificationsScreen() {
                   textAlign: 'center',
                 }}
               >
-                You're all caught up! New notifications will appear here.
+                You&apos;re all caught up! New notifications will appear here.
               </Text>
             </View>
           </View>

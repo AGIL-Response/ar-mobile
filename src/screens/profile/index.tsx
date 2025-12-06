@@ -16,7 +16,6 @@ import {
   Icon,
   iconNames,
   Text,
-  ThemeToggle,
   View,
 } from '@/components';
 import { useAuthStore } from '@/stores/auth';
@@ -24,11 +23,11 @@ import { useTheme } from '@/theme';
 
 export default function ProfileScreen() {
   const theme = useTheme();
-  const authState = useAuthStore();
+  const user = useAuthStore((state) => state.user);
+  const selectedTenant = useAuthStore((state) => state.selectedTenant);
+  const logout = useAuthStore((state) => state.actions.logout);
   const router = useRouter();
 
-  const user = authState.user;
-  const selectedTenant = authState.selectedTenant;
   const [isLogoutModalVisible, setIsLogoutModalVisible] =
     React.useState(false);
   // Get user role/title
@@ -55,7 +54,7 @@ export default function ProfileScreen() {
   };
 
   const handleConfirmLogout = () => {
-    authState.actions.logout();
+    logout();
     setIsLogoutModalVisible(false);
     router.back();
   };

@@ -3,9 +3,9 @@
  * Detailed view of a specific incident
  */
 
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { RelativePathString, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView, TouchableOpacity } from 'react-native';
 
 import type { Incident, IncidentSeverity } from '@/api/incidents/types';
 import {
@@ -21,6 +21,7 @@ import {
 import { useIncidentsStore } from '@/stores/incidents';
 import { Palette, Theme, useTheme } from '@/theme';
 import { useUsersStore } from '@/stores/users';
+import { useMapStore } from '@/stores/map';
 
 export const mapIncidentTypeToSeverity = (
   type?: Incident['type']
@@ -176,26 +177,29 @@ export const getPriorityLabel = (severity?: IncidentSeverity) => {
 export default function IncidentDetailScreen() {
   const theme = useTheme();
   const { id } = useLocalSearchParams();
-  const incidentsState = useIncidentsStore();
+  const selectedIncident = useIncidentsStore((state) => state.selectedIncident);
+  const isLoadingDetails = useIncidentsStore((state) => state.isLoadingDetails);
+  const error = useIncidentsStore((state) => state.error);
+  const fetchIncident = useIncidentsStore((state) => state.actions.fetchIncident);
+  const setSelectedIncident = useIncidentsStore((state) => state.actions.setSelectedIncident);
+  const setMapFocusIncident = useMapStore((state) => state.actions.setMapFocusIncident);
   const usersState = useUsersStore();
   const router = useRouter();
 
-  const incident = incidentsState.selectedIncident;
   const incidentId = id as string;
   const displaySeverity =
-    incident?.severity || mapIncidentTypeToSeverity(incident?.type);
-  const { actions } = incidentsState;
+    selectedIncident?.severity || mapIncidentTypeToSeverity(selectedIncident?.type);
 
   useEffect(() => {
     if (incidentId) {
-      actions.fetchIncident(incidentId);
+      fetchIncident(incidentId);
     }
 
     // Clear selected incident when component unmounts
     return () => {
-      actions.setSelectedIncident(null);
+      setSelectedIncident(null);
     };
-  }, [incidentId, actions]);
+  }, [incidentId, fetchIncident, setSelectedIncident]);
 
   const handleBackPress = () => {
     router.back();
@@ -217,23 +221,23 @@ export default function IncidentDetailScreen() {
   };
 
   const handleViewLocation = () => {
-    const coordinates = incident?.location?.coordinates;
-    if (!incident || !coordinates) {
+    const coordinates = selectedIncident?.location?.coordinates;
+    if (!selectedIncident || !coordinates) {
       return;
     }
 
-    incidentsState.actions.setMapFocusIncident(incident.id);
-    router.navigate('/' as any);
+    router.dismissTo('/(app)/map' as RelativePathString);
+    setMapFocusIncident(selectedIncident.id);
   };
 
   const getCreatedByName = () => {
-    if (incident?.reportedBy) {
-      return incident.reportedBy;
+    if (selectedIncident?.reportedBy) {
+      return selectedIncident.reportedBy;
     }
 
-    if (incident?.createdBy) {
+    if (selectedIncident?.createdBy) {
       const user = usersState.users.find(
-        (user) => user.id === incident.createdBy
+        (user) => user.id === selectedIncident.createdBy
       );
       if (user) {
         return user.fullName || user.username || 'Unknown User';
@@ -279,17 +283,20 @@ export default function IncidentDetailScreen() {
         </Text>
       </View>
       <View style={{ flex: 1, alignItems: 'flex-end' }}>
-        <Text
-          variant="bodyMedium"
-          style={{
-            color: theme.colors.text.secondary,
-            textAlign: 'right',
-            textDecorationLine: onPress ? 'underline' : 'none',
-          }}
+        <TouchableOpacity
           onPress={onPress}
         >
-          {value}
-        </Text>
+          <Text
+            variant="bodyMedium"
+            style={{
+              color: theme.colors.text.secondary,
+              textAlign: 'right',
+              textDecorationLine: onPress ? 'underline' : 'none',
+            }}
+          >
+            {value}
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -324,7 +331,7 @@ export default function IncidentDetailScreen() {
     </View>
   );
 
-  if (incidentsState.isLoadingDetails) {
+  if (isLoadingDetails) {
     return (
       <Background
         style={{ flex: 1, backgroundColor: theme.colors.background.primary }}
@@ -350,7 +357,7 @@ export default function IncidentDetailScreen() {
     );
   }
 
-  if (incidentsState.error) {
+  if (error) {
     return (
       <Background>
         <AppBar
@@ -368,14 +375,14 @@ export default function IncidentDetailScreen() {
               textAlign: 'center',
             }}
           >
-            {incidentsState.error}
+            {error}
           </Text>
         </Center>
       </Background>
     );
   }
 
-  if (!incident) {
+  if (!selectedIncident) {
     return (
       <Background>
         <AppBar
@@ -403,9 +410,9 @@ export default function IncidentDetailScreen() {
   const pillFields = [
     {
       label: 'Type',
-      value: getTypeLabel(incident?.type),
-      backgroundColor: getTypeBackgroundColor(incident?.type),
-      textColor: getTypeColor(incident?.type),
+      value: getTypeLabel(selectedIncident?.type),
+      backgroundColor: getTypeBackgroundColor(selectedIncident?.type),
+      textColor: getTypeColor(selectedIncident?.type),
     },
     {
       label: 'Priority',
@@ -415,9 +422,9 @@ export default function IncidentDetailScreen() {
     },
     {
       label: 'Status',
-      value: getStatusLabel(incident?.status),
-      backgroundColor: getStatusBackgroundColor(incident?.status),
-      textColor: getStatusColor(incident?.status),
+      value: getStatusLabel(selectedIncident?.status),
+      backgroundColor: getStatusBackgroundColor(selectedIncident?.status),
+      textColor: getStatusColor(selectedIncident?.status),
     },
   ];
 
@@ -430,15 +437,15 @@ export default function IncidentDetailScreen() {
     {
       icon: iconNames.location,
       label: 'Location',
-      value: incident.location?.coordinates
-        ? `${incident.location.coordinates[1]?.toFixed(6)}, ${incident.location.coordinates[0]?.toFixed(6)}`
+      value: selectedIncident.location?.coordinates
+        ? `${selectedIncident.location.coordinates[1]?.toFixed(6)}, ${selectedIncident.location.coordinates[0]?.toFixed(6)}`
         : 'Not specified',
       onPress: handleViewLocation,
     },
     {
       icon: iconNames.clock_fast_forward,
       label: 'Reported at',
-      value: formatDate(incident.createdAt),
+      value: formatDate(selectedIncident.createdAt),
     },
   ];
 
@@ -477,7 +484,7 @@ export default function IncidentDetailScreen() {
               }}
             >
               <Icon
-                name={getIncidentTypeIcon(incident.type)}
+                name={getIncidentTypeIcon(selectedIncident.type)}
                 size={16}
                 color={getIncidentTypeColor(theme)}
               />
@@ -490,7 +497,7 @@ export default function IncidentDetailScreen() {
                 marginLeft: 8,
               }}
             >
-              {incident.name}
+              {selectedIncident.name}
             </Text>
           </View>
 
@@ -532,7 +539,7 @@ export default function IncidentDetailScreen() {
         </View>
 
         {/* Action Section (if incident has tasks) */}
-        {incident.description && (
+        {selectedIncident.description && (
           <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
             <Text
               variant="h4"
@@ -550,15 +557,15 @@ export default function IncidentDetailScreen() {
                 color: theme.colors.text.tertiary,
               }}
             >
-              {incident.description}
+              {selectedIncident.description}
             </Text>
           </View>
         )}
 
         {/* Attachments Section */}
-        {incident.fileIds && incident.fileIds.length > 0 && (
+        {selectedIncident.fileIds && selectedIncident.fileIds.length > 0 && (
           <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
-            <AttachmentsGallery fileIds={incident.fileIds} gap={12} />
+            <AttachmentsGallery fileIds={selectedIncident.fileIds} gap={12} />
           </View>
         )}
       </ScrollView>

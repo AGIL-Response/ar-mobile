@@ -2,7 +2,25 @@ import axios from 'axios';
 
 // Create axios instance with default config
 export const apiClient = axios.create({
-  baseURL: 'https://dev.agilres.net/be',
+  baseURL: 'https://dev.agilres.net/api/be',
+  headers: {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  },
+  withCredentials: false,
+});
+
+export const mediaApiClient = axios.create({
+  baseURL: 'https://dev.agilres.net/api/media',
+  headers: {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  },
+  withCredentials: false,
+});
+
+export const chatApiClient = axios.create({
+  baseURL: 'https://dev.agilres.net/api/chat',
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
@@ -69,22 +87,16 @@ const requestSuccessInterceptor = (config: any) => {
 };
 
 const responseSuccessInterceptor = (response: any) => {
-  // Log successful response
-  console.log(
-    `\x1b[32m${getTimestamp()} ✅ Response [${response.status}]: ${response.config.method?.toUpperCase()} ${response.config.url}\x1b[0m`
-  );
-  console.log(
-    `\x1b[32m${getTimestamp()} 📦 Response Data: ${JSON.stringify(response.data, undefined, 2)}\x1b[0m`
-  );
+
   return response;
 };
 
 const responseFailedInterceptor = (error: any) => {
   // Log error response
-  console.log(
-    `\x1b[31m${getTimestamp()} ❌ Error [${error.response?.status || 'No Status'}]: ${error.config?.method?.toUpperCase()} ${error.config?.url}\x1b[0m`
-  );
   if (error.response?.data) {
+    console.log(
+      `\x1b[31m${getTimestamp()} ❌ Error [${error.response?.status || 'No Status'}]: ${error.config?.method?.toUpperCase()} ${error.config?.url}\x1b[0m`
+    );
     console.log(
       `\x1b[31m${getTimestamp()} 📦 Error Data: ${JSON.stringify(error.response.data, undefined, 2)}\x1b[0m`
     );
@@ -104,13 +116,22 @@ const responseFailedInterceptor = (error: any) => {
 
 // Add request interceptor for auth token and logging
 apiClient.interceptors.request.use(requestSuccessInterceptor);
+mediaApiClient.interceptors.request.use(requestSuccessInterceptor);
+chatApiClient.interceptors.request.use(requestSuccessInterceptor);
 
 // Add response interceptor for error handling and logging
 apiClient.interceptors.response.use(
   responseSuccessInterceptor,
   responseFailedInterceptor
 );
-
+mediaApiClient.interceptors.response.use(
+  responseSuccessInterceptor,
+  responseFailedInterceptor
+);
+chatApiClient.interceptors.response.use(
+  responseSuccessInterceptor,
+  responseFailedInterceptor
+);
 // API response type
 export type ApiResponse<T> = {
   data: T;

@@ -85,6 +85,12 @@ export default function AppLayout() {
         }}
       />
       <Stack.Screen
+        name="map"
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
         name="chat/[roomId]"
         options={{
           headerShown: false,

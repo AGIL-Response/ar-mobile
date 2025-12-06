@@ -44,7 +44,7 @@ const formatTimeAgo = (dateString: string): string => {
 
 export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
   const theme = useTheme();
-  const usersState = useUsersStore();
+  const users = useUsersStore((state) => state.users);
 
   const handlePress = () => {
     onPress?.(incident);
@@ -61,7 +61,7 @@ export function IncidentListCard({ incident, onPress }: IncidentCardProps) {
     }
 
     if (incident.createdBy) {
-      const user = usersState.users.find(
+      const user = users.find(
         (user) => user.id === incident.createdBy
       );
       if (user) {

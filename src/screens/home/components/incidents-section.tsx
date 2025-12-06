@@ -10,21 +10,20 @@ import { TouchableOpacity } from 'react-native';
 import type { Incident } from '@/api/incidents/types';
 import { Text, View } from '@/components';
 import { IncidentListCard } from '@/screens/incidents/components';
-import { useAuthStore } from '@/stores/auth';
 import { useIncidentsStore } from '@/stores/incidents';
-import { useUsersStore } from '@/stores/users';
 import { Palette, useTheme } from '@/theme';
 
 export function IncidentsSection() {
   const theme = useTheme();
   const router = useRouter();
-  const authState = useAuthStore();
-  const incidentsState = useIncidentsStore();
-  const usersState = useUsersStore();
+  const fetchIncidents = useIncidentsStore((state) => state.actions.fetchIncidents);
+  const setSelectedIncident = useIncidentsStore((state) => state.actions.setSelectedIncident);
+  const isLoading = useIncidentsStore((state) => state.isLoading);
+  const incidents = useIncidentsStore((state) => state.incidents);
 
   useEffect(() => {
     // Fetch incidents with default parameters (fire type, reported status)
-    incidentsState.actions.fetchIncidents({
+    fetchIncidents({
       type: 'fire',
       status: 'reported'
     });
@@ -35,11 +34,11 @@ export function IncidentsSection() {
   };
 
   const handleIncidentPress = (incident: Incident) => {
-    incidentsState.actions.setSelectedIncident(incident);
+    setSelectedIncident(incident);
     router.navigate(`/incidents/${incident.id}`);
   };
 
-  if (incidentsState.isLoading && incidentsState.incidents.length === 0) {
+  if (isLoading && incidents.length === 0) {
     return (
       <View style={{ gap: 16 }}>
         <View
@@ -107,12 +106,12 @@ export function IncidentsSection() {
 
       {/* Incident Cards */}
       <View style={{ gap: 12 }}>
-        {incidentsState.incidents.length === 0 ? (
+        {incidents.length === 0 ? (
           <Text variant="body" style={{ color: theme.colors.text.muted }}>
             No incidents found
           </Text>
         ) : (
-          incidentsState.incidents.slice(0, 3).map((incident) => (
+          incidents.slice(0, 3).map((incident) => (
             <IncidentListCard
               key={incident.id}
               incident={incident}

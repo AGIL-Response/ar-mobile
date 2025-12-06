@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "169100759987",
+    "project_id": "agil-response",
+    "storage_bucket": "agil-response.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:169100759987:android:bd1272aed1b515db3771c6",
+        "android_client_info": {
+          "package_name": "com.agilresponse"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAe23j9hb6bhuikX1Db5MWsln4PfENHKqo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:169100759987:android:b7b36425c20e57323771c6",
+        "android_client_info": {
+          "package_name": "com.agilresponse.development"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAe23j9hb6bhuikX1Db5MWsln4PfENHKqo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

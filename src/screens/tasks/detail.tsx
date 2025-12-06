@@ -5,7 +5,7 @@
 
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ScrollView, TouchableOpacity } from 'react-native';
+import { ScrollView } from 'react-native';
 
 import type { Task } from '@/api/tasks/types';
 import {
@@ -24,7 +24,6 @@ import {
   useModal,
   View,
 } from '@/components';
-import { useAuthStore } from '@/stores/auth';
 import { useTasksStore } from '@/stores/tasks';
 import { Palette, useTheme } from '@/theme';
 
@@ -81,8 +80,13 @@ export const formatDateTime = (dateString?: string) => {
 export default function TaskDetailScreen() {
   const theme = useTheme();
   const { id } = useLocalSearchParams();
-  const authState = useAuthStore();
-  const tasksState = useTasksStore();
+  const task = useTasksStore((state) => state.selectedTask);
+  const isLoadingDetail = useTasksStore((state) => state.isLoadingDetail);
+  const taskId = id as string;
+  const updateTaskStatus = useTasksStore((state) => state.actions.updateTaskStatus);
+  const updateChecklistItem = useTasksStore((state) => state.actions.updateChecklistItem);
+  const fetchTask = useTasksStore((state) => state.actions.fetchTask);
+  const clearSelectedTask = useTasksStore((state) => state.actions.clearSelectedTask);
   const {
     ref: statusModalRef,
     present: presentStatusModal,
@@ -90,9 +94,6 @@ export default function TaskDetailScreen() {
   } = useModal();
   const [isMarkDoneModalVisible, setIsMarkDoneModalVisible] = useState(false);
 
-  const selectedTenant = authState.selectedTenant;
-  const task = tasksState.selectedTask;
-  const taskId = id as string;
   const [selectedStatus, setSelectedStatus] = React.useState<
     Task['status'] | ''
   >('');
@@ -100,12 +101,12 @@ export default function TaskDetailScreen() {
 
   useEffect(() => {
     if (taskId) {
-      tasksState.actions.fetchTask(taskId);
+      fetchTask(taskId);
     }
 
     // Clear selected task when component unmounts
     return () => {
-      tasksState.actions.clearSelectedTask();
+      clearSelectedTask();
     };
   }, [taskId]);
 
@@ -115,7 +116,7 @@ export default function TaskDetailScreen() {
 
   const handleStatusUpdate = async (status: Task['status']) => {
     if (taskId) {
-      await tasksState.actions.updateTaskStatus(taskId as string, status);
+      await updateTaskStatus(taskId as string, status);
     }
   };
 
@@ -129,7 +130,7 @@ export default function TaskDetailScreen() {
       return;
     }
 
-    await tasksState.actions.updateChecklistItem(
+    await updateChecklistItem(
       checklistId,
       isCompleted,
       description
@@ -143,7 +144,7 @@ export default function TaskDetailScreen() {
 
   const handleStatusChange = async () => {
     if (selectedStatus && taskId) {
-      await tasksState.actions.updateTaskStatus(
+      await updateTaskStatus(
         taskId,
         selectedStatus as Task['status']
       );
@@ -153,7 +154,7 @@ export default function TaskDetailScreen() {
 
   const handleMarkAsDone = async () => {
     if (taskId) {
-      await tasksState.actions.updateTaskStatus(taskId, 'completed');
+      await updateTaskStatus(taskId, 'completed');
       setIsMarkDoneModalVisible(false);
     }
   };
@@ -251,7 +252,7 @@ export default function TaskDetailScreen() {
     </View>
   );
 
-  if (tasksState.isLoadingDetail) {
+  if (isLoadingDetail) {
     return (
       <Background>
         <AppBar

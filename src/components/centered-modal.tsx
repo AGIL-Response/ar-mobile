@@ -19,10 +19,11 @@ import { X } from './icons';
 interface CenteredModalProps {
   visible: boolean;
   onClose: () => void;
-  title?: string;
+  title?:  React.JSX.Element | string;
   subText?: string;
   children?: React.ReactNode;
   showCloseButton?: boolean;
+  titleAlign?: 'left' | 'center' | 'right';
 }
 
 export function CenteredModal({
@@ -32,9 +33,9 @@ export function CenteredModal({
   subText,
   children,
   showCloseButton = true,
+  titleAlign = 'left',
 }: CenteredModalProps) {
   const theme = useTheme();
-
   return (
     <Modal
       visible={visible}
@@ -51,33 +52,34 @@ export function CenteredModal({
           ]}
           onPress={(e) => e.stopPropagation()}
         >
+          {showCloseButton && (
+            <TouchableOpacity
+              onPress={onClose}
+              style={[
+                styles.closeButton,
+                { backgroundColor: theme.colors.button.ghost },
+              ]}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <X width={20} height={20} color={theme.colors.text.icon} />
+            </TouchableOpacity>
+          )}
           {/* Header */}
-          {(title || showCloseButton) && (
-            <View style={styles.header}>
+          {title && (
+            <View style={[styles.header, { justifyContent: titleAlign === 'center' ? 'center' : 'flex-start' }]}>
               {title && (
                 <Text
                   variant="h4"
                   style={[
-                    styles.title,
                     {
                       color: theme.colors.text.primary, // Purple color for header (matching design)
                       fontFamily: theme.fonts.goldmanRegular,
+                      textAlign: titleAlign,
                     },
                   ]}
                 >
                   {title}
                 </Text>
-              )}
-              {showCloseButton && (
-                <TouchableOpacity
-                  onPress={onClose}
-                  style={[
-                    styles.closeButton,
-                    { backgroundColor: theme.colors.button.ghost },
-                  ]}
-                >
-                  <X width={20} height={20} color={theme.colors.text.icon} />
-                </TouchableOpacity>
               )}
             </View>
           )}
@@ -127,20 +129,19 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     marginBottom: 16,
   },
-  title: {
-    flex: 1,
-  },
   closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
     width: 40,
     height: 40,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 12,
+    zIndex: 10,
   },
   content: {
     width: '100%',

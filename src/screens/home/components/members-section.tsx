@@ -1,47 +1,42 @@
-import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 
 import { Avatar, Text, View } from '@/components';
 import { Modal, useModal } from '@/components/modal';
-import { FontFamilies } from '@/lib/fonts';
 import { MembersScreen } from '@/screens/members';
 import { useAuthStore } from '@/stores/auth';
 import { useUsersStore } from '@/stores/users';
+import { useMapStore } from '@/stores/map';
 import { useTheme } from '@/theme';
 import type { User } from '@/types';
 
 export function MembersSection(): React.JSX.Element {
-  const router = useRouter();
   const theme = useTheme();
-  const authState = useAuthStore();
-  const usersState = useUsersStore();
+  const teamId = useAuthStore((state) => state.selectedTeam?.id);
+  const users = useUsersStore((state) => state.users);
+  const isLoading = useUsersStore((state) => state.isLoading);
+  const fetchTeamMembers = useUsersStore((state) => state.actions.fetchTeamMembers);
+  const flatViewFocusUserId = useMapStore((state) => state.flatViewFocusUserId);
   const styles = createStyles(theme);
   const { ref: membersModalRef, present: presentMembers } = useModal();
-
-  const teamId = authState.selectedTeam?.id;
-
   useEffect(() => {
     if (teamId) {
-      usersState.actions.fetchTeamMembers(teamId);
+      fetchTeamMembers(teamId);
     }
   }, [teamId]);
 
   // Open members modal when a user is focused from map
   useEffect(() => {
-    if (usersState.flatViewFocusUserId) {
+    if (flatViewFocusUserId) {
       presentMembers();
     }
-  }, [usersState.flatViewFocusUserId, presentMembers]);
+  }, [flatViewFocusUserId]);
 
-  const displayUsers = usersState.users.slice(0, 4);
-  const hasMore = usersState.users.length > 1;
-  const moreCount = usersState.users.length - 1;
+  const displayUsers = users.slice(0, 4);
 
   const handleViewAll = () => {
     presentMembers();
   };
-
 
   const getInitials = (user: User) => {
     if (user.fullName) {
@@ -55,7 +50,7 @@ export function MembersSection(): React.JSX.Element {
     return user.username?.charAt(0)?.toUpperCase() || 'U';
   };
 
-  if (usersState.isLoading && usersState.users.length === 0) {
+  if (isLoading && users.length === 0) {
     return (
       <View style={styles.container}>
         <Text variant="caption" style={styles.loadingText}>
@@ -65,7 +60,7 @@ export function MembersSection(): React.JSX.Element {
     );
   }
 
-  if (usersState.users.length === 0) {
+  if (users.length === 0) {
     return <></>;
   }
 

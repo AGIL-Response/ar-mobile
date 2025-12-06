@@ -10,18 +10,20 @@ import Mapbox, {
 } from '@rnmapbox/maps';
 import { router, type RelativePathString } from 'expo-router';
 import React, {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
 } from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { Avatar, Center, Icon, Text, View, iconNames } from '@/components';
 import { getCoordinate } from '@/screens/incidents/utils';
 import { useIncidentsStore } from '@/stores/incidents';
 import { useUsersStore } from '@/stores/users';
+import { useMapStore } from '@/stores/map';
 import { type Theme, useTheme } from '@/theme';
-
-import type { IncidentCoordinate, UserCoordinate } from '../types';
+import { Pressable } from 'react-native-gesture-handler';
+import type { IncidentCoordinate, UserCoordinate } from '../../map/types';
 
 Mapbox.setAccessToken(
   'sk.eyJ1IjoibGFpem4iLCJhIjoiY21lamxqZzh4MDQ0bjJrcXZ0dWRiZHAzNyJ9.NU6sHZrIkDuDpHCEManSJQ'
@@ -29,21 +31,23 @@ Mapbox.setAccessToken(
 
 export function MapView() {
   const theme = useTheme();
-  const styles = createStyles(theme);
-  const incidentsState = useIncidentsStore();
-  const usersState = useUsersStore();
-
-  const { fetchIncidents, setMapFocusIncident } = incidentsState.actions;
-  const mapFocusIncidentId = incidentsState.mapFocusIncidentId;
-
-  const { setMapFocusUserId, setFlatViewFocusUserId } = usersState.actions;
-  const mapFocusUserId = usersState.mapFocusUserId;
-
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  const incidents = useIncidentsStore((state) => state.incidents);
+  const users = useUsersStore((state) => state.users);
+  const incidentsLoading = useIncidentsStore((state) => state.isLoading);
+  const usersLoading = useUsersStore((state) => state.isLoading);
+  const isLoading = incidentsLoading || usersLoading;
+  const mapFocusIncidentId = useMapStore((state) => state.mapFocusIncidentId);
+  const mapFocusUserId = useMapStore((state) => state.mapFocusUserId);
+  const setMapFocusIncident = useMapStore((state) => state.actions.setMapFocusIncident);
+  const setMapFocusUserId = useMapStore((state) => state.actions.setMapFocusUserId);
+  const setFlatViewFocusUserId = useMapStore((state) => state.actions.setFlatViewFocusUserId);
+  const fetchIncidents = useIncidentsStore((state) => state.actions.fetchIncidents);
+  const isMapReady = useMapStore((state) => state.isMapReady);
+  const setIsMapReady = useMapStore((state) => state.actions.setIsMapReady);
   const cameraRef = useRef<Camera>(null);
-  const hasCenteredDefaultRef = useRef(false);
-
   const coordinates = useMemo<IncidentCoordinate[]>(() => {
-    return incidentsState.incidents
+    return incidents
       ?.filter((incident) => incident.location?.coordinates) // only with coords
       .map((incident) => ({
         id: incident.id,
@@ -53,10 +57,10 @@ export function MapView() {
         ],
       }))
       .filter((item) => Boolean(item.coordinates));
-  }, [incidentsState.incidents]);
+  }, [incidents]);
 
   const usersCoordinates = useMemo<UserCoordinate[]>(() => {
-    return usersState.users
+    return users
       ?.filter((user) => user.location?.coordinates && user.avatarId) // only with coords and avatarId
       .map((user) => ({
         id: user.id,
@@ -68,93 +72,93 @@ export function MapView() {
         ],
       }))
       .filter((item) => Boolean(item.coordinates));
-  }, [usersState.users]);
+  }, [users]);
 
   useEffect(() => {
     fetchIncidents({});
-  }, [fetchIncidents]);
+  }, []);
 
-  const handleMarkerPress = (incidentId: string) => {
-    router.navigate(`/incidents/${incidentId}` as any);
-  };
+  const handleMarkerPress = useCallback((incidentId: string) => {
+    router.replace(`/incidents/${incidentId}` as RelativePathString);
+  }, []);
 
-  const handleUserMarkerPress = (userId: string) => {
+  const handleUserMarkerPress = useCallback((userId: string) => {
+    router.replace('/' as RelativePathString);
     setFlatViewFocusUserId(userId);
-    router.navigate('/' as RelativePathString);
-  };
+  }, [setFlatViewFocusUserId]);
 
   useEffect(() => {
-    if (!cameraRef.current) {
+    if (!isMapReady) {
       return;
     }
 
-    if (mapFocusIncidentId) {
-      const target = coordinates.find(
-        (coordinate) => coordinate.id === mapFocusIncidentId
-      );
-
-      if (target && cameraRef.current) {
-        cameraRef.current.setCamera({
-          centerCoordinate: target.coordinates,
-          zoomLevel: 15,
-          animationDuration: 1000,
-        });
-
-        hasCenteredDefaultRef.current = true;
-        requestAnimationFrame(() => {
-          setMapFocusIncident(null);
-        });
+    const timeout = setTimeout(() => {
+      if (!cameraRef.current) {
+        return;
       }
-      return;
-    }
-
-    if (mapFocusUserId) {
-      const target = usersCoordinates.find(
-        (coordinate) => coordinate.id === mapFocusUserId
-      );
-
-      if (target && cameraRef.current) {
-        cameraRef.current.setCamera({
-          centerCoordinate: target.coordinates,
-          zoomLevel: 15,
-          animationDuration: 1000,
-        });
-        hasCenteredDefaultRef.current = true;
-        requestAnimationFrame(() => {
-          setMapFocusUserId(null);
-        });
+      if (!cameraRef.current) {
+        return;
       }
-      return;
-    }
-
-    if (
-      !hasCenteredDefaultRef.current &&
-      (coordinates.length > 0 || usersCoordinates.length > 0)
-    ) {
-      const defaultCoordinate =
-        coordinates[0]?.coordinates || usersCoordinates[0]?.coordinates;
-      if (defaultCoordinate && cameraRef.current) {
-        cameraRef.current.setCamera({
-          centerCoordinate: defaultCoordinate,
-          zoomLevel: 15,
-          animationDuration: 1000,
-        });
-        hasCenteredDefaultRef.current = true;
+  
+      if (mapFocusIncidentId) {
+        const target = coordinates.find(
+          (coordinate) => coordinate.id === mapFocusIncidentId
+        );
+  
+        if (target && cameraRef.current) {
+          cameraRef.current.setCamera({
+            centerCoordinate: target.coordinates,
+            zoomLevel: 20,
+            animationDuration: 500,
+          });
+        }
+        return;
       }
-    }
+  
+      if (mapFocusUserId) {
+        const target = usersCoordinates.find(
+          (coordinate) => coordinate.id === mapFocusUserId
+        );
+  
+        if (target && cameraRef.current) {
+          cameraRef.current.setCamera({
+            centerCoordinate: target.coordinates,
+            zoomLevel: 20,
+            animationDuration: 500,
+          });
+        }
+        return;
+      }
+  
+      const hasData = coordinates.length > 0 || usersCoordinates.length > 0;
+      if (hasData) {
+        const defaultCoordinate =
+          coordinates[0]?.coordinates || usersCoordinates[0]?.coordinates;
+        if (defaultCoordinate && cameraRef.current) {
+          cameraRef.current.setCamera({
+            centerCoordinate: defaultCoordinate,
+            zoomLevel: 20,
+            animationDuration: 500,
+          });
+        }
+      }
+    }, 100);
+    return () => clearTimeout(timeout);
   }, [
+    isMapReady,
     coordinates,
     usersCoordinates,
     mapFocusIncidentId,
     mapFocusUserId,
-    setMapFocusIncident,
-    setMapFocusUserId,
   ]);
 
-  const isLoading =
-    incidentsState.isLoading ||
-    usersState.isLoading ||
-    (!coordinates.length && !usersCoordinates.length);
+  useEffect(() => {
+    return () => {
+      setMapFocusIncident(null);
+      setMapFocusUserId(null);
+    };
+  }, [setMapFocusIncident, setMapFocusUserId]);
+
 
   if (isLoading) {
     return (
@@ -177,21 +181,24 @@ export function MapView() {
         <MapboxMapView
           style={styles.map}
           styleURL={theme.isDark ? Mapbox.StyleURL.Dark : Mapbox.StyleURL.Light}
+          onDidFinishLoadingMap={() => {
+            setIsMapReady(true);
+          }}
         >
-          <Camera ref={cameraRef} />
+          <Camera ref={cameraRef} zoomLevel={0}/>
 
           {coordinates.map((coordinate) => (
             <MarkerView
               key={`incident-marker-${coordinate.id}`}
               coordinate={coordinate.coordinates}
               allowOverlapWithPuck={false}
+              allowOverlap
             >
-              <TouchableOpacity
+              <Pressable
                 onPress={() => handleMarkerPress(coordinate.id)}
-                activeOpacity={0.8}
               >
-                <View style={styles.incidentMarker} collapsable={false}>
-                  <View style={styles.incidentOuterRing} />
+                <View style={styles.incidentMarker}>
+                  <View style={styles.incidentOuterRing}/>
                   <View style={styles.incidentInnerCircle}>
                     <Icon
                       name={iconNames.incident}
@@ -200,7 +207,7 @@ export function MapView() {
                     />
                   </View>
                 </View>
-              </TouchableOpacity>
+              </Pressable>
             </MarkerView>
           ))}
 
@@ -209,8 +216,9 @@ export function MapView() {
               key={`user-marker-${coordinate.id}`}
               coordinate={coordinate.coordinates}
               allowOverlapWithPuck={false}
+              allowOverlap
             >
-              <TouchableOpacity
+              <Pressable
                 onPress={() => handleUserMarkerPress(coordinate.id)}
               >
                 <Avatar
@@ -219,7 +227,7 @@ export function MapView() {
                   size="small"
                   isMapAvatar={true}
                 />
-              </TouchableOpacity>
+              </Pressable>
             </MarkerView>
           ))}
         </MapboxMapView>

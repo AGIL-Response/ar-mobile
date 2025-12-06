@@ -8,7 +8,6 @@ import React from 'react';
 import { TouchableOpacity } from 'react-native';
 
 import { Text, View } from '@/components';
-import { useAuthStore } from '@/stores/auth';
 import { useTasksStore } from '@/stores/tasks';
 import { Palette, useTheme } from '@/theme';
 import { TaskCard } from '@/screens/tasks/components/task-card';
@@ -17,11 +16,13 @@ import { FontFamilies } from '@/lib/fonts';
 export function TasksSection() {
   const theme = useTheme();
   const router = useRouter();
-  const authState = useAuthStore();
-  const tasksState = useTasksStore();
+  const tasks = useTasksStore((state) => state.tasks);
+  const pendingTasks = useTasksStore((state) => state.pendingTasks);
+  const isLoading = useTasksStore((state) => state.isLoading);
+  const setActiveTab = useTasksStore((state) => state.actions.setActiveTab);
 
   const handleViewAll = () => {
-    tasksState.actions.setActiveTab('pending');
+    setActiveTab('pending');
     router.navigate('/tasks');
   };
 
@@ -29,7 +30,7 @@ export function TasksSection() {
     router.navigate(`/task/${taskId}`);
   };
 
-  if (tasksState.isLoading && tasksState.tasks.length === 0) {
+  if (isLoading && tasks.length === 0) {
     return (
       <View style={{ gap: 16 }}>
         <View
@@ -99,7 +100,7 @@ export function TasksSection() {
 
       {/* Task Cards */}
       <View style={{ gap: 12 }}>
-        {tasksState.pendingTasks.length === 0 ? (
+        {pendingTasks.length === 0 ? (
           <Text
             variant="bodyMedium"
             style={{ color: theme.colors.text.secondary }}
@@ -107,7 +108,7 @@ export function TasksSection() {
             No on-going tasks found
           </Text>
         ) : (
-          tasksState.pendingTasks
+          pendingTasks
             .slice(0, 3)
             .map((task) => (
               <TaskCard

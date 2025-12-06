@@ -8,30 +8,24 @@ import React, { useEffect } from 'react';
 import { Avatar, Icon, iconNames, Text, View } from '@/components';
 import { useTheme } from '@/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import useAuthStore from '@/stores/auth';
-import { TouchableOpacity } from 'react-native';
+import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'expo-router';
 import { useNotificationsStore } from '@/stores/notifications';
+import { TouchableOpacity } from 'react-native';
+import { SosSection } from './sos-section';
 
-interface AppHeaderProps {
-  title: string;
-  showRightSection?: boolean;
-  showBackButton?: boolean;
-}
 
-export function AppHeader({ title, showRightSection = true, showBackButton = false }: AppHeaderProps) {
+export function AppHeader() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const authState = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const router = useRouter();
-  const notificationsState = useNotificationsStore();
-
-  const { unreadCount } = notificationsState;
-  const user = authState.user;
+  const getUnreadCount = useNotificationsStore((state) => state.actions.getUnreadCount);
+  const unreadCount = useNotificationsStore((state) => state.unreadCount);
 
   useEffect(() => {
-    notificationsState.actions.getUnreadCount();
-  }, [notificationsState.actions]);
+    getUnreadCount();
+  }, []);
 
   return (
     <View
@@ -46,105 +40,76 @@ export function AppHeader({ title, showRightSection = true, showBackButton = fal
         backgroundColor: theme.colors.background.secondary,
       }}
     >
-      {/* Back Button */}
-      {showBackButton && (
-        <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 8 }}>
-          <View
-            style={{
-              width: 32,
-              height: 32,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <Icon
-              name={iconNames.chevron_left}
-              size={24}
-              color={theme.colors.text.primary}
-            />
-          </View>
-        </TouchableOpacity>
-      )}
-
-      {/* Title Section */}
-      <View style={{ flex: 1 }}>
-        <Text
-          variant="h3"
-          style={{
-            color: theme.colors.text.primary,
-            fontFamily: theme.fonts.goldmanRegular,
-          }}
-        >
-          {title}
-        </Text>
+      <View style={{ flex: 1, gap: 8 }}>
+        <View style={{ maxWidth: 55, borderRadius: 100, overflow: 'hidden' }}>
+          <SosSection />
+        </View>
       </View>
 
       {/* Right Section */}
-      {showRightSection && (
-        <View
-          style={{
-            gap: 8,
-            alignItems: 'center',
-            flexDirection: 'row',
-          }}
-        >
-          <TouchableOpacity onPress={() => router.navigate('/notifications')}>
-            <View
-              style={{
-                width: 32,
-                justifyContent: 'center',
-                alignItems: 'center',
-                borderRadius: 100,
-                height: 32,
-                overflow: 'hidden',
-              }}
-            >
-              <Icon
-                name={iconNames.notification_badge}
-                size={20}
-                color={theme.colors.text.icon}
-              />
-              {unreadCount > 0 && (
-                <View
-                  style={{
-                    position: 'absolute',
-                    top: 5,
-                    right: 5,
-                    backgroundColor: theme.colors.semantic.error,
-                    borderRadius: 5,
-                    width: 10,
-                    height: 10,
-                    borderWidth: 1,
-                    borderColor: theme.colors.semantic.white,
-                  }}
-                ></View>
-              )}
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => router.navigate('/profile')}>
-            <View
-              style={{
-                width: 32,
-                justifyContent: 'center',
-                alignItems: 'center',
-                borderRadius: 100,
-                height: 32,
-                overflow: 'hidden',
-              }}
-            >
-              <Avatar
-                fileId={user?.avatarId}
-                size="small"
+      <View
+        style={{
+          gap: 8,
+          alignItems: 'center',
+          flexDirection: 'row',
+        }}
+      >
+        <TouchableOpacity onPress={() => router.navigate('/notifications')}>
+          <View
+            style={{
+              width: 32,
+              justifyContent: 'center',
+              alignItems: 'center',
+              borderRadius: 100,
+              height: 32,
+              overflow: 'hidden',
+            }}
+          >
+            <Icon
+              name={iconNames.notification_badge}
+              size={20}
+              color={theme.colors.text.icon}
+            />
+            {unreadCount > 0 && (
+              <View
                 style={{
-                  borderWidth: 2,
+                  position: 'absolute',
+                  top: 5,
+                  right: 5,
+                  backgroundColor: theme.colors.semantic.error,
+                  borderRadius: 5,
+                  width: 10,
+                  height: 10,
+                  borderWidth: 1,
                   borderColor: theme.colors.semantic.white,
                 }}
-              />
-            </View>
-          </TouchableOpacity>
-        </View>
-      )}
+              ></View>
+            )}
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => router.navigate('/profile')}>
+          <View
+            style={{
+              width: 32,
+              justifyContent: 'center',
+              alignItems: 'center',
+              borderRadius: 100,
+              height: 32,
+              overflow: 'hidden',
+            }}
+          >
+            <Avatar
+              fileId={user?.avatarId}
+              size="small"
+              style={{
+                borderWidth: 2,
+                borderColor: theme.colors.semantic.white,
+              }}
+            />
+          </View>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }

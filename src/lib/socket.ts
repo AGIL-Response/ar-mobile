@@ -17,7 +17,7 @@ export interface SocketLocationPayload {
 export interface SocketLocationUpdateEvent {
   event: string;
   type: string;
-  features: Array<{
+  features: {
     type: string;
     geometry: {
       coordinates: [number, number, number];
@@ -30,7 +30,7 @@ export interface SocketLocationUpdateEvent {
         batteryPercentage?: number;
       };
     };
-  }>;
+  }[];
 }
 
 /**
@@ -41,8 +41,8 @@ export interface SocketLocationUpdateEvent {
 export const initMapSocket = (accessToken: string): Socket => {
   const baseUrl = 'https://dev.agilres.net';
 
-  return io(`${baseUrl}`, {
-    path: '/be/ws',
+  return io(baseUrl, {
+    path: '/api/be/ws',
     withCredentials: true,
     auth: {
       authorization: `Bearer ${accessToken}`,
@@ -63,8 +63,6 @@ export const handleListenMapSocket = (
   // Listen for location updates from other users
   socket.on('maps', (data: any) => {
     try {
-      console.log('📩 Received socket data:', data);
-
       // Handle the data directly as an object (like web app)
       if (
         data &&
