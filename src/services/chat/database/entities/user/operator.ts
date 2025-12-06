@@ -13,13 +13,6 @@ export async function upsertUser(userData: ChatUser): Promise<User> {
   const userDataTransformed = chatUserToUserData(userData);
   const userId = userDataTransformed.userId;
 
-  console.log('💾 [UserOperator] Upserting user:', {
-    userId,
-    username: userData.username,
-    displayName: userData.displayName,
-    avatarUrl: userData.avatarUrl,
-  });
-
   // Check if user exists
   const existingUsers = await db
     .get<User>('users')
@@ -29,7 +22,6 @@ export async function upsertUser(userData: ChatUser): Promise<User> {
   const existingUser = existingUsers.length > 0 ? existingUsers[0] : null;
 
   if (existingUser) {
-    console.log('🔄 [UserOperator] Updating existing user:', userId);
     return await db.write(async () => {
       await existingUser.update((user) => {
         user.username = userDataTransformed.username;
@@ -44,7 +36,6 @@ export async function upsertUser(userData: ChatUser): Promise<User> {
       return existingUser;
     });
   } else {
-    console.log('➕ [UserOperator] Creating new user:', userId);
     return await db.write(async () => {
       const newUser = await db.get<User>('users').create((user) => {
         user.userId = userDataTransformed.userId;
@@ -57,7 +48,6 @@ export async function upsertUser(userData: ChatUser): Promise<User> {
           user.lastSeen = userDataTransformed.lastSeen;
         }
       });
-      console.log('✅ [UserOperator] User created successfully:', userId);
       return newUser;
     });
   }

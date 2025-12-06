@@ -12,7 +12,7 @@ export interface ChatRoom {
   id: string;
   name: string;
   description?: string;
-  type: 'direct' | 'group';
+  type: 'dm' | 'group';
   avatar?: string;
   isPrivate?: boolean;
   members: ChatUser[];

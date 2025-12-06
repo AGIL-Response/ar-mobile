@@ -73,12 +73,6 @@ export class ChatDbService {
    * Save or update multiple messages
    */
   async saveMessages(messages: ChatMessage[], roomId: string): Promise<void> {
-    console.log('💾 [DbService] Saving messages to DB:', {
-      count: messages.length,
-      roomId,
-      messageIds: messages.map(m => m.id).slice(0, 5),
-    });
-
     for (const message of messages) {
       try {
         await this.saveMessage(message, roomId);
@@ -86,8 +80,6 @@ export class ChatDbService {
         console.error('❌ [DbService] Failed to save message:', error, { messageId: message.id });
       }
     }
-
-    console.log('✅ [DbService] All messages saved to DB');
   }
 
   /**

@@ -18,18 +18,7 @@ export async function upsertMessage(messageData: ChatMessage, roomId: string): P
   // Upsert sender user if sender data is available
   if (messageData.sender) {
     try {
-      console.log('👤 [MessageOperator] Upserting sender for message:', {
-        messageId,
-        senderId: messageData.senderId,
-        sender: {
-          id: messageData.sender.id,
-          username: messageData.sender.username,
-          displayName: messageData.sender.displayName,
-          avatarUrl: messageData.sender.avatarUrl,
-        },
-      });
       await upsertUser(messageData.sender);
-      console.log('✅ [MessageOperator] Sender upserted successfully for message:', messageId);
     } catch (error) {
       console.error('❌ [MessageOperator] Failed to upsert sender user:', error, {
         messageId,
@@ -137,17 +126,6 @@ export function observeMessages(
           // Ascending: smaller time (older) comes first
           return timeA - timeB;
         });
-        
-        // Debug: log first and last message to verify sort order
-        if (sortedMessages.length > 0) {
-          const first = sortedMessages[0];
-          const last = sortedMessages[sortedMessages.length - 1];
-          console.log('📋 [MessageOperator] Message sort order:', {
-            total: sortedMessages.length,
-            first: { id: first.messageId, content: first.content?.substring(0, 20), time: first.createdAt?.toISOString() },
-            last: { id: last.messageId, content: last.content?.substring(0, 20), time: last.createdAt?.toISOString() },
-          });
-        }
         
         return Promise.all(sortedMessages.map((message) => messageToChatMessageFn(message)));
       })

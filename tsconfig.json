@@ -9,7 +9,9 @@
       "@assets/*": ["./assets/*"]
     },
     "esModuleInterop": true,
-    "checkJs": true
+    "checkJs": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
   },
   "exclude": [
     "node_modules",

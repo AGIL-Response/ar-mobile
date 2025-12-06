@@ -155,15 +155,6 @@ export class ChatSocketService {
     });
 
     this.socket.on('message:history:loaded', (data: { conversation_id: string; messages: any }) => {
-      console.log('📨 [SocketService] message:history:loaded received:', {
-        conversation_id: data.conversation_id,
-        messagesType: typeof data.messages,
-        isArray: Array.isArray(data.messages),
-        messagesLength: Array.isArray(data.messages) ? data.messages.length : 'N/A',
-        hasNestedMessages: data.messages && typeof data.messages === 'object' && 'messages' in data.messages,
-        rawData: JSON.stringify(data, null, 2),
-      });
-
       // Handle nested structure: data.messages.messages (server returns { messages: { messages: [...] } })
       let messagesArray: any[] = [];
       if (Array.isArray(data.messages)) {
@@ -176,8 +167,6 @@ export class ChatSocketService {
         // Fallback: try to extract from any structure
         messagesArray = [];
       }
-
-      console.log('📋 [SocketService] Processing messages array:', { count: messagesArray.length });
 
       // Transform messages to ChatMessage format using transformMessageToChatMessage utility
       const messages: ChatMessage[] = messagesArray
@@ -194,8 +183,6 @@ export class ChatSocketService {
           }
         })
         .filter((msg): msg is ChatMessage => msg !== null);
-
-      console.log('✅ [SocketService] Transformed messages:', { count: messages.length });
 
       this.eventHandlers.onMessageHistoryLoaded?.({
         conversation_id: data.conversation_id,
@@ -311,13 +298,11 @@ export class ChatSocketService {
       return;
     }
 
-    console.log('📤 [SocketService] Emitting message:history:load:', { conversationId: roomId, limit, before });
     this.socket.emit('message:history:load', {
       conversationId: roomId,
       limit,
       before,
     });
-    console.log('✅ [SocketService] message:history:load event emitted');
   }
 
   /**

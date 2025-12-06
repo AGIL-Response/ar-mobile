@@ -52,7 +52,6 @@ export default function ChatRoomScreen() {
       return null;
     }
     try {
-      console.log('🔍 [RoomScreen] Creating messages observable for roomId:', roomId);
       return chatService.observeMessages(roomId, 100);
     } catch (error) {
       console.error('❌ [RoomScreen] Error creating messages observable:', error, { roomId });
@@ -118,7 +117,6 @@ export default function ChatRoomScreen() {
         setIsLoading(true);
 
         // First, get room details to ensure room exists in DB
-        console.log('📥 [RoomScreen] Loading room details for:', roomId);
         chatService.getSocketService().getConversationDetails(roomId);
 
         // Sync messages from API

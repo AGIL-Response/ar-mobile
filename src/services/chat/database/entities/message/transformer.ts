@@ -133,12 +133,6 @@ export async function messageToChatMessage(message: Message, getUserFn: (userId:
       status: senderUser.status,
       lastSeen: senderUser.lastSeen ? new Date(senderUser.lastSeen) : undefined,
     };
-    console.log('✅ [MessageTransformer] Fetched sender via relation:', {
-      messageId: message.messageId,
-      senderId: message.senderId,
-      displayName: sender.displayName,
-      username: sender.username,
-    });
   } catch (error) {
     // If relation fetch fails, try to fetch directly from users table
     console.warn('⚠️ [MessageTransformer] Relation fetch failed, trying direct query:', {
@@ -164,12 +158,6 @@ export async function messageToChatMessage(message: Message, getUserFn: (userId:
           status: senderUser.status,
           lastSeen: senderUser.lastSeen ? new Date(senderUser.lastSeen) : undefined,
         };
-        console.log('✅ [MessageTransformer] Fetched sender via direct query:', {
-          messageId: message.messageId,
-          senderId: message.senderId,
-          displayName: sender.displayName,
-          username: sender.username,
-        });
       } else {
         // Try using the provided getUserFn as fallback
         const fallbackSender = await getUserFn(message.senderId);

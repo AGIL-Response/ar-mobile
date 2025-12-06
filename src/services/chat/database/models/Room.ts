@@ -1,11 +1,10 @@
 import { Model } from '@nozbe/watermelondb';
-import { field, date, readonly, relation, children } from '@nozbe/watermelondb/decorators';
+import { field, date, readonly, children } from '@nozbe/watermelondb/decorators';
 import type { Associations } from '@nozbe/watermelondb/Model';
-import type Message from './Message';
 
 export default class Room extends Model {
   static table = 'rooms';
-  
+
   static associations: Associations = {
     messages: { type: 'has_many', foreignKey: 'room_id' },
     room_members: { type: 'has_many', foreignKey: 'room_id' },
@@ -14,7 +13,7 @@ export default class Room extends Model {
   @field('room_id') roomId!: string;
   @field('name') name!: string;
   @field('description') description?: string;
-  @field('type') type!: 'direct' | 'group';
+  @field('type') type!: 'dm' | 'group';
   @field('avatar_url') avatarUrl?: string;
   @field('is_private') isPrivate!: boolean;
   @field('unread_count') unreadCount!: number;

@@ -21,11 +21,6 @@ export class ChatService {
     // Handle new messages from server (both sent by us and received from others)
     this.socketService.on('onMessage', async (message) => {
       // Save message to DB - this will trigger the observable to update
-      console.log('📥 [ChatService] Saving message from server:', {
-        messageId: message.id,
-        roomId: message.roomId,
-        content: message.content.substring(0, 50),
-      });
       await chatDbService.saveMessage(message, message.roomId);
     });
 
@@ -41,13 +36,7 @@ export class ChatService {
 
     // Handle message history loaded
     this.socketService.on('onMessageHistoryLoaded', async (data) => {
-      console.log('📥 [ChatService] Message history loaded:', {
-        conversation_id: data.conversation_id,
-        messageCount: data.messages?.length || 0,
-        messages: data.messages,
-      });
       await chatDbService.saveMessages(data.messages, data.conversation_id);
-      console.log('✅ [ChatService] Messages saved to DB');
     });
 
     // Handle conversation list (from socket emit conversation:list)
@@ -138,10 +127,8 @@ export class ChatService {
    */
   async syncMessages(roomId: string, limit: number = 50, before?: string): Promise<void> {
     try {
-      console.log('📤 [ChatService] Syncing messages for room:', { roomId, limit, before });
       // Emit socket event to load message history
       this.socketService.loadHistory(roomId, limit, before);
-      console.log('✅ [ChatService] Load history event emitted');
       // The messages will be saved via onMessageHistoryLoaded handler
     } catch (error) {
       console.error('❌ [ChatService] Failed to sync messages:', error);

@@ -75,19 +75,22 @@ export async function roomToChatRoom(
   getLastMessageFn?: (messageId: string) => Promise<ChatMessage | undefined>
 ): Promise<ChatRoom> {
   let lastMessage: ChatMessage | undefined = undefined;
-  
+
   if (room.lastMessageId && getLastMessageFn) {
     lastMessage = await getLastMessageFn(room.lastMessageId);
   }
 
   // For DM rooms, set the room name to the opposite member's name
   let roomName = room.name;
-  if (room.type === 'direct' && context.currentUserId && context.members.length > 0) {
+
+  console.log('🔍 [roomToChatRoom] Room name:', roomName, 'Room type:', room.type, 'Current user ID:', context.currentUserId, 'Members:', context.members.length);
+  if (room.type === 'dm' && context.currentUserId && context.members.length > 0) {
     // Find the opposite member (not the current user)
     const oppositeMember = context.members.find((member) => member.id !== context.currentUserId);
     if (oppositeMember) {
       roomName = oppositeMember.displayName || oppositeMember.username || room.name;
     }
+    console.log('🔍 [roomToChatRoom] Opposite member:', oppositeMember);
   }
 
   return {
@@ -124,21 +127,21 @@ export function observeRoom(roomId: string, roomToChatRoomFn: (room: Room) => Pr
   if (roomId === undefined || roomId === null || typeof roomId !== 'string') {
     return of(null);
   }
-  
+
   const validRoomId = String(roomId).trim();
   if (validRoomId === '' || validRoomId === 'undefined' || validRoomId === 'null' || validRoomId === '[object Object]') {
     return of(null);
   }
-  
+
   if (!validRoomId || validRoomId.length === 0) {
     return of(null);
   }
-  
+
   try {
     const query = db
       .get<Room>('rooms')
       .query(Q.where('room_id', validRoomId));
-    
+
     return query.observe().pipe(
       switchMap((rooms) => {
         if (rooms.length > 0) {
