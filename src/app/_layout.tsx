@@ -15,7 +15,7 @@ import { DeviceInfoMonitor } from '@/components/device-info-monitor';
 import { CustomAlertProvider } from '@/components/custom-alert-provider';
 import { useAppFonts } from '@/lib/fonts';
 import { useThemeConfig } from '@/lib/use-theme-config';
-import { useFirebaseNotification } from '@/lib/hooks';
+import { useFirebaseNotification, useNotifee } from '@/lib/hooks';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -56,10 +56,15 @@ export default function RootLayout() {
 
 function Providers({ children }: { children: React.ReactNode }) {
   const theme = useThemeConfig();
+  
+  // Firebase notification hook - handles FCM token and permissions
   useFirebaseNotification({
     autoRequestPermission: true,
     autoGetToken: true,
   });
+
+  // Notifee hook - handles all notification taps and displays
+  useNotifee();
 
   return (
     <GestureHandlerRootView
