@@ -12,7 +12,8 @@
     "ios:pro": "APP_VARIANT=production expo run:ios",
     "clean": "npx expo prebuild --clean",
     "lint": "expo lint",
-    "generate:env-types": "node scripts/generate-env-types.js"
+    "generate:env-types": "node scripts/generate-env-types.js",
+    "buildApk": "bash scripts/build-apk.sh"
   },
   "dependencies": {
     "@expo-google-fonts/goldman": "^0.4.2",
