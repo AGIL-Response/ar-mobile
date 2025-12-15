@@ -1,7 +1,6 @@
 import { Model } from '@nozbe/watermelondb';
-import { field, date, readonly, relation, children } from '@nozbe/watermelondb/decorators';
+import { field, date, readonly, children } from '@nozbe/watermelondb/decorators';
 import type { Associations } from '@nozbe/watermelondb/Model';
-import type Message from './Message';
 
 export default class Room extends Model {
   static table = 'rooms';

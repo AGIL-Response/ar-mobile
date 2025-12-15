@@ -10,7 +10,7 @@ import { useTheme } from '@/theme';
 import { chatService } from '@/services/chat';
 import { RoomCard } from './components';
 import type { ChatRoom } from '@/services/chat';
-import { useRouter } from 'expo-router';
+import { RelativePathString, useRouter } from 'expo-router';
 import { useObservable } from '@/lib/hooks/use-observable';
 import { AppHeader } from '@/screens/home/components/app-header';
 
@@ -55,7 +55,7 @@ export default function ChatRoomsListScreen() {
   };
 
   const handleRoomPress = (room: ChatRoom) => {
-    router.push(`/chat/${room.id}`);
+    router.push(`/chat/${room.id}` as RelativePathString);
   };
 
   return (

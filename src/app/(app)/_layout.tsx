@@ -6,7 +6,7 @@
 import { Redirect, Stack } from 'expo-router';
 import React from 'react';
 
-import useAuthStore from '@/stores/auth';
+import { useAuthStore } from '@/stores/auth';
 import { handleAppOpenEvent } from '@/lib/hooks';
 
 export default function AppLayout() {

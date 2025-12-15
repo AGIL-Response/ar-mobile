@@ -1,27 +1,16 @@
 import React from 'react';
 
-import { reactNativeRender as render } from '@/lib/test-utils';
+import { reactNativeRender as render, fireEvent } from '@/lib/test-utils';
 
 import TabLayout from './_layout';
 
 const themeModule = require('@/theme');
+const mockTheme = themeModule.useThemeColors();
 const routerModule = require('expo-router');
 
 describe('TabLayout', () => {
-  const mockTheme = {
-    colors: {
-      background: {
-        primary: '#ffffff',
-      },
-      text: {
-        primary: '#111827',
-      },
-    },
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(themeModule, 'useTheme').mockReturnValue(mockTheme);
   });
 
   it('renders TabLayout component', () => {
@@ -38,16 +27,18 @@ describe('TabLayout', () => {
     const screenOptions = props.screenOptions;
 
     expect(screenOptions.headerShown).toBe(false);
+    expect(screenOptions.tabBarShowLabel).toBe(false);
     expect(screenOptions.tabBarStyle.backgroundColor).toBe(
-      mockTheme.colors.background.primary
+      mockTheme.background.tertiary
     );
     expect(screenOptions.tabBarStyle.borderTopWidth).toBe(0);
-    expect(screenOptions.tabBarStyle.paddingTop).toBe(8);
-    expect(screenOptions.tabBarStyle.paddingBottom).toBe(24);
-    expect(screenOptions.tabBarStyle.height).toBe(80);
-    expect(screenOptions.tabBarActiveTintColor).toBe('#1068eb');
+    expect(screenOptions.tabBarStyle.paddingTop).toBe(20);
+    expect(screenOptions.tabBarStyle.height).toBe(85);
+    expect(screenOptions.tabBarActiveTintColor).toBe(
+      mockTheme.text.tertiary
+    );
     expect(screenOptions.tabBarInactiveTintColor).toBe(
-      mockTheme.colors.text.primary
+      mockTheme.text.inactive
     );
   });
 
@@ -58,14 +49,14 @@ describe('TabLayout', () => {
     const props = tabsCall[0];
     const children = props.children;
 
-    const tabNames = ['index', 'tasks', 'incidents', 'notifications', 'chat', 'profile'];
-    const tabTitles = ['Home', 'Tasks', 'Incidents', 'Notifications', 'Chat', 'Profile'];
+    const tabNames = ['index', 'tasks', 'create', 'incidents', 'chat'];
+    const tabTitles = ['Home', 'Tasks', 'Create', 'Incidents', 'Chat'];
 
-    expect(children).toHaveLength(6);
+    expect(children).toHaveLength(5);
 
     children.forEach((child: React.ReactElement, index: number) => {
-      expect(child.props.name).toBe(tabNames[index]);
-      expect(child.props.options.title).toBe(tabTitles[index]);
+      expect((child as any).props.name).toBe(tabNames[index]);
+      expect((child as any).props.options.title).toBe(tabTitles[index]);
     });
   });
 
@@ -77,72 +68,77 @@ describe('TabLayout', () => {
     const children = props.children;
 
     children.forEach((child: React.ReactElement) => {
-      const iconFunction = child.props.options.tabBarIcon;
+      const iconFunction = (child as any).props.options.tabBarIcon;
       expect(typeof iconFunction).toBe('function');
 
       // Test that icon function returns a component
-      const iconResult = iconFunction({ color: '#1068eb', focused: true });
+      const iconResult = iconFunction({ color: mockTheme.primary, focused: true });
       expect(iconResult).toBeTruthy();
     });
   });
 
   it('applies theme colors correctly', () => {
-    const darkTheme = {
-      colors: {
-        background: {
-          primary: '#000000',
-        },
-        text: {
-          primary: '#ffffff',
-        },
-      },
-    };
-
-    jest.spyOn(themeModule, 'useTheme').mockReturnValue(darkTheme);
-
     render(<TabLayout />);
-
     const tabsCall = (routerModule.Tabs as jest.Mock).mock.calls[0];
     const props = tabsCall[0];
     const screenOptions = props.screenOptions;
 
     expect(screenOptions.tabBarStyle.backgroundColor).toBe(
-      darkTheme.colors.background.primary
+      mockTheme.white
     );
     expect(screenOptions.tabBarInactiveTintColor).toBe(
-      darkTheme.colors.text.primary
+      mockTheme.white
     );
   });
 
-  it('configures tab bar label style correctly', () => {
+  it('On press of create incident, it navigates to the create incident screen', () => {
+    // Create a mock navigate function
+    const navigateMock = jest.fn();
+    (routerModule.useRouter as jest.Mock).mockReturnValue({
+      navigate: navigateMock,
+    });
+
     render(<TabLayout />);
 
     const tabsCall = (routerModule.Tabs as jest.Mock).mock.calls[0];
     const props = tabsCall[0];
-    const screenOptions = props.screenOptions;
+    const children = props.children;
 
-    expect(screenOptions.tabBarLabelStyle.fontSize).toBe(12);
-    expect(screenOptions.tabBarLabelStyle.fontFamily).toBe('Manrope-Medium');
-    expect(screenOptions.tabBarLabelStyle.fontWeight).toBe('500');
-    expect(screenOptions.tabBarLabelStyle.marginTop).toBe(4);
+    // Get the create tab (index 2)
+    const createTab = children[2];
+    expect((createTab as any).props.name).toBe('create');
+
+    // Get the icon function from the create tab
+    const createIconFunction = (createTab as any).props.options.tabBarIcon;
+    expect(typeof createIconFunction).toBe('function');
+
+    // Call the icon function to get the TouchableOpacity component
+    const createIconResult = createIconFunction({
+      color: mockTheme.primary,
+      focused: true,
+    });
+
+    // The icon function should return a TouchableOpacity component
+    expect(createIconResult).toBeTruthy();
+    expect(createIconResult.type.displayName || createIconResult.type.name).toBe(
+      'TouchableOpacity'
+    );
+
+    // Get the onPress handler from the TouchableOpacity props
+    const onPressHandler = createIconResult.props.onPress;
+    expect(typeof onPressHandler).toBe('function');
+
+    // Call the onPress handler
+    onPressHandler();
+
+    // Assert that router.navigate was called with '/incidents/create'
+    expect(navigateMock).toHaveBeenCalledWith('/incidents/create');
   });
 });
 
 describe('TabBarIcon integration', () => {
-  const mockTheme = {
-    colors: {
-      background: {
-        primary: '#ffffff',
-      },
-      text: {
-        primary: '#111827',
-      },
-    },
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(themeModule, 'useTheme').mockReturnValue(mockTheme);
   });
 
   it('renders icon for all configured routes', () => {
@@ -154,8 +150,8 @@ describe('TabBarIcon integration', () => {
 
     // All tabs should have valid icons (no null returns)
     children.forEach((child: React.ReactElement) => {
-      const iconFunction = child.props.options.tabBarIcon;
-      const iconResult = iconFunction({ color: '#1068eb', focused: true });
+      const iconFunction = (child as any).props.options.tabBarIcon;
+      const iconResult = iconFunction({ color: 'mockTheme.primary', focused: true });
       // Should not be null for configured routes
       expect(iconResult).not.toBeNull();
     });
@@ -168,26 +164,14 @@ describe('TabBarIcon integration', () => {
     const indexTab = tabsCall[0].children[0];
     const iconFunction = indexTab.props.options.tabBarIcon;
 
-    const iconResult = iconFunction({ color: '#1068eb', focused: true });
+    const iconResult = iconFunction({ color: 'mockTheme.primary', focused: true });
     expect(iconResult).toBeTruthy();
   });
 });
 
 describe('TabBarBadge integration', () => {
-  const mockTheme = {
-    colors: {
-      background: {
-        primary: '#ffffff',
-      },
-      text: {
-        primary: '#111827',
-      },
-    },
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(themeModule, 'useTheme').mockReturnValue(mockTheme);
   });
 
   it('renders tabs with View wrapper for tasks and chat (badge support)', () => {
@@ -201,7 +185,7 @@ describe('TabBarBadge integration', () => {
     const tasksTab = children[1];
     const tasksIconFunction = tasksTab.props.options.tabBarIcon;
     const tasksIconResult = tasksIconFunction({
-      color: '#1068eb',
+      color: 'mockTheme.primary',
       focused: true,
     });
     expect(tasksIconResult.type.displayName || tasksIconResult.type.name).toBe(
@@ -212,11 +196,11 @@ describe('TabBarBadge integration', () => {
     const chatTab = children[3];
     const chatIconFunction = chatTab.props.options.tabBarIcon;
     const chatIconResult = chatIconFunction({
-      color: '#1068eb',
+      color: 'mockTheme.primary',
       focused: true,
     });
     expect(chatIconResult.type.displayName || chatIconResult.type.name).toBe(
-      'View'
+      'TabBarIcon'
     );
   });
 
@@ -231,7 +215,7 @@ describe('TabBarBadge integration', () => {
     const indexTab = children[0];
     const indexIconFunction = indexTab.props.options.tabBarIcon;
     const indexIconResult = indexIconFunction({
-      color: '#1068eb',
+      color: 'mockTheme.primary',
       focused: true,
     });
     expect(

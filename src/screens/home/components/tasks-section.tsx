@@ -3,7 +3,7 @@
  * Display task cards and reports
  */
 
-import { useRouter } from 'expo-router';
+import { RelativePathString, useRouter } from 'expo-router';
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
 
@@ -23,11 +23,11 @@ export function TasksSection() {
 
   const handleViewAll = () => {
     setActiveTab('pending');
-    router.navigate('/tasks');
+    router.navigate('/tasks' as RelativePathString);
   };
 
   const handleTaskPress = (taskId: string) => {
-    router.navigate(`/task/${taskId}`);
+    router.navigate(`/task/${taskId}` as RelativePathString);
   };
 
   if (isLoading && tasks.length === 0) {

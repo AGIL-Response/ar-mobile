@@ -9,7 +9,7 @@ import { Avatar, Icon, iconNames, Text, View } from '@/components';
 import { useTheme } from '@/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/stores/auth';
-import { useRouter } from 'expo-router';
+import { RelativePathString, useRouter } from 'expo-router';
 import { useNotificationsStore } from '@/stores/notifications';
 import { TouchableOpacity } from 'react-native';
 import { SosSection } from './sos-section';
@@ -54,7 +54,7 @@ export function AppHeader() {
           flexDirection: 'row',
         }}
       >
-        <TouchableOpacity onPress={() => router.navigate('/notifications')}>
+        <TouchableOpacity onPress={() => router.navigate('/notifications' as RelativePathString)}>
           <View
             style={{
               width: 32,
@@ -88,7 +88,7 @@ export function AppHeader() {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => router.navigate('/profile')}>
+        <TouchableOpacity onPress={() => router.navigate('/profile' as RelativePathString)}>
           <View
             style={{
               width: 32,

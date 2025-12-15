@@ -3,7 +3,7 @@
  * Display incident cards and reports
  */
 
-import { useRouter } from 'expo-router';
+import { RelativePathString, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { TouchableOpacity } from 'react-native';
 
@@ -30,12 +30,12 @@ export function IncidentsSection() {
   }, []);
 
   const handleViewAll = () => {
-    router.navigate('/incidents');
+    router.navigate('/incidents' as RelativePathString);
   };
 
   const handleIncidentPress = (incident: Incident) => {
     setSelectedIncident(incident);
-    router.navigate(`/incidents/${incident.id}`);
+    router.navigate(`/incidents/${incident.id}` as RelativePathString);
   };
 
   if (isLoading && incidents.length === 0) {

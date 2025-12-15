@@ -3,7 +3,7 @@
  * Task management and list view with tab functionality
  */
 
-import { router } from 'expo-router';
+import { RelativePathString, router } from 'expo-router';
 import React, { useEffect } from 'react';
 import { RefreshControl, ScrollView } from 'react-native';
 
@@ -60,7 +60,7 @@ export default function TasksScreen() {
   };
 
   const handleTaskPress = (taskId: string) => {
-    router.navigate(`/task/${taskId}`);
+    router.navigate(`/task/${taskId}` as RelativePathString);
   };
 
   const renderTaskSection = (title: string, tasks: any[], showCount = true) => {

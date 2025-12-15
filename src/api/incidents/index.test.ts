@@ -10,8 +10,7 @@ describe('incidentsApi', () => {
   });
 
   describe('getIncidents', () => {
-    it('successfully gets all incidents', async () => {
-      const tenantId = 'tenant-1';
+    it('successfully gets all incidents with default params', async () => {
       const mockIncidents = [
         {
           id: 'incident-1',
@@ -35,19 +34,20 @@ describe('incidentsApi', () => {
 
       (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
 
-      const result = await incidentsApi.getIncidents(tenantId);
+      const result = await incidentsApi.getIncidents();
 
-      expect(apiClient.get).toHaveBeenCalledWith('/incidents');
+      expect(apiClient.get).toHaveBeenCalledWith(
+        '/incidents?offset=0&limit=100&sort=%7B%7D&count=false'
+      );
       expect(result).toEqual(mockIncidents);
     });
 
-    it('builds query string with params', async () => {
-      const tenantId = 'tenant-1';
+    it('builds query string with custom params', async () => {
       const params = {
-        page: 1,
-        limit: 10,
-        status: 'NEW' as const,
-        type: 'emergency' as const,
+        offset: 10,
+        limit: 20,
+        sort: '{"createdAt":"desc"}',
+        count: true,
       };
 
       const mockResponse = {
@@ -58,20 +58,23 @@ describe('incidentsApi', () => {
 
       (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
 
-      await incidentsApi.getIncidents(tenantId, params);
+      await incidentsApi.getIncidents(params);
 
       expect(apiClient.get).toHaveBeenCalledWith(
-        '/incidents?page=1&limit=10&status=NEW&type=emergency'
+        expect.stringContaining('/incidents?')
       );
+      const callUrl = (apiClient.get as jest.Mock).mock.calls[0][0];
+      expect(callUrl).toContain('offset=10');
+      expect(callUrl).toContain('limit=20');
+      expect(callUrl).toContain('sort=');
+      expect(callUrl).toContain('count=true');
     });
 
     it('excludes undefined and null params from query string', async () => {
-      const tenantId = 'tenant-1';
       const params = {
-        page: 1,
+        offset: 10,
         limit: undefined,
-        status: 'NEW' as const,
-        search: null as unknown as string,
+        count: null as unknown as boolean,
       };
 
       const mockResponse = {
@@ -82,27 +85,27 @@ describe('incidentsApi', () => {
 
       (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
 
-      await incidentsApi.getIncidents(tenantId, params);
+      await incidentsApi.getIncidents(params);
 
-      expect(apiClient.get).toHaveBeenCalledWith('/incidents?page=1&status=NEW');
+      const callUrl = (apiClient.get as jest.Mock).mock.calls[0][0];
+      expect(callUrl).toContain('offset=10');
+      expect(callUrl).not.toContain('limit=');
+      expect(callUrl).not.toContain('count=');
     });
 
     it('returns empty array when no data', async () => {
-      const tenantId = 'tenant-1';
-
       const mockResponse = {
         data: {},
       };
 
       (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
 
-      const result = await incidentsApi.getIncidents(tenantId);
+      const result = await incidentsApi.getIncidents();
 
       expect(result).toEqual([]);
     });
 
     it('handles errors', async () => {
-      const tenantId = 'tenant-1';
       const error = new Error('Failed to get incidents');
       (apiClient.get as jest.Mock).mockRejectedValue(error);
       (handleApiError as jest.Mock).mockReturnValue({
@@ -110,7 +113,7 @@ describe('incidentsApi', () => {
         status: 500,
       });
 
-      await expect(incidentsApi.getIncidents(tenantId)).rejects.toEqual({
+      await expect(incidentsApi.getIncidents()).rejects.toEqual({
         message: 'Failed to get incidents',
         status: 500,
       });
@@ -119,7 +122,6 @@ describe('incidentsApi', () => {
 
   describe('getIncident', () => {
     it('successfully gets a single incident', async () => {
-      const tenantId = 'tenant-1';
       const incidentId = 'incident-1';
 
       const mockIncident = {
@@ -137,14 +139,13 @@ describe('incidentsApi', () => {
 
       (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
 
-      const result = await incidentsApi.getIncident(tenantId, incidentId);
+      const result = await incidentsApi.getIncident(incidentId);
 
       expect(apiClient.get).toHaveBeenCalledWith('/incidents/incident-1');
       expect(result).toEqual(mockIncident);
     });
 
     it('handles errors', async () => {
-      const tenantId = 'tenant-1';
       const incidentId = 'incident-1';
 
       const error = new Error('Incident not found');
@@ -154,9 +155,7 @@ describe('incidentsApi', () => {
         status: 404,
       });
 
-      await expect(
-        incidentsApi.getIncident(tenantId, incidentId)
-      ).rejects.toEqual({
+      await expect(incidentsApi.getIncident(incidentId)).rejects.toEqual({
         message: 'Incident not found',
         status: 404,
       });
@@ -165,11 +164,10 @@ describe('incidentsApi', () => {
 
   describe('createIncident', () => {
     it('successfully creates an incident', async () => {
-      const tenantId = 'tenant-1';
       const incidentData = {
         name: 'New Incident',
         description: 'Description',
-        type: 'emergency' as const,
+        type: 'fire' as const,
         status: 'NEW' as const,
         location: {
           coordinates: [103.826738, 1.282355, 0],
@@ -189,18 +187,17 @@ describe('incidentsApi', () => {
 
       (apiClient.post as jest.Mock).mockResolvedValue(mockResponse);
 
-      const result = await incidentsApi.createIncident(tenantId, incidentData);
+      const result = await incidentsApi.createIncident(incidentData);
 
       expect(apiClient.post).toHaveBeenCalledWith('/incidents', incidentData);
       expect(result).toEqual(mockIncident);
     });
 
     it('handles errors', async () => {
-      const tenantId = 'tenant-1';
       const incidentData = {
         name: 'New Incident',
         description: 'Description',
-        type: 'emergency' as const,
+        type: 'fire' as const,
         status: 'NEW' as const,
       };
 
@@ -211,9 +208,7 @@ describe('incidentsApi', () => {
         status: 400,
       });
 
-      await expect(
-        incidentsApi.createIncident(tenantId, incidentData)
-      ).rejects.toEqual({
+      await expect(incidentsApi.createIncident(incidentData)).rejects.toEqual({
         message: 'Failed to create incident',
         status: 400,
       });
@@ -222,7 +217,6 @@ describe('incidentsApi', () => {
 
   describe('updateIncident', () => {
     it('successfully updates an incident', async () => {
-      const tenantId = 'tenant-1';
       const updateData = {
         id: 'incident-1',
         name: 'Updated Incident',
@@ -243,7 +237,7 @@ describe('incidentsApi', () => {
 
       (apiClient.put as jest.Mock).mockResolvedValue(mockResponse);
 
-      const result = await incidentsApi.updateIncident(tenantId, updateData);
+      const result = await incidentsApi.updateIncident(updateData);
 
       expect(apiClient.put).toHaveBeenCalledWith('/incidents/incident-1', {
         name: 'Updated Incident',
@@ -253,7 +247,6 @@ describe('incidentsApi', () => {
     });
 
     it('excludes id from request body', async () => {
-      const tenantId = 'tenant-1';
       const updateData = {
         id: 'incident-1',
         name: 'Updated Incident',
@@ -268,7 +261,7 @@ describe('incidentsApi', () => {
 
       (apiClient.put as jest.Mock).mockResolvedValue(mockResponse);
 
-      await incidentsApi.updateIncident(tenantId, updateData);
+      await incidentsApi.updateIncident(updateData);
 
       expect(apiClient.put).toHaveBeenCalledWith('/incidents/incident-1', {
         name: 'Updated Incident',
@@ -277,7 +270,6 @@ describe('incidentsApi', () => {
     });
 
     it('handles errors', async () => {
-      const tenantId = 'tenant-1';
       const updateData = {
         id: 'incident-1',
         name: 'Updated Incident',
@@ -290,9 +282,7 @@ describe('incidentsApi', () => {
         status: 400,
       });
 
-      await expect(
-        incidentsApi.updateIncident(tenantId, updateData)
-      ).rejects.toEqual({
+      await expect(incidentsApi.updateIncident(updateData)).rejects.toEqual({
         message: 'Failed to update incident',
         status: 400,
       });
@@ -301,18 +291,16 @@ describe('incidentsApi', () => {
 
   describe('deleteIncident', () => {
     it('successfully deletes an incident', async () => {
-      const tenantId = 'tenant-1';
       const incidentId = 'incident-1';
 
       (apiClient.delete as jest.Mock).mockResolvedValue({});
 
-      await incidentsApi.deleteIncident(tenantId, incidentId);
+      await incidentsApi.deleteIncident(incidentId);
 
       expect(apiClient.delete).toHaveBeenCalledWith('/incidents/incident-1');
     });
 
     it('handles errors', async () => {
-      const tenantId = 'tenant-1';
       const incidentId = 'incident-1';
 
       const error = new Error('Failed to delete incident');
@@ -322,9 +310,7 @@ describe('incidentsApi', () => {
         status: 404,
       });
 
-      await expect(
-        incidentsApi.deleteIncident(tenantId, incidentId)
-      ).rejects.toEqual({
+      await expect(incidentsApi.deleteIncident(incidentId)).rejects.toEqual({
         message: 'Failed to delete incident',
         status: 404,
       });
