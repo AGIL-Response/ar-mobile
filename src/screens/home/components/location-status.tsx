@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
+import { StyleSheet } from 'react-native';
 import { View, Text } from '@/components';
 import { useLocationStore } from '@/stores/location';
+import type { Theme } from '@/theme';
 import { useTheme } from '@/theme';
 
 export function LocationStatus() {
@@ -49,52 +51,63 @@ export function LocationStatus() {
     [error, isMonitoring, isSocketConnected, hasLocationPermission]
   );
 
+  const styles = createStyles(theme, statusColor, isMonitoring);
+
   return (
-      <View
-        style={{
-          backgroundColor: theme.colors.background.secondary,
-          padding: 12,
-          margin: 8,
-          borderRadius: 8,
-          borderLeftWidth: 4,
-          borderLeftColor: statusColor,
-        }}
-      >
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-        <Text style={{ fontSize: 16, marginRight: 8 }}>{statusIcon}</Text>
-        <Text
-          style={{
-            fontSize: 14,
-            fontWeight: '600',
-            color: theme.colors.text.primary,
-          }}
-        >
+    <View style={styles.container}>
+      <View style={styles.headerRow}>
+        <Text style={styles.icon}>{statusIcon}</Text>
+        <Text style={styles.title}>
           Location Status
         </Text>
       </View>
       
-      <Text
-        style={{
-          fontSize: 12,
-          color: statusColor,
-          marginLeft: 24,
-        }}
-      >
+      <Text style={styles.statusText}>
         {statusText}
       </Text>
       
       {isMonitoring && (
-        <Text
-          style={{
-            fontSize: 10,
-            color: theme.colors.text.secondary,
-            marginLeft: 24,
-            marginTop: 2,
-          }}
-        >
+        <Text style={styles.monitoringText}>
           Sending location every 10 seconds
         </Text>
       )}
     </View>
   );
 }
+
+const createStyles = (theme: Theme, statusColor: string, isMonitoring: boolean) =>
+  StyleSheet.create({
+    container: {
+      backgroundColor: theme.colors.background.secondary,
+      padding: 12,
+      margin: 8,
+      borderRadius: 8,
+      borderLeftWidth: 4,
+      borderLeftColor: statusColor,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    icon: {
+      fontSize: 16,
+      marginRight: 8,
+    },
+    title: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.colors.text.primary,
+    },
+    statusText: {
+      fontSize: 12,
+      color: statusColor,
+      marginLeft: 24,
+    },
+    monitoringText: {
+      fontSize: 10,
+      color: theme.colors.text.secondary,
+      marginLeft: 24,
+      marginTop: 2,
+    },
+  });

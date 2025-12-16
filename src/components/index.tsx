@@ -42,7 +42,6 @@ export * from './textarea';
 export * from './view';
 
 // Legacy components (to be migrated)
-export { default as colors } from './colors';
 export * from './focus-aware-status-bar';
 export * from './modal';
 export * from './centered-modal';

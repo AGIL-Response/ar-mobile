@@ -4,8 +4,9 @@
  */
 
 import React, { useState, useRef } from 'react';
-import { View, TouchableOpacity, Keyboard } from 'react-native';
-import { Input, Icon, Text } from '@/components';
+import { StyleSheet, TouchableOpacity, Keyboard } from 'react-native';
+import { Input, Icon, Text, View } from '@/components';
+import type { Theme } from '@/theme';
 import { useTheme } from '@/theme';
 import type { SendMessageData } from '@/services/chat';
 
@@ -27,7 +28,8 @@ export function Composer({
   const theme = useTheme();
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const styles = createStyles(theme, !!message.trim(), isSending, disabled);
 
   const handleSend = async () => {
     if (!message.trim() || isSending || disabled) {
@@ -84,68 +86,25 @@ export function Composer({
   };
 
   return (
-    <View
-      style={{
-        backgroundColor: theme.colors.background.primary,
-        borderTopWidth: 1,
-        borderTopColor: theme.colors.surface.border,
-        paddingBottom: theme.spacing.gap.md,
-      }}
-    >
+    <View style={styles.container}>
       {replyTo && (
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingHorizontal: theme.spacing.gap.md,
-            paddingTop: theme.spacing.gap.sm,
-            paddingBottom: theme.spacing.gap.xs,
-            borderBottomWidth: 1,
-            borderBottomColor: theme.colors.surface.border,
-          }}
-        >
-          <View style={{ flex: 1 }}>
-            <Text
-              variant="caption"
-              style={{
-                color: theme.colors.text.secondary,
-                marginBottom: 2,
-              }}
-            >
+        <View style={styles.replyContainer}>
+          <View style={styles.replyContent}>
+            <Text variant="caption" style={styles.replyLabel}>
               Replying to
             </Text>
-            <Text
-              variant="body"
-              style={{
-                color: theme.colors.text.primary,
-                fontSize: 12,
-              }}
-              numberOfLines={1}
-            >
+            <Text variant="body" style={styles.replyText} numberOfLines={1}>
               {replyTo.content}
             </Text>
           </View>
-          <TouchableOpacity
-            onPress={handleCancelReply}
-            style={{
-              padding: theme.spacing.gap.xs,
-            }}
-          >
+          <TouchableOpacity onPress={handleCancelReply} style={styles.cancelButton}>
             <Icon name="x" size={20} color={theme.colors.text.secondary} />
           </TouchableOpacity>
         </View>
       )}
 
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'flex-end',
-          paddingHorizontal: theme.spacing.gap.md,
-          paddingTop: theme.spacing.gap.md,
-        }}
-      >
-        <View style={{ flex: 1, marginRight: theme.spacing.gap.sm }}>
+      <View style={styles.inputContainer}>
+        <View style={styles.inputWrapper}>
           <Input
             value={message}
             onChangeText={handleTextChange}
@@ -153,14 +112,8 @@ export function Composer({
             multiline
             maxLength={5000}
             disabled={disabled || isSending}
-            containerStyle={{
-              marginBottom: 0,
-            }}
-            inputStyle={{
-              maxHeight: 100,
-              paddingTop: theme.spacing.gap.sm,
-              paddingBottom: theme.spacing.gap.sm,
-            }}
+            containerStyle={styles.inputContainerStyle}
+            inputStyle={styles.inputStyle}
             onSubmitEditing={handleSend}
           />
         </View>
@@ -168,24 +121,9 @@ export function Composer({
         <TouchableOpacity
           onPress={handleSend}
           disabled={!message.trim() || isSending || disabled}
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 22,
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginBottom: theme.spacing.gap.xs,
-          }}
+          style={styles.sendButton}
         >
-          <Text
-            style={{
-              fontSize: 20,
-              color:
-                message.trim() && !isSending && !disabled
-                  ? 'white'
-                  : theme.colors.text.secondary,
-            }}
-          >
+          <Text style={styles.sendButtonText}>
             →
           </Text>
         </TouchableOpacity>
@@ -194,3 +132,66 @@ export function Composer({
   );
 }
 
+const createStyles = (theme: Theme, hasMessage: boolean, isSending: boolean, disabled: boolean) =>
+  StyleSheet.create({
+    container: {
+      backgroundColor: theme.colors.background.primary,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.surface.border,
+      paddingBottom: theme.spacing.gap.md,
+    },
+    replyContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: theme.spacing.gap.md,
+      paddingTop: theme.spacing.gap.sm,
+      paddingBottom: theme.spacing.gap.xs,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.surface.border,
+    },
+    replyContent: {
+      flex: 1,
+    },
+    replyLabel: {
+      color: theme.colors.text.secondary,
+      marginBottom: 2,
+    },
+    replyText: {
+      color: theme.colors.text.primary,
+      fontSize: 12,
+    },
+    cancelButton: {
+      padding: theme.spacing.gap.xs,
+    },
+    inputContainer: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      paddingHorizontal: theme.spacing.gap.md,
+      paddingTop: theme.spacing.gap.md,
+    },
+    inputWrapper: {
+      flex: 1,
+      marginRight: theme.spacing.gap.sm,
+    },
+    inputContainerStyle: {
+      marginBottom: 0,
+    },
+    inputStyle: {
+      maxHeight: 100,
+      paddingTop: theme.spacing.gap.sm,
+      paddingBottom: theme.spacing.gap.sm,
+    },
+    sendButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: theme.spacing.gap.xs,
+    },
+    sendButtonText: {
+      fontSize: 20,
+      color: hasMessage && !isSending && !disabled ? 'white' : theme.colors.text.secondary,
+    },
+  });

@@ -9,6 +9,7 @@ import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { TasksSection } from './tasks-section';
 import { MembersSection } from './members-section';
 import { useAuthStore } from '@/stores/auth';
+import type { Theme } from '@/theme';
 import { useTheme } from '@/theme';
 import { View, Text } from '@/components';
 import { RelativePathString, router } from 'expo-router';
@@ -17,17 +18,13 @@ export function FlatView() {
   const theme = useTheme();
   const styles = createStyles(theme);
   const selectedTeamName = useAuthStore((state) => state.selectedTeam?.name || '');
+  
   return (
     <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={{
-        padding: 16,
-        gap: 20,
-        paddingBottom: 100, // Extra space for FAB
-      }}
+      style={styles.scrollView}
+      contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
     >
-
       <View style={styles.headerRow}>
         <Text variant="h3" style={styles.teamTitle}>
           {selectedTeamName}
@@ -53,8 +50,17 @@ export function FlatView() {
     </ScrollView>
   );
 }
-const createStyles = (theme: any) =>
+
+const createStyles = (theme: Theme) =>
   StyleSheet.create({
+    scrollView: {
+      flex: 1,
+    },
+    contentContainer: {
+      padding: 16,
+      gap: 20,
+      paddingBottom: 100, // Extra space for FAB
+    },
     headerRow: {
       flexDirection: 'row',
       alignItems: 'center',

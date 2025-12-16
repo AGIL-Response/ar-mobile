@@ -5,9 +5,10 @@
 
 import React from 'react';
 import type { ImageProps, ImageSourcePropType } from 'react-native';
-import { Image } from 'react-native';
+import { Image, StyleSheet } from 'react-native';
 
 import { type Theme } from '@/theme';
+import { useTheme } from '@/theme';
 
 import {
   createAccessibilityProps,
@@ -419,6 +420,9 @@ const AvatarBase = React.forwardRef<
       outerRingOpacity,
     });
 
+    const theme = useTheme();
+    const styles = createStyles(theme);
+
     // Merge with user-provided styles
     const mergedStyle = mergeStyles(avatarStyles, userStyle);
 
@@ -446,7 +450,7 @@ const AvatarBase = React.forwardRef<
           <Image
             ref={ref}
             source={source}
-            style={{ width: '100%', height: '100%' }}
+            style={styles.imageFullSize}
             resizeMode="cover"
             {...accessibilityProps}
             {...props}
@@ -499,7 +503,7 @@ const AvatarBase = React.forwardRef<
 
         {/* Custom badge */}
         {badge && (
-          <View style={{ position: 'absolute', top: -4, right: -4, zIndex: 2 }}>
+          <View style={styles.badgeContainer}>
             {badge}
           </View>
         )}
@@ -585,24 +589,21 @@ export const AvatarGroup = React.forwardRef<any, AvatarGroupProps>(
 
     return (
       <View ref={ref} style={finalStyle} {...props}>
-        {visibleAvatars.map((avatar, index) => (
-          <View
-            key={index}
-            style={{
-              marginLeft: index > 0 ? -overlap : 0,
-              zIndex: visibleAvatars.length - index,
-            }}
-          >
-            {typeof avatar === 'object' && 'source' in avatar ? (
-              <Avatar {...avatar} size={size} />
-            ) : (
-              <Avatar source={avatar as ImageSourcePropType} size={size} />
-            )}
-          </View>
-        ))}
+        {visibleAvatars.map((avatar, index) => {
+          const itemStyles = createAvatarGroupStyles(overlap, index, visibleAvatars.length);
+          return (
+            <View key={index} style={itemStyles.item}>
+              {typeof avatar === 'object' && 'source' in avatar ? (
+                <Avatar {...avatar} size={size} />
+              ) : (
+                <Avatar source={avatar as ImageSourcePropType} size={size} />
+              )}
+            </View>
+          );
+        })}
 
         {remainingCount > 0 && (
-          <View style={{ marginLeft: -overlap, zIndex: 0 }}>
+          <View style={createAvatarGroupStyles(overlap, 0, 0).remainingAvatar}>
             <Avatar
               size={size}
               fallback={`+${remainingCount}`}
@@ -636,3 +637,29 @@ export const TeamMemberAvatar = React.forwardRef<
   Omit<AvatarProps, 'variant'> & Omit<ImageProps, 'source'>
 >((props, ref) => <Avatar ref={ref} variant="bordered" {...props} />);
 TeamMemberAvatar.displayName = 'TeamMemberAvatar';
+
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    imageFullSize: {
+      width: '100%',
+      height: '100%',
+    },
+    badgeContainer: {
+      position: 'absolute',
+      top: -theme.spacing.gap.xs,
+      right: -theme.spacing.gap.xs,
+      zIndex: 2,
+    },
+  });
+
+const createAvatarGroupStyles = (overlap: number, index: number, total: number) =>
+  StyleSheet.create({
+    item: {
+      marginLeft: index > 0 ? -overlap : 0,
+      zIndex: total - index,
+    },
+    remainingAvatar: {
+      marginLeft: -overlap,
+      zIndex: 0,
+    },
+  });
