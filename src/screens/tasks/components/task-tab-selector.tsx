@@ -4,9 +4,10 @@
  */
 
 import React from 'react';
-import { TouchableOpacity } from 'react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 
 import { Text, View } from '@/components';
+import type { Theme } from '@/theme';
 import { useTheme } from '@/theme';
 
 export type TaskTab = 'all' | 'pending' | 'completed';
@@ -25,6 +26,7 @@ export function TaskTabSelector({
   completedCount = 0,
 }: TaskTabSelectorProps) {
   const theme = useTheme();
+  const styles = createStyles(theme, activeTab);
 
   const tabs = [
     {
@@ -37,61 +39,24 @@ export function TaskTabSelector({
   ];
 
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.surface.border,
-        marginBottom: 16,
-        backgroundColor: theme.colors.background.primary,
-      }}
-    >
+    <View style={styles.container}>
       {tabs.map((tab) => {
         const isActive = activeTab === tab.key;
 
         return (
           <TouchableOpacity
             key={tab.key}
-            style={{
-              flex: 1,
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderBottomWidth: isActive ? 2 : 0,
-              borderBottomColor: isActive
-                ? theme.colors.primary
-                : 'transparent',
-            }}
+            style={styles.tab(isActive)}
             onPress={() => onTabChange(tab.key)}
             testID={`tab-${tab.key}`}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  color: isActive
-                    ? theme.colors.text.tertiary
-                    : theme.colors.text.inactive,
-                  fontWeight: isActive ? '600' : '500',
-                  fontSize: 14,
-                }}
-              >
+            <View style={styles.tabContent}>
+              <Text variant="bodyMedium" style={styles.tabText(isActive)}>
                 {tab.label}
               </Text>
 
               {tab.count > 0 && tab.key !== 'all' && (
-                <Text
-                  variant="bodyMedium"
-                  style={{
-                    color: isActive
-                      ? theme.colors.text.tertiary
-                      : theme.colors.text.inactive,
-                    fontWeight: isActive ? '600' : '500',
-                    fontSize: 14,
-                    marginLeft: 4,
-                  }}
-                >
+                <Text variant="bodyMedium" style={styles.tabCount(isActive)}>
                   ({tab.count})
                 </Text>
               )}
@@ -102,3 +67,38 @@ export function TaskTabSelector({
     </View>
   );
 }
+
+const createStyles = (theme: Theme, activeTab: TaskTab) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.surface.border,
+      marginBottom: 16,
+      backgroundColor: theme.colors.background.primary,
+    },
+    tab: (isActive: boolean) => ({
+      flex: 1,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderBottomWidth: isActive ? 2 : 0,
+      borderBottomColor: isActive ? theme.colors.primary : 'transparent',
+    }),
+    tabContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    tabText: (isActive: boolean) => ({
+      color: isActive ? theme.colors.text.tertiary : theme.colors.text.inactive,
+      fontWeight: isActive ? '600' : '500',
+      fontSize: 14,
+    }),
+    tabCount: (isActive: boolean) => ({
+      color: isActive ? theme.colors.text.tertiary : theme.colors.text.inactive,
+      fontWeight: isActive ? '600' : '500',
+      fontSize: 14,
+      marginLeft: 4,
+    }),
+  });

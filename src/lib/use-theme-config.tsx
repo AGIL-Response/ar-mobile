@@ -5,17 +5,17 @@ import {
 } from '@react-navigation/native';
 import { useColorScheme } from 'react-native';
 
-import colors from '@/components/colors';
+import { useTheme } from '@/theme';
 
 const DarkTheme: Theme = {
   ..._DarkTheme,
   colors: {
     ..._DarkTheme.colors,
-    primary: colors.primary[200],
-    background: colors.charcoal[950],
-    text: colors.charcoal[100],
-    border: colors.charcoal[500],
-    card: colors.charcoal[850],
+    primary: '#FFA766', // primary[200] equivalent
+    background: '#121212', // charcoal[950] equivalent
+    text: '#E5E5E5', // charcoal[100] equivalent
+    border: '#7D7D7D', // charcoal[500] equivalent
+    card: '#2E2E2E', // charcoal[850] equivalent
   },
 };
 
@@ -23,8 +23,8 @@ const LightTheme: Theme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    primary: colors.primary[400],
-    background: colors.white,
+    primary: '#FF8933', // primary[400] equivalent
+    background: '#ffffff',
   },
 };
 
