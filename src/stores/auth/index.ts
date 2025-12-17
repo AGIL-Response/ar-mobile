@@ -119,7 +119,7 @@ const authStore = (set: any, get: any) => ({
     checkUsername: checkUsername(set, get),
     loginWithPassword: loginWithPassword(set, get),
     register: register(set, get),
-    logout: () => {
+    logout: async () => {
       // Stop location monitoring and disconnect WebSocket
       try {
         const locationStore = useLocationStore.getState();
@@ -131,6 +131,19 @@ const authStore = (set: any, get: any) => ({
           'Error stopping location monitoring during logout:',
           error
         );
+      }
+
+      // Disconnect chat socket and clear database
+      try {
+        const { chatService } = await import('@/services/chat');
+        chatService.disconnect();
+        console.log('💬 Chat socket disconnected during logout');
+        
+        const { chatDbService } = await import('@/services/chat/db-service');
+        await chatDbService.clearAll();
+        console.log('💬 Chat database cleared during logout');
+      } catch (error) {
+        console.warn('Error clearing chat during logout:', error);
       }
 
       set((state: AuthState) => {

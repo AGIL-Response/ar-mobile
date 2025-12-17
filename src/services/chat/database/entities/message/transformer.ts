@@ -7,6 +7,9 @@ import { Q } from '@nozbe/watermelondb';
 
 const db = getDatabase();
 
+// Cache to track which senderIds we've already warned about to reduce log spam
+const warnedMissingUsers = new Set<string>();
+
 /**
  * Safely convert a value to a string ID
  */
@@ -14,18 +17,18 @@ function ensureStringId(value: any, fieldName: string = 'id'): string {
   if (value === null || value === undefined) {
     throw new Error(`${fieldName} is null or undefined`);
   }
-  
+
   if (typeof value === 'string') {
     if (value.trim() === '' || value === '[object Object]' || value === 'undefined' || value === 'null') {
       throw new Error(`Invalid string ID for ${fieldName}: '${value}'`);
     }
     return value;
   }
-  
+
   if (typeof value === 'number') {
     return String(value);
   }
-  
+
   if (typeof value === 'object') {
     const possibleIdFields = ['id', '_id', 'uuid', 'uid'];
     for (const key of possibleIdFields) {
@@ -33,14 +36,14 @@ function ensureStringId(value: any, fieldName: string = 'id'): string {
         return value[key];
       }
     }
-    
+
     if (typeof value.toString === 'function') {
       const stringValue = value.toString();
       if (stringValue !== '[object Object]' && stringValue !== '') {
         return stringValue;
       }
     }
-    
+
     try {
       const stringified = JSON.stringify(value);
       if (stringified && stringified !== 'null' && stringified !== 'undefined' && stringified.length < 200) {
@@ -50,11 +53,11 @@ function ensureStringId(value: any, fieldName: string = 'id'): string {
     } catch (e) {
       // JSON.stringify failed
     }
-    
+
     console.error(`Cannot convert object to string ID for ${fieldName}:`, value);
     throw new Error(`${fieldName} is an object that cannot be converted to a string ID: ${JSON.stringify(value)}`);
   }
-  
+
   const stringValue = String(value);
   if (stringValue === '[object Object]' || stringValue === 'undefined' || stringValue === 'null') {
     throw new Error(`${fieldName} cannot be converted to a valid string ID (got: ${typeof value})`);
@@ -87,9 +90,9 @@ export function chatMessageToMessageData(messageData: ChatMessage, roomId: strin
   } else {
     messageId = String(messageData.id);
   }
-  
+
   const validRoomId = typeof roomId === 'string' ? roomId : String(roomId);
-  
+
   if (!messageId || messageId === 'undefined' || messageId === 'null' || messageId === '[object Object]') {
     throw new Error(`Invalid message ID: ${messageData.id} (type: ${typeof messageData.id})`);
   }
@@ -114,7 +117,42 @@ export function chatMessageToMessageData(messageData: ChatMessage, roomId: strin
  * Convert WatermelonDB Message to ChatMessage
  */
 export async function messageToChatMessage(message: Message, getUserFn: (userId: string) => Promise<ChatUser | null>): Promise<ChatMessage> {
-  const attachments = await message.attachments.fetch();
+  // Query attachments directly by message_id field (not using the broken relation)
+  // The relation tries to match against WatermelonDB's internal id, but we store business IDs
+  const rawAttachments = await db
+    .get<Attachment>('attachments')
+    .query(Q.where('message_id', message.messageId))
+    .fetch();
+
+  // Deduplicate by attachment_id (keep first occurrence of each unique ID)
+  const attachments = rawAttachments.reduce((acc, current) => {
+    const exists = acc.find(item => item.attachmentId === current.attachmentId);
+    if (!exists) {
+      acc.push(current);
+    }
+    return acc;
+  }, [] as Attachment[]);
+
+  if (rawAttachments.length !== attachments.length) {
+    console.warn('⚠️ [MessageTransformer] Duplicate attachments found:', {
+      messageId: message.messageId,
+      original: rawAttachments.length,
+      unique: attachments.length,
+    });
+  }
+
+  if (attachments.length > 0) {
+    console.log('💾 Loading attachments from DB for message:', {
+      messageId: message.messageId,
+      attachmentCount: attachments.length,
+      attachments: attachments.map(a => ({
+        id: a.attachmentId,
+        filename: a.filename,
+        url: a.url,
+        mimeType: a.mimeType,
+      })),
+    });
+  }
 
   // Fetch sender from users table
   let sender: ChatUser = {
@@ -135,12 +173,8 @@ export async function messageToChatMessage(message: Message, getUserFn: (userId:
     };
   } catch (error) {
     // If relation fetch fails, try to fetch directly from users table
-    console.warn('⚠️ [MessageTransformer] Relation fetch failed, trying direct query:', {
-      messageId: message.messageId,
-      senderId: message.senderId,
-      error: error instanceof Error ? error.message : String(error),
-    });
-    
+    // Don't log here - only log if user is actually missing after all attempts
+
     try {
       const users = await db
         .get<User>('users')
@@ -158,23 +192,50 @@ export async function messageToChatMessage(message: Message, getUserFn: (userId:
           status: senderUser.status,
           lastSeen: senderUser.lastSeen ? new Date(senderUser.lastSeen) : undefined,
         };
+        // User found, remove from warned set in case it was previously missing
+        warnedMissingUsers.delete(message.senderId);
       } else {
         // Try using the provided getUserFn as fallback
         const fallbackSender = await getUserFn(message.senderId);
         if (fallbackSender) {
           sender = fallbackSender;
+          // User found via fallback, remove from warned set
+          warnedMissingUsers.delete(message.senderId);
         } else {
-          console.warn('⚠️ [MessageTransformer] Sender user not found in database:', {
-            messageId: message.messageId,
+          // User is definitely missing - only warn once per senderId
+          if (!warnedMissingUsers.has(message.senderId)) {
+            warnedMissingUsers.add(message.senderId);
+            console.warn('⚠️ [MessageTransformer] Sender user not found in database (will only warn once per user):', {
+              senderId: message.senderId,
+            });
+          }
+        }
+      }
+    } catch (queryError) {
+      // Query failed - try fallback before logging
+      try {
+        const fallbackSender = await getUserFn(message.senderId);
+        if (fallbackSender) {
+          sender = fallbackSender;
+          warnedMissingUsers.delete(message.senderId);
+        } else {
+          // Only log error once per senderId after all attempts failed
+          if (!warnedMissingUsers.has(message.senderId)) {
+            warnedMissingUsers.add(message.senderId);
+            console.warn('⚠️ [MessageTransformer] Sender user not found in database (will only warn once per user):', {
+              senderId: message.senderId,
+            });
+          }
+        }
+      } catch (fallbackError) {
+        // All attempts failed - only log once per senderId
+        if (!warnedMissingUsers.has(message.senderId)) {
+          warnedMissingUsers.add(message.senderId);
+          console.warn('⚠️ [MessageTransformer] Sender user not found in database (will only warn once per user):', {
             senderId: message.senderId,
           });
         }
       }
-    } catch (queryError) {
-      console.error('❌ [MessageTransformer] Failed to fetch sender via direct query:', queryError, {
-        messageId: message.messageId,
-        senderId: message.senderId,
-      });
     }
   }
 

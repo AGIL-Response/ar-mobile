@@ -137,7 +137,6 @@ export type RoomToChatRoomContext = {
     status?: 'online' | 'away' | 'offline';
     lastSeen?: Date;
   }>;
-  lastMessage?: ChatMessage;
   currentUserId?: string;
 };
 

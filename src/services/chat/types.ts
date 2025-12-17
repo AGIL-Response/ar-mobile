@@ -30,6 +30,7 @@ export interface ChatMessage {
   content: string;
   type: 'text' | 'file' | 'image' | 'system';
   attachments?: ChatAttachment[];
+  files?: ChatAttachment[];
   timestamp: Date;
   editedAt?: Date;
   replyTo?: string;

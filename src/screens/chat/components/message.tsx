@@ -1,14 +1,15 @@
 /**
  * Message Component
- * Displays a single chat message
+ * Displays a single chat message with attachment support
  */
 
 import React from 'react';
 import { View } from 'react-native';
-import type { ChatMessage } from '@/services/chat';
+import type { ChatMessage, ChatAttachment } from '@/services/chat';
 import { Avatar, Text } from '@/components';
 import { useTheme } from '@/theme';
 import useAuthStore from '@/stores/auth';
+import { MessageAttachment } from './message-attachment';
 
 export interface MessageProps {
   message: ChatMessage;
@@ -17,12 +18,32 @@ export interface MessageProps {
   compact?: boolean;
   showDateSeparator?: boolean;
   dateSeparatorText?: string;
+  onAttachmentPress?: (attachment: ChatAttachment, index: number) => void;
 }
 
-export function Message({ message, showAvatar = true, showSenderName = false, compact = false, showDateSeparator = false, dateSeparatorText }: MessageProps) {
+export function Message({ 
+  message, 
+  showAvatar = true, 
+  showSenderName = false, 
+  compact = false, 
+  showDateSeparator = false, 
+  dateSeparatorText,
+  onAttachmentPress,
+}: MessageProps) {
   const theme = useTheme();
   const currentUsername = useAuthStore((state) => state.user?.username);
   const isOwnMessage = message.sender.username === currentUsername;
+  
+  const hasAttachments = message.attachments && message.attachments.length > 0;
+  
+  // Debug logging
+  if (hasAttachments) {
+    console.log('📎 Message has attachments:', {
+      messageId: message.id,
+      attachmentCount: message.attachments?.length,
+      attachments: message.attachments,
+    });
+  }
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('en-US', {
@@ -178,8 +199,8 @@ export function Message({ message, showAvatar = true, showSenderName = false, co
                 backgroundColor: isOwnMessage
                   ? 'rgba(18, 94, 145, 1)' // iOS blue for own messages
                   : 'rgba(11, 53, 86, 0.4)', // Dark gray for received messages
-                paddingHorizontal: 12,
-                paddingVertical: 8,
+                paddingHorizontal: hasAttachments ? 8 : 12,
+                paddingVertical: hasAttachments ? 8 : 8,
                 borderRadius: 18,
                 // More rounded corners, slightly different for own vs received
                 borderTopLeftRadius: isOwnMessage ? 18 : 4,
@@ -190,10 +211,21 @@ export function Message({ message, showAvatar = true, showSenderName = false, co
                 borderWidth: 1,
                 maxWidth: '100%',
                 flexShrink: 1,
+                gap: 8,
               }}
             >
-              {message.type === 'image' && message.attachments && message.attachments.length > 0 ? (
-                <View>
+              {/* Attachments */}
+              {hasAttachments && (
+                <MessageAttachment
+                  attachments={message.attachments!}
+                  onPress={onAttachmentPress}
+                  isOwnMessage={isOwnMessage}
+                />
+              )}
+
+              {/* Text content */}
+              {message.content && (
+                <View style={{ paddingHorizontal: hasAttachments ? 4 : 0 }}>
                   <Text
                     variant="body"
                     style={{
@@ -202,34 +234,9 @@ export function Message({ message, showAvatar = true, showSenderName = false, co
                       lineHeight: 20,
                     }}
                   >
-                    {message.content || '📷 Image'}
-                  </Text>
-                  {/* TODO: Add image preview component */}
-                </View>
-              ) : message.type === 'file' && message.attachments && message.attachments.length > 0 ? (
-                <View>
-                  <Text
-                    variant="body"
-                    style={{
-                      color: '#FFFFFF',
-                      fontSize: 15,
-                      lineHeight: 20,
-                    }}
-                  >
-                    📎 {message.attachments[0].filename}
+                    {message.content}
                   </Text>
                 </View>
-              ) : (
-                <Text
-                  variant="body"
-                  style={{
-                    color: '#FFFFFF',
-                    fontSize: 15,
-                    lineHeight: 20,
-                  }}
-                >
-                  {message.content}
-                </Text>
               )}
 
               {message.editedAt && (
@@ -240,6 +247,7 @@ export function Message({ message, showAvatar = true, showSenderName = false, co
                     fontSize: 11,
                     marginTop: 2,
                     fontStyle: 'italic',
+                    paddingHorizontal: hasAttachments ? 4 : 0,
                   }}
                 >
                   (edited)

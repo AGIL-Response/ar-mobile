@@ -66,18 +66,18 @@ function ensureStringId(value: any, fieldName: string = 'id'): string {
   if (value === null || value === undefined) {
     throw new Error(`${fieldName} is null or undefined`);
   }
-  
+
   if (typeof value === 'string') {
     if (value === '' || value === 'undefined' || value === 'null' || value === '[object Object]') {
       throw new Error(`${fieldName} is an invalid string: "${value}"`);
     }
     return value;
   }
-  
+
   if (typeof value === 'number') {
     return String(value);
   }
-  
+
   if (typeof value === 'object') {
     // Try to extract an ID field from the object
     if ('id' in value) {
@@ -94,14 +94,14 @@ function ensureStringId(value: any, fieldName: string = 'id'): string {
         return ensureStringId(nestedId, `${fieldName}.id`);
       }
     }
-    
+
     // Try other common ID field names
     for (const key of ['_id', 'uuid', 'uid']) {
       if (key in value && typeof value[key] === 'string') {
         return value[key];
       }
     }
-    
+
     // If it has a toString method that returns something useful, use it
     if (typeof value.toString === 'function') {
       const stringValue = value.toString();
@@ -109,7 +109,7 @@ function ensureStringId(value: any, fieldName: string = 'id'): string {
         return stringValue;
       }
     }
-    
+
     // Last resort: try JSON.stringify, but this is not ideal for IDs
     try {
       const stringified = JSON.stringify(value);
@@ -120,12 +120,12 @@ function ensureStringId(value: any, fieldName: string = 'id'): string {
     } catch (e) {
       // JSON.stringify failed (circular reference, etc.)
     }
-    
+
     // If we get here, we couldn't convert the object to a valid string ID
     console.error(`Cannot convert object to string ID for ${fieldName}:`, value);
     throw new Error(`${fieldName} is an object that cannot be converted to a string ID: ${JSON.stringify(value)}`);
   }
-  
+
   // For any other type, try String() conversion
   const stringValue = String(value);
   if (stringValue === '[object Object]' || stringValue === 'undefined' || stringValue === 'null') {
@@ -140,7 +140,7 @@ function ensureStringId(value: any, fieldName: string = 'id'): string {
 export function transformConversationToRoom(conversation: any): ChatRoom {
   // Ensure ID is a string - handle all cases
   const id = ensureStringId(conversation.id, 'conversation.id');
-  
+
   return {
     id,
     name: conversation.name || '',
@@ -158,10 +158,10 @@ export function transformConversationToRoom(conversation: any): ChatRoom {
     })),
     lastMessage: conversation.lastMessage ? transformMessageToChatMessage(conversation.lastMessage, id) : undefined,
     unreadCount: conversation.unreadCount || 0,
-    createdAt: conversation.createdAt 
+    createdAt: conversation.createdAt
       ? (conversation.createdAt instanceof Date ? conversation.createdAt : new Date(conversation.createdAt))
       : new Date(),
-    updatedAt: conversation.updatedAt 
+    updatedAt: conversation.updatedAt
       ? (conversation.updatedAt instanceof Date ? conversation.updatedAt : new Date(conversation.updatedAt))
       : new Date(),
   };
@@ -174,7 +174,7 @@ function transformMessageToChatMessage(message: any, roomId: string): ChatMessag
   const id = ensureStringId(message.id, 'message.id');
   const senderId = ensureStringId(message.senderId, 'message.senderId');
   const conversationId = message.conversationId ? ensureStringId(message.conversationId, 'message.conversationId') : roomId;
-  
+
   return {
     id,
     roomId: conversationId,
@@ -189,14 +189,23 @@ function transformMessageToChatMessage(message: any, roomId: string): ChatMessag
     },
     content: message.content || '',
     type: message.type || 'text',
-    attachments: (message.attachments || []).map((a: any) => ({
-      id: ensureStringId(a.id || a.key, 'attachment.id'),
-      filename: a.filename || a.key,
-      url: a.url || a.key,
-      size: a.size || 0,
-      mimeType: a.mimeType || a.contentType || 'application/octet-stream',
-      uploadedAt: a.uploadedAt ? new Date(a.uploadedAt) : new Date(),
-    })),
+    attachments: (() => {
+      // Handle both attachments and files arrays (like svelte-chat-kit)
+      // CRITICAL: Must concatenate both arrays, not use OR logic!
+      // Empty arrays are truthy, so || would stop at empty attachments array
+      const attachmentsArray = [
+        ...(Array.isArray(message.attachments) ? message.attachments : []),
+        ...(Array.isArray(message.files) ? message.files : []),
+      ];
+      return attachmentsArray.map((a: any) => ({
+        id: ensureStringId(a.id || a.fileId || a.key || '', 'attachment.id'),
+        filename: a.filename || a.name || a.key || 'file',
+        url: a.url || a.key || '',
+        size: a.size || 0,
+        mimeType: a.mimeType || a.contentType || a.type || 'application/octet-stream',
+        uploadedAt: a.uploadedAt ? new Date(a.uploadedAt) : new Date(),
+      }));
+    })(),
     timestamp: message.createdAt ? new Date(message.createdAt) : new Date(),
     editedAt: message.editedAt ? new Date(message.editedAt) : undefined,
     replyTo: message.replyToId ? ensureStringId(message.replyToId, 'replyToId') : undefined,
@@ -208,10 +217,15 @@ export const chatApi = {
   /**
    * Get all conversations/rooms
    */
-  getRooms: async (): Promise<ChatRoom[]> => {
-    const response = await chatApiClient.get(`${CHAT_ROUTE_PREFIX}/conversations`);
+  getRooms: async (limit: number = 100, offset: number = 0): Promise<ChatRoom[]> => {
+    const response = await chatApiClient.get(`${CHAT_ROUTE_PREFIX}/conversations`, {
+      params: {
+        limit,
+        offset,
+      },
+    });
     const conversations = response.data.conversations || response.data.data || [];
-    
+
     // Transform with error handling
     const transformedRooms: ChatRoom[] = [];
     for (const conversation of conversations) {
@@ -284,9 +298,22 @@ export const chatApi = {
       params,
     });
     const messages = response.data.messages || response.data.data || [];
+    console.log('📡 [API] Fetched messages:', {
+      roomId,
+      messageCount: messages.length,
+      messagesWithAttachments: messages.filter((m: any) => m.attachments?.length > 0).length,
+      messagesWithFiles: messages.filter((m: any) => m.files?.length > 0).length,
+      sample: messages.length > 0 ? {
+        messageId: messages[0].id,
+        hasAttachments: !!messages[0].attachments,
+        hasFiles: !!messages[0].files,
+      } : null,
+    });
+    const transformed = messages.map((msg: any) => transformMessageToChatMessage(msg, roomId));
+    console.log('✅ [API] Transformed messages with attachments:', transformed.filter((m: any) => m.attachments?.length > 0).length);
     return {
       ...response.data,
-      data: messages.map((msg: any) => transformMessageToChatMessage(msg, roomId)),
+      data: transformed,
     };
   },
 
@@ -298,7 +325,7 @@ export const chatApi = {
     formData.append('conversationId', data.roomId);
     formData.append('content', data.content);
     formData.append('type', data.type);
-    
+
     if (data.replyTo) {
       formData.append('replyToId', data.replyTo);
     }
@@ -315,7 +342,20 @@ export const chatApi = {
       },
     });
     const message = response.data.message || response.data.data;
-    return transformMessageToChatMessage(message, data.roomId);
+    console.log('📡 [API] Sent message response:', {
+      messageId: message.id,
+      hasAttachments: !!message.attachments,
+      attachmentsCount: message.attachments?.length || 0,
+      hasFiles: !!message.files,
+      filesCount: message.files?.length || 0,
+      raw: message,
+    });
+    const transformed = transformMessageToChatMessage(message, data.roomId);
+    console.log('✅ [API] Transformed sent message:', {
+      messageId: transformed.id,
+      attachmentCount: transformed.attachments?.length || 0,
+    });
+    return transformed;
   },
 
   /**

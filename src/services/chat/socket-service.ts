@@ -128,20 +128,61 @@ export class ChatSocketService {
     // Message events
     this.socket.on('message:new', (data: { message: any }) => {
       // Transform the message to ensure it has the correct format with sender data
+      // Handle case where message might be an array
+      const messageData = Array.isArray(data.message) ? data.message[0] : data.message;
+
+      if (!messageData) {
+        console.error('❌ [SocketService] Invalid message data (empty array or null):', data);
+        return;
+      }
+
+      // Log raw message data to see attachments/files structure
+      console.log('📨 [SocketService] Raw message:new data:', {
+        messageId: messageData.id,
+        hasAttachments: !!messageData.attachments,
+        attachmentsCount: messageData.attachments?.length ?? 0,
+        hasFiles: !!messageData.files,
+        filesCount: messageData.files?.length ?? 0,
+        raw: messageData,
+      });
+
       try {
-        const transformedMessage = transformMessageToChatMessage(data.message, data.message.conversationId || data.message.roomId);
+        const transformedMessage = transformMessageToChatMessage(messageData, messageData.conversationId || messageData.roomId);
+        console.log('✅ [SocketService] Transformed message:', {
+          messageId: transformedMessage.id,
+          attachmentCount: transformedMessage.attachments?.length || 0,
+        });
         this.eventHandlers.onMessage?.(transformedMessage);
       } catch (error) {
-        console.error('❌ [SocketService] Error transforming message:new:', error, { data });
+        console.error('❌ [SocketService] Error transforming message:new:', error, { data, messageData });
         // Fallback: try to use the message as-is if transformation fails
-        this.eventHandlers.onMessage?.(data.message as ChatMessage);
+        if (messageData.id) {
+          this.eventHandlers.onMessage?.(messageData as ChatMessage);
+        }
       }
     });
 
     this.socket.on('message:edited', (data: { message: any }) => {
       // Transform the message to ensure it has the correct format with sender data
+      // Handle case where message might be an array
+      const messageData = Array.isArray(data.message) ? data.message[0] : data.message;
+
+      if (!messageData) {
+        console.error('❌ [SocketService] Invalid message data (empty array or null):', data);
+        return;
+      }
+
+      // Log raw message data to see attachments/files structure
+      console.log('✏️ [SocketService] Raw message:edited data:', {
+        messageId: messageData.id,
+        hasAttachments: !!messageData.attachments,
+        attachmentsCount: messageData.attachments?.length ?? 0,
+        hasFiles: !!messageData.files,
+        filesCount: messageData.files?.length ?? 0,
+      });
+
       try {
-        const transformedMessage = transformMessageToChatMessage(data.message, data.message.conversationId || data.message.roomId);
+        const transformedMessage = transformMessageToChatMessage(messageData, messageData.conversationId || messageData.roomId);
         this.eventHandlers.onMessageEdited?.(transformedMessage);
       } catch (error) {
         console.error('❌ [SocketService] Error transforming message:edited:', error, { data });
@@ -168,6 +209,20 @@ export class ChatSocketService {
         messagesArray = [];
       }
 
+      console.log('📜 [SocketService] Raw message:history:loaded data:', {
+        conversationId: data.conversation_id,
+        messageCount: messagesArray.length,
+        messagesWithAttachments: messagesArray.filter(m => m.attachments?.length ?? 0 > 0).length,
+        messagesWithFiles: messagesArray.filter(m => m.files?.length ?? 0 > 0).length,
+        sample: messagesArray.length > 0 ? {
+          messageId: messagesArray[0].id,
+          hasAttachments: !!messagesArray[0].attachments,
+          hasFiles: !!messagesArray[0].files,
+          attachments: messagesArray[0].attachments,
+          files: messagesArray[0].files,
+        } : null,
+      });
+
       // Transform messages to ChatMessage format using transformMessageToChatMessage utility
       const messages: ChatMessage[] = messagesArray
         .map((msg: any) => {
@@ -184,6 +239,8 @@ export class ChatSocketService {
         })
         .filter((msg): msg is ChatMessage => msg !== null);
 
+      console.log('📜 [SocketService] Transformed history messages with attachments:', messages.filter(m => (m.attachments?.length ?? 0) > 0).length);
+
       this.eventHandlers.onMessageHistoryLoaded?.({
         conversation_id: data.conversation_id,
         messages,
@@ -192,20 +249,51 @@ export class ChatSocketService {
 
     // Conversation events
     this.socket.on('conversation:list', (data: { conversations: any[] }) => {
+      console.log('📋 [SocketService] Raw conversation:list data:', {
+        conversationCount: data.conversations?.length ?? 0,
+        conversationsWithLastMessage: data.conversations?.filter(c => c.lastMessage).length ?? 0,
+        lastMessagesWithAttachments: data.conversations?.filter(c => c.lastMessage?.attachments?.length ?? 0 > 0).length ?? 0,
+        lastMessagesWithFiles: data.conversations?.filter(c => c.lastMessage?.files?.length ?? 0 > 0).length ?? 0,
+        sample: data.conversations?.[0]?.lastMessage ? {
+          messageId: data.conversations[0].lastMessage.id,
+          hasAttachments: !!data.conversations[0].lastMessage.attachments,
+          hasFiles: !!data.conversations[0].lastMessage.files,
+          attachments: data.conversations[0].lastMessage.attachments,
+          files: data.conversations[0].lastMessage.files,
+        } : null,
+      });
       this.eventHandlers.onConversationList?.(data);
     });
 
     this.socket.on('conversation:created', (data: { conversation: any }) => {
+      console.log('✨ [SocketService] Raw conversation:created data:', {
+        conversationId: data.conversation?.id,
+        hasLastMessage: !!data.conversation?.lastMessage,
+        lastMessageHasAttachments: !!(data.conversation?.lastMessage?.attachments?.length ?? 0 > 0),
+        lastMessageHasFiles: !!(data.conversation?.lastMessage?.files?.length ?? 0 > 0),
+      });
       this.eventHandlers.onConversationCreated?.(data);
     });
 
     this.socket.on('conversation:updated', (data: { conversation: any }) => {
+      console.log('🔄 [SocketService] Raw conversation:updated data:', {
+        conversationId: data.conversation?.id,
+        hasLastMessage: !!data.conversation?.lastMessage,
+        lastMessageHasAttachments: !!(data.conversation?.lastMessage?.attachments?.length ?? 0 > 0),
+        lastMessageHasFiles: !!(data.conversation?.lastMessage?.files?.length ?? 0 > 0),
+      });
       this.eventHandlers.onConversationUpdated?.(data);
       // Also emit legacy event for backward compatibility
       this.eventHandlers.onRoomUpdate?.(data.conversation);
     });
 
     this.socket.on('conversation:details', (data: { conversation: any }) => {
+      console.log('📖 [SocketService] Raw conversation:details data:', {
+        conversationId: data.conversation?.id,
+        hasLastMessage: !!data.conversation?.lastMessage,
+        lastMessageHasAttachments: !!(data.conversation?.lastMessage?.attachments?.length ?? 0 > 0),
+        lastMessageHasFiles: !!(data.conversation?.lastMessage?.files?.length ?? 0 > 0),
+      });
       this.eventHandlers.onConversationDetails?.(data);
     });
 
@@ -381,13 +469,16 @@ export class ChatSocketService {
   /**
    * Get conversations list (matching chat-client-js pattern)
    */
-  getConversations(): void {
+  getConversations(limit: number = 100, offset: number = 0): void {
     if (!this.socket?.connected) {
       console.warn('Socket not connected, cannot get conversations');
       return;
     }
 
-    this.socket.emit('conversation:list');
+    this.socket.emit('conversation:list', {
+      limit,
+      offset,
+    });
   }
 
   /**

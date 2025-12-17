@@ -75,7 +75,6 @@ export const handleListenMapSocket = (
         // Try to parse as JSON if it's a string
         const parsedData = JSON.parse(data) as SocketLocationUpdateEvent;
         if (parsedData.event === 'locations.updated') {
-          console.log('📩 Processing parsed location update:', parsedData);
           onLocationUpdate?.(parsedData);
         }
       } else if (data && data.event === 'error') {
@@ -162,7 +161,7 @@ export const sendLocationToSocket = (
     if (batteryPercentage !== undefined && batteryPercentage !== null) {
       payload.attributes.batteryPercentage = batteryPercentage;
     }
-    
+
     // Log what we're including
     console.log('🔍 Attributes being added:', {
       networkMbps: networkMbps !== undefined && networkMbps !== null ? networkMbps : 'null/undefined',
@@ -175,7 +174,6 @@ export const sendLocationToSocket = (
     });
   }
 
-  console.log('📤 Sending location to WebSocket:', JSON.stringify(payload, null, 2));
   socket.emit('maps', payload);
 };
 

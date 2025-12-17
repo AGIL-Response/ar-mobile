@@ -3,9 +3,11 @@ import type Room from '../../models/Room';
 import type Message from '../../models/Message';
 import type { ChatRoom } from '../../../types';
 import { Q } from '@nozbe/watermelondb';
-import { switchMap, of } from 'rxjs';
+import { switchMap, of, distinctUntilChanged } from 'rxjs';
 import { chatRoomToRoomData, type RoomToChatRoomContext } from './transformer';
 import type { ChatMessage } from '../../../types';
+import { messageToChatMessage } from '../message/transformer';
+import { getUser } from '../user/operator';
 
 const db = getDatabase();
 
@@ -76,21 +78,49 @@ export async function roomToChatRoom(
 ): Promise<ChatRoom> {
   let lastMessage: ChatMessage | undefined = undefined;
 
-  if (room.lastMessageId && getLastMessageFn) {
-    lastMessage = await getLastMessageFn(room.lastMessageId);
+  // Fetch the actual last message from messages table for this room
+  // Query the most recent non-deleted message instead of relying on last_message_id which might be stale
+  try {
+    const messages = await db
+      .get<Message>('messages')
+      .query(
+        Q.where('room_id', room.roomId),
+        Q.where('deleted_at', null),
+        Q.sortBy('created_at', Q.desc)
+      )
+      .fetch();
+
+    if (messages.length > 0) {
+      // Sort by timestamp to ensure we get the truly most recent message
+      // Use server_created_at as fallback if created_at is not available
+      const sortedMessages = [...messages].sort((a, b) => {
+        const timeA = a.createdAt?.getTime() || (a.serverCreatedAt ? new Date(a.serverCreatedAt).getTime() : 0);
+        const timeB = b.createdAt?.getTime() || (b.serverCreatedAt ? new Date(b.serverCreatedAt).getTime() : 0);
+        // Descending: larger time (newer) comes first
+        return timeB - timeA;
+      });
+
+      lastMessage = await messageToChatMessage(sortedMessages[0], getUser);
+    } else if (room.lastMessageId && getLastMessageFn) {
+      // Fall back to last_message_id if no messages found (shouldn't happen, but just in case)
+      lastMessage = await getLastMessageFn(room.lastMessageId);
+    }
+  } catch {
+    // If query fails, fall back to last_message_id if available
+    if (room.lastMessageId && getLastMessageFn) {
+      lastMessage = await getLastMessageFn(room.lastMessageId);
+    }
   }
 
   // For DM rooms, set the room name to the opposite member's name
   let roomName = room.name;
 
-  console.log('🔍 [roomToChatRoom] Room name:', roomName, 'Room type:', room.type, 'Current user ID:', context.currentUserId, 'Members:', context.members.length);
   if (room.type === 'dm' && context.currentUserId && context.members.length > 0) {
     // Find the opposite member (not the current user)
     const oppositeMember = context.members.find((member) => member.id !== context.currentUserId);
     if (oppositeMember) {
       roomName = oppositeMember.displayName || oppositeMember.username || room.name;
     }
-    console.log('🔍 [roomToChatRoom] Opposite member:', oppositeMember);
   }
 
   return {
@@ -112,7 +142,12 @@ export async function roomToChatRoom(
  * Get observable for all rooms
  */
 export function observeRooms(roomToChatRoomFn: (room: Room) => Promise<ChatRoom>) {
-  return db.get<Room>('rooms').query().observe().pipe(
+  return db.get<Room>('rooms').query(Q.sortBy('last_message_at', Q.desc)).observe().pipe(
+    distinctUntilChanged((prev, curr) => {
+      // Compare room IDs and order to prevent redundant emissions
+      if (prev.length !== curr.length) return false;
+      return prev.every((room, index) => room.roomId === curr[index]?.roomId);
+    }),
     switchMap((rooms) => {
       return Promise.all(rooms.map((room) => roomToChatRoomFn(room)));
     })

@@ -61,7 +61,9 @@ export class ChatDbService {
 
     // Save attachments
     if (messageData.attachments && messageData.attachments.length > 0) {
-      await AttachmentEntity.upsertAttachments(messageData.id, messageData.attachments);
+
+      const attachments = messageData.files || messageData.attachments;
+      await AttachmentEntity.upsertAttachments(messageData.id, attachments);
     }
 
     // Update room's last message
@@ -88,9 +90,6 @@ export class ChatDbService {
   observeRooms() {
     return RoomEntity.observeRooms(async (room: Room) => {
       const members = await RoomMemberEntity.getRoomMembers(room.roomId);
-      const lastMessage = room.lastMessageId
-        ? await this.getMessageById(room.lastMessageId)
-        : undefined;
       const currentUserId = useAuthStore.getState().user?.id;
 
       return RoomEntity.roomToChatRoom(
@@ -104,9 +103,9 @@ export class ChatDbService {
             status: m.status,
             lastSeen: m.lastSeen,
           })),
-          lastMessage,
           currentUserId,
         },
+        // Fallback function in case relation fetch fails
         async (messageId: string) => {
           return await this.getMessageById(messageId);
         }
@@ -190,9 +189,6 @@ export class ChatDbService {
   async getRooms(): Promise<ChatRoom[]> {
     return RoomEntity.getRooms(async (room: Room) => {
       const members = await RoomMemberEntity.getRoomMembers(room.roomId);
-      const lastMessage = room.lastMessageId
-        ? await this.getMessageById(room.lastMessageId)
-        : undefined;
       const currentUserId = useAuthStore.getState().user?.id;
 
       return RoomEntity.roomToChatRoom(
@@ -206,9 +202,9 @@ export class ChatDbService {
             status: m.status,
             lastSeen: m.lastSeen,
           })),
-          lastMessage,
           currentUserId,
         },
+        // Fallback function in case relation fetch fails
         async (messageId: string) => {
           return await this.getMessageById(messageId);
         }
@@ -222,9 +218,6 @@ export class ChatDbService {
   async getRoom(roomId: string): Promise<ChatRoom | null> {
     return RoomEntity.getRoom(roomId, async (room: Room) => {
       const members = await RoomMemberEntity.getRoomMembers(room.roomId);
-      const lastMessage = room.lastMessageId
-        ? await this.getMessageById(room.lastMessageId)
-        : undefined;
       const currentUserId = useAuthStore.getState().user?.id;
 
       return RoomEntity.roomToChatRoom(
@@ -238,9 +231,9 @@ export class ChatDbService {
             status: m.status,
             lastSeen: m.lastSeen,
           })),
-          lastMessage,
           currentUserId,
         },
+        // Fallback function in case relation fetch fails
         async (messageId: string) => {
           return await this.getMessageById(messageId);
         }

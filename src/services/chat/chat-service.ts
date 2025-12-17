@@ -112,7 +112,7 @@ export class ChatService {
     try {
       // Emit socket event to get conversation list
       if (this.socketService && typeof this.socketService.getConversations === 'function') {
-        this.socketService.getConversations();
+        this.socketService.getConversations(100, 0);
         // The rooms will be saved via onConversationList handler
       } else {
         console.error('Socket service or getConversations method not available');

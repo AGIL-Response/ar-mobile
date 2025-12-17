@@ -147,11 +147,6 @@ const usersStore = (set: any, get: any) => ({
 
           // Only trigger re-render if something actually changed
           if (hasChanges) {
-            console.log(`✅ Updated location for user ${userId}:`, {
-              location,
-              attributes,
-              status,
-            });
             state.users = [...state.users];
           } else {
             console.log(`⏭️ Received socket: skip location update for user ${userId} (no changes detected)`);

@@ -4,7 +4,7 @@ import { Alert, Linking } from 'react-native';
 
 import type IBaseState from '@/stores/interfaces/IBaseState';
 import { type InitStateType } from '@/stores/interfaces/IBaseState';
-import { createStore, resetStore , coordinatesChanged, attributesChanged } from '@/stores/utils';
+import { createStore, resetStore, coordinatesChanged, attributesChanged } from '@/stores/utils';
 import {
   initMapSocket,
   handleListenMapSocket,
@@ -244,7 +244,6 @@ const locationStore = (set: any, get: any) => ({
           isCheckingBattery: deviceInfoState.isCheckingBattery,
           batteryError: deviceInfoState.batteryError,
         });
-        console.log('📍 Sending location update with:', { networkSpeed, batteryPercentage });
 
         // Send location update - attributes will be included if networkSpeed or batteryPercentage is not null
         get().actions.sendLocationUpdate(networkSpeed, batteryPercentage);
@@ -415,12 +414,7 @@ const locationStore = (set: any, get: any) => ({
           state.lastSentAttributes = { ...newAttributes };
         });
 
-        console.log('📤 Sent location update (changed):', {
-          coordinates: state.coordinates,
-          attributes: newAttributes,
-        });
-      } else {
-        console.log('⏭️ Socket emit: skipping location update (no changes detected)');
+
       }
     },
 

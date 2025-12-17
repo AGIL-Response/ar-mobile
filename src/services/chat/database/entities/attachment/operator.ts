@@ -11,19 +11,65 @@ const db = getDatabase();
  */
 export async function upsertAttachments(messageId: string, attachments: ChatAttachment[]): Promise<void> {
   const validMessageId = typeof messageId === 'string' ? messageId : String(messageId);
-  
-  // Delete existing attachments for this message
+
+  // Deduplicate attachments by ID (keep first occurrence of each unique ID)
+  const uniqueAttachments = attachments.reduce((acc, current) => {
+    const exists = acc.find(item => item.id === current.id);
+    if (!exists) {
+      acc.push(current);
+    }
+    return acc;
+  }, [] as ChatAttachment[]);
+
+  if (uniqueAttachments.length !== attachments.length) {
+    console.warn('⚠️ [AttachmentOperator] Duplicate attachments detected:', {
+      original: attachments.length,
+      unique: uniqueAttachments.length,
+      duplicates: attachments.length - uniqueAttachments.length,
+    });
+  }
+
+  // Get existing attachments for this message
   const existingAttachments = await db
     .get<Attachment>('attachments')
     .query(Q.where('message_id', validMessageId))
     .fetch();
+
+  // Check if attachments have changed (compare IDs only for efficiency)
+  const existingIds = new Set(existingAttachments.map(a => a.attachmentId));
+  const newIds = new Set(uniqueAttachments.map(a => a.id));
+
+  const hasChanged =
+    existingIds.size !== newIds.size ||
+    ![...existingIds].every(id => newIds.has(id));
+
+  if (!hasChanged) {
+    console.log('⏭️  [AttachmentOperator] Attachments unchanged, skipping update:', {
+      messageId: validMessageId,
+      attachmentCount: uniqueAttachments.length,
+    });
+    return;
+  }
+
+  console.log('💾 [AttachmentOperator] Upserting attachments:', {
+    messageId: validMessageId,
+    attachmentCount: uniqueAttachments.length,
+    attachments: uniqueAttachments.map(a => ({
+      id: a.id,
+      filename: a.filename,
+      mimeType: a.mimeType,
+      url: a.url,
+    })),
+  });
+
+  console.log('🗑️ [AttachmentOperator] Deleting existing attachments:', existingAttachments.length);
 
   await db.write(async () => {
     for (const attachment of existingAttachments) {
       await attachment.destroyPermanently();
     }
 
-    for (const attachmentData of attachments) {
+    for (const attachmentData of uniqueAttachments) {
       const attachmentDataTransformed = chatAttachmentToAttachmentData(attachmentData, validMessageId);
       await db.get<Attachment>('attachments').create((attachment) => {
         attachment.attachmentId = attachmentDataTransformed.attachmentId;
@@ -39,6 +85,8 @@ export async function upsertAttachments(messageId: string, attachments: ChatAtta
       });
     }
   });
+
+  console.log('✅ [AttachmentOperator] Attachments saved successfully');
 }
 
 /**
@@ -46,12 +94,41 @@ export async function upsertAttachments(messageId: string, attachments: ChatAtta
  */
 export async function getAttachments(messageId: string): Promise<ChatAttachment[]> {
   const validMessageId = typeof messageId === 'string' ? messageId : String(messageId);
-  
+
   const attachments = await db
     .get<Attachment>('attachments')
     .query(Q.where('message_id', validMessageId))
     .fetch();
 
-  return attachments.map(attachmentToChatAttachment);
+  // Deduplicate by attachment_id (keep first occurrence of each unique ID)
+  const uniqueAttachments = attachments.reduce((acc, current) => {
+    const exists = acc.find(item => item.attachmentId === current.attachmentId);
+    if (!exists) {
+      acc.push(current);
+    }
+    return acc;
+  }, [] as Attachment[]);
+
+  if (uniqueAttachments.length !== attachments.length) {
+    console.warn('⚠️ [AttachmentOperator] Duplicate attachments found in DB:', {
+      messageId: validMessageId,
+      original: attachments.length,
+      unique: uniqueAttachments.length,
+      duplicates: attachments.length - uniqueAttachments.length,
+    });
+  }
+
+  console.log('📤 [AttachmentOperator] Retrieved attachments from DB:', {
+    messageId: validMessageId,
+    attachmentCount: uniqueAttachments.length,
+    attachments: uniqueAttachments.map(a => ({
+      id: a.attachmentId,
+      filename: a.filename,
+      mimeType: a.mimeType,
+      url: a.url,
+    })),
+  });
+
+  return uniqueAttachments.map(attachmentToChatAttachment);
 }
 

@@ -9,8 +9,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Background, View, Text, AppBar } from '@/components';
 import { useTheme } from '@/theme';
 import { chatService } from '@/services/chat';
-import { Message, Composer } from './components';
-import type { ChatMessage, SendMessageData } from '@/services/chat';
+import { Message, Composer, MediaViewer } from './components';
+import type { ChatMessage, ChatAttachment, SendMessageData } from '@/services/chat';
 import { useObservable } from '@/lib/hooks/use-observable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -29,6 +29,9 @@ export default function ChatRoomScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const [mediaViewerVisible, setMediaViewerVisible] = useState(false);
+  const [selectedAttachments, setSelectedAttachments] = useState<ChatAttachment[]>([]);
+  const [selectedAttachmentIndex, setSelectedAttachmentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
   // Memoize observables to prevent recreation on every render
@@ -186,6 +189,18 @@ export default function ChatRoomScreen() {
     setReplyTo(undefined);
   }, []);
 
+  const handleAttachmentPress = useCallback((message: ChatMessage, attachment: ChatAttachment, index: number) => {
+    if (!message.attachments || message.attachments.length === 0) return;
+    
+    setSelectedAttachments(message.attachments);
+    setSelectedAttachmentIndex(index);
+    setMediaViewerVisible(true);
+  }, []);
+
+  const handleCloseMediaViewer = useCallback(() => {
+    setMediaViewerVisible(false);
+  }, []);
+
   // Memoize room name to prevent recalculation on every render
   const roomName = useMemo(() => {
     if (!room) return 'Chat';
@@ -265,9 +280,10 @@ export default function ChatRoomScreen() {
         compact={!showAvatar && isGrouped}
         showDateSeparator={showDateSeparator}
         dateSeparatorText={dateSeparatorText}
+        onAttachmentPress={(attachment, attachmentIndex) => handleAttachmentPress(item, attachment, attachmentIndex)}
       />
     );
-  }, [messages, room?.type]);
+  }, [messages, room?.type, handleAttachmentPress]);
 
   // Memoize onContentSizeChange callback
   const handleContentSizeChange = useCallback(() => {
@@ -400,6 +416,14 @@ export default function ChatRoomScreen() {
             onCancelReply={handleCancelReply}
           />
         </View>
+
+        {/* Media Viewer */}
+        <MediaViewer
+          visible={mediaViewerVisible}
+          attachments={selectedAttachments}
+          initialIndex={selectedAttachmentIndex}
+          onClose={handleCloseMediaViewer}
+        />
       </Background>
     </KeyboardAvoidingView>
   );
