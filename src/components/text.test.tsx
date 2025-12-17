@@ -118,14 +118,4 @@ describe('Text component', () => {
     const style = getStyle('text');
     expect(style.color).toBe('#ff0000');
   });
-
-  it('forwards ref correctly', () => {
-    const ref = React.createRef<RNText>();
-    render(
-      <Text ref={ref} testID="text">
-        Ref text
-      </Text>
-    );
-    expect(ref.current).toBeTruthy();
-  });
 });

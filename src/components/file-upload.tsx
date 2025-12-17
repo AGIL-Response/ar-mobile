@@ -525,6 +525,7 @@ export const FileUpload = forwardRef<RNView, FileUploadProps>(
                     onPress={() => handleFileRemove(index)}
                     accessibilityLabel={`Remove ${file.name}`}
                     accessibilityRole="button"
+                    testID={`remove-${file.name}`}
                   >
                     <X width={20} height={20} />
                   </Pressable>

@@ -19,16 +19,32 @@ const DrawerLayout = ({ children, ...props }: any) => {
   return React.createElement(RNComponents.View, props, children);
 };
 
-// Gesture handlers - return empty objects/functions
+// Gesture handlers - return chainable gesture objects
+const createGestureMock = () => ({
+  onBegin: jest.fn(() => createGestureMock()),
+  onStart: jest.fn(() => createGestureMock()),
+  onUpdate: jest.fn(() => createGestureMock()),
+  onEnd: jest.fn(() => createGestureMock()),
+  onFinalize: jest.fn(() => createGestureMock()),
+  onTouchesDown: jest.fn(() => createGestureMock()),
+  onTouchesMove: jest.fn(() => createGestureMock()),
+  onTouchesUp: jest.fn(() => createGestureMock()),
+  onTouchesCancelled: jest.fn(() => createGestureMock()),
+  enabled: jest.fn(() => createGestureMock()),
+  shouldCancelWhenOutside: jest.fn(() => createGestureMock()),
+  hitSlop: jest.fn(() => createGestureMock()),
+  runOnJS: jest.fn((fn) => fn),
+});
+
 const Gesture = {
-  Tap: () => ({}),
-  Pan: () => ({}),
-  Pinch: () => ({}),
-  Rotation: () => ({}),
-  Fling: () => ({}),
-  LongPress: () => ({}),
-  ForceTouch: () => ({}),
-  Native: () => ({}),
+  Tap: () => createGestureMock(),
+  Pan: () => createGestureMock(),
+  Pinch: () => createGestureMock(),
+  Rotation: () => createGestureMock(),
+  Fling: () => createGestureMock(),
+  LongPress: () => createGestureMock(),
+  ForceTouch: () => createGestureMock(),
+  Native: () => createGestureMock(),
 };
 
 // Gesture utilities

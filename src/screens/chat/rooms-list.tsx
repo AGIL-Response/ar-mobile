@@ -62,7 +62,7 @@ export default function ChatRoomsListScreen() {
 
   return (
     <Background>
-      <AppHeader title="Chat" />
+      <AppHeader />
       <View style={styles.container}>
         <FlatList
           data={rooms}

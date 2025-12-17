@@ -108,7 +108,7 @@ describe('checkUsername', () => {
     });
   });
 
-  describe.only('Error Cases', () => {
+  describe('Error Cases', () => {
     beforeEach(() => {
       jest.clearAllMocks();
       jest.spyOn(console, 'error').mockImplementation();

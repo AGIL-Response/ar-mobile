@@ -34,7 +34,7 @@ describe('FileUpload', () => {
     render(<FileUpload label="U" files={files} onFileRemove={onFileRemove} />);
     expect(screen.getByText('Resume.pdf')).toBeTruthy();
     expect(screen.getByText('Photo.jpg')).toBeTruthy();
-    fireEvent.press(screen.getAllByRole('button')[1]); // Remove button for Photo.jpg
+    fireEvent.press(screen.getByTestId('remove-Photo.jpg'));
     expect(onFileRemove).toHaveBeenCalledWith(1);
   });
 

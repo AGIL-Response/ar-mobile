@@ -154,6 +154,7 @@ export function withFileSource<
         mimeType={mimeType}
         isLoading={isLoading}
         error={error}
+        testID={`withFileSource-${fileId}`}
       />
     );
   });

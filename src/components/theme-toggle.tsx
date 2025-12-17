@@ -74,7 +74,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
       accessibilityLabel={`Switch to ${isDark ? 'light' : 'dark'} theme`}
       accessibilityHint="Toggles between light and dark theme"
     >
-      <Pressable style={styles.button} onPress={toggleTheme}>
+      <Pressable testID="theme-toggle-button" style={styles.button} onPress={toggleTheme} accessibilityRole="button" accessibilityLabel={`Switch to ${isDark ? 'light' : 'dark'} theme`} accessibilityHint="Toggles between light and dark theme">
         <Text style={styles.icon}>{isDark ? '☀️' : '🌙'}</Text>
       </Pressable>
       {showLabel && (

@@ -153,6 +153,7 @@ export function MediaViewerModal({
           {/* Close Button */}
           <TouchableOpacity
             onPress={handleClose}
+            testID="media-viewer-close"
             style={[
               styles.closeButton,
               { backgroundColor: theme.colors.button.ghost },

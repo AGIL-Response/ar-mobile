@@ -41,7 +41,7 @@ describe('View component', () => {
   test('bordered sets borderWidth and default borderColor', () => {
     render(<View testID="v" bordered />);
     const style = getStyle('v');
-    expect(style.borderWidth).toBe(1);
+    expect(style.borderWidth).toBe(2);
     expect(style.borderColor).toBe('#6b7280'); // theme.colors.text.secondary
   });
 

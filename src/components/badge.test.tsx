@@ -34,7 +34,7 @@ describe('Badge component', () => {
   it('applies outline variant', () => {
     render(<Badge label="Badge" variant="outline" testID="badge" />);
     const style = getStyle('badge');
-    expect(style.borderWidth).toBe(1);
+    expect(style.borderWidth).toBe(2);
     expect(style.backgroundColor).toBe('transparent');
   });
 

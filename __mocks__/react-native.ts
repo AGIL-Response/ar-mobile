@@ -18,6 +18,8 @@ module.exports = {
   Image: (props: any) => React.createElement('Image', props),
   ImageBackground: ({ children, source, ...props }: any) =>
     React.createElement('ImageBackground', { ...props, source }, children),
+  ActivityIndicator: (props: any) =>
+    React.createElement('ActivityIndicator', props),
   Pressable: ({ children, ...props }: any) => React.createElement('Pressable', props, children),
   TouchableOpacity: ({ children, ...props }: any) => React.createElement('TouchableOpacity', props, children),
   TouchableHighlight: ({ children, ...props }: any) => React.createElement('TouchableHighlight', props, children),
@@ -37,6 +39,12 @@ module.exports = {
     addEventListener: jest.fn(),
     removeEventListener: jest.fn(),
   },
+  useWindowDimensions: jest.fn(() => ({
+    width: 375,
+    height: 812,
+    scale: 2,
+    fontScale: 2,
+  })),
   Alert: {
     alert: jest.fn(),
     prompt: jest.fn(),

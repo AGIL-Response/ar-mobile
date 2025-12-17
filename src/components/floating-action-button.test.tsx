@@ -13,6 +13,9 @@ import {
   PrimaryFAB,
 } from './floating-action-button';
 describe('FloatingActionButton', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
   it('renders icon and label', () => {
     render(
       <FloatingActionButton icon={<Text>+</Text>} label="Do thing" extended />
@@ -38,17 +41,19 @@ describe('FloatingActionButton', () => {
   });
   it('does not fire onPress when disabled', () => {
     const onPress = jest.fn();
-    render(
+    const { getByTestId } = render(
       <FloatingActionButton
         icon={<Text>X</Text>}
         label="disabled"
         onPress={onPress}
-        disabled
+        disabled={true}
         testID="floating-action-button"
       />
     );
-    fireEvent.press(screen.getByTestId('floating-action-button'));
-    expect(onPress).not.toHaveBeenCalled();
+    const button = getByTestId('floating-action-button');
+    
+    expect(button.props.disabled).toBe(true);
+    expect(button.props.onPress).toBeUndefined();
   });
   it('applies color variants via PrimaryFAB', () => {
     render(

@@ -497,7 +497,7 @@ jest.mock('@/stores/device-info', () => {
     }
     return defaultDeviceInfoStoreState;
   });
-
+  (useDeviceInfoStoreMock as any).getState = mockGetState;
   return {
     __esModule: true,
     useDeviceInfoStore: useDeviceInfoStoreMock,
@@ -517,3 +517,13 @@ jest.mock('@/lib/hooks', () => ({
   useObservable: jest.fn(),
   handleAppOpenEvent: jest.fn().mockResolvedValue(undefined),
 }));
+
+jest.mock('@/stores/media-viewer', () => {
+  const actions = {
+    openMediaViewer: jest.fn(),
+  };
+  return {
+    __esModule: true,
+    useMediaViewerStore: jest.fn(() => ({ actions })),
+  };
+});
