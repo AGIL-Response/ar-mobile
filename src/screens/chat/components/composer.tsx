@@ -1,18 +1,20 @@
 /**
  * Message Composer Component
  * Input component for sending chat messages with attachment support
+ * Supports: camera photo, image/video upload, audio recording
  */
 
-import React, { useState, useRef } from 'react';
-import { View, TouchableOpacity, Keyboard, Alert } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, TouchableOpacity, Keyboard, Alert, AppState } from 'react-native';
 import { Input, Icon, Text } from '@/components';
 import { useTheme } from '@/theme';
 import * as ImagePicker from 'expo-image-picker';
-import * as DocumentPicker from 'expo-document-picker';
 import type { SendMessageData } from '@/services/chat';
 import type { MediaFile } from '@/utils/media';
-import { validateMediaFile, getMediaType, getMimeType } from '@/utils/media';
+import { validateMediaFile, getMediaType, getMimeType, ensureFileExtension } from '@/utils/media';
 import { AttachmentPreview } from './attachment-preview';
+import { AudioRecorder } from '@/utils/audioRecorder';
+import { useCameraPermission, useMediaLibraryPermission } from '@/lib/media-permissions';
 
 export interface ComposerProps {
   onSend: (data: Omit<SendMessageData, 'roomId'>) => Promise<void>;
@@ -33,7 +35,17 @@ export function Composer({
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [attachments, setAttachments] = useState<MediaFile[]>([]);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Audio recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const audioRecorderRef = useRef<AudioRecorder | null>(null);
+
+  // Permission hooks
+  const verifyCameraPermission = useCameraPermission();
+  const verifyMediaLibraryPermission = useMediaLibraryPermission();
 
   const handleSend = async () => {
     if ((!message.trim() && attachments.length === 0) || isSending || disabled) {
@@ -42,13 +54,13 @@ export function Composer({
 
     const messageToSend = message.trim();
     const attachmentsToSend = attachments;
-    
+
     console.log('📤 Sending message with attachments:', {
       messageLength: messageToSend.length,
       attachmentCount: attachmentsToSend.length,
       attachments: attachmentsToSend,
     });
-    
+
     setMessage('');
     setAttachments([]);
     setIsSending(true);
@@ -62,8 +74,8 @@ export function Composer({
       let messageType: 'text' | 'file' | 'image' = 'text';
       if (attachmentsToSend.length > 0) {
         const firstAttachmentType = getMediaType(attachmentsToSend[0].name);
-        messageType = firstAttachmentType === 'image' || firstAttachmentType === 'video' 
-          ? 'image' 
+        messageType = firstAttachmentType === 'image' || firstAttachmentType === 'video'
+          ? 'image'
           : 'file';
         console.log('📎 Message type determined:', messageType, 'from', firstAttachmentType);
       }
@@ -86,7 +98,7 @@ export function Composer({
         replyTo: replyTo?.messageId,
         attachments: files.length > 0 ? files : undefined,
       });
-      
+
       console.log('✅ Message sent successfully');
     } catch (error) {
       console.error('❌ Failed to send message:', error);
@@ -124,45 +136,127 @@ export function Composer({
     }
   };
 
+  // Format time as MM:SS
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Reset recording state
+  const resetRecordingState = () => {
+    setIsRecording(false);
+    setRecordingTime(0);
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
+    }
+    if (audioRecorderRef.current) {
+      audioRecorderRef.current.destroy();
+      audioRecorderRef.current = null;
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      resetRecordingState();
+    };
+  }, []);
+
+  // Handle camera capture
+  const handleTakePhoto = async () => {
+    try {
+      const hasPermission = await verifyCameraPermission();
+      if (!hasPermission) {
+        Alert.alert('Permission required', 'Please grant permission to access your camera');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images', 'videos'] as any, // Using string literals for new API
+        allowsEditing: true,
+        quality: 0.8,
+        videoQuality: 1, // 1 = highest quality, 0 = lowest quality
+      });
+
+      if (!result.canceled && result.assets && result.assets[0]) {
+        const asset = result.assets[0];
+        const mimeType = asset.mimeType || (asset.type === 'video' ? 'video/mp4' : 'image/jpeg');
+        const baseName = asset.fileName || `camera_${Date.now()}`;
+        const fileName = ensureFileExtension(baseName, mimeType);
+
+        const newAttachment: MediaFile = {
+          uri: asset.uri,
+          name: fileName,
+          type: asset.type || 'image',
+          size: asset.fileSize || 0,
+          mimeType,
+        };
+
+        const validation = validateMediaFile(newAttachment);
+        if (validation.valid) {
+          setAttachments((prev) => [...prev, newAttachment]);
+          console.log('📷 Added camera photo/video');
+        } else {
+          Alert.alert('Invalid file', validation.error || 'File validation failed');
+        }
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to take photo';
+
+      // Handle specific error cases
+      if (errorMessage.includes('simulator') || errorMessage.includes('not available')) {
+        Alert.alert(
+          'Camera Not Available',
+          'Camera is not available on this device or simulator. Please use a physical device or select from gallery instead.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert('Error', errorMessage);
+      }
+    }
+  };
+
+  // Handle image/video pick from gallery (single selection only)
   const handlePickImage = async () => {
     try {
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
-      if (!permissionResult.granted) {
+      const hasPermission = await verifyMediaLibraryPermission();
+      if (!hasPermission) {
         Alert.alert('Permission required', 'Please grant permission to access your photos');
         return;
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.All,
-        allowsMultipleSelection: true,
+        mediaTypes: ['images', 'videos'] as any, // Using string literals for new API
+        allowsMultipleSelection: false, // Only allow 1 photo/video
         quality: 0.8,
-        selectionLimit: 10,
+        selectionLimit: 1,
       });
 
-      if (!result.canceled && result.assets) {
-        const newAttachments: MediaFile[] = result.assets.map((asset) => ({
+      if (!result.canceled && result.assets && result.assets[0]) {
+        const asset = result.assets[0];
+        const mimeType = asset.mimeType || (asset.type === 'video' ? 'video/mp4' : 'image/jpeg');
+        const baseName = asset.fileName || `media_${Date.now()}`;
+        const fileName = ensureFileExtension(baseName, mimeType);
+
+        const newAttachment: MediaFile = {
           uri: asset.uri,
-          name: asset.fileName || `media_${Date.now()}.${asset.type === 'video' ? 'mp4' : 'jpg'}`,
+          name: fileName,
           type: asset.type || 'image',
           size: asset.fileSize || 0,
-          mimeType: asset.type === 'video' ? 'video/mp4' : 'image/jpeg',
-        }));
+          mimeType,
+        };
 
-        // Validate each file
-        const validAttachments: MediaFile[] = [];
-        for (const attachment of newAttachments) {
-          const validation = validateMediaFile(attachment);
-          if (validation.valid) {
-            validAttachments.push(attachment);
-          } else {
-            Alert.alert('Invalid file', validation.error || 'File validation failed');
-          }
-        }
-
-        if (validAttachments.length > 0) {
-          setAttachments((prev) => [...prev, ...validAttachments]);
-          console.log('📷 Added images/videos:', validAttachments.length, 'attachments');
+        // Validate the file
+        const validation = validateMediaFile(newAttachment);
+        if (validation.valid) {
+          setAttachments((prev) => [...prev, newAttachment]);
+          console.log('📷 Added image/video from gallery');
+        } else {
+          console.error('❌ Validation failed:', validation.error, newAttachment);
+          Alert.alert('Invalid file', validation.error || 'File validation failed');
         }
       }
     } catch (error) {
@@ -171,49 +265,137 @@ export function Composer({
     }
   };
 
-  const handlePickDocument = async () => {
+  // Handle document/file picker (not used in Messenger-style UI)
+  // const handlePickDocument = async () => {
+  //   try {
+  //     const result = await DocumentPicker.getDocumentAsync({
+  //       type: ['audio/*', 'video/*', 'image/*'],
+  //       multiple: true,
+  //       copyToCacheDirectory: true,
+  //     });
+  //
+  //     if (!result.canceled && result.assets) {
+  //       const newAttachments: MediaFile[] = result.assets.map((asset) => ({
+  //         uri: asset.uri,
+  //         name: asset.name,
+  //         type: 'file',
+  //         size: asset.size || 0,
+  //         mimeType: asset.mimeType,
+  //       }));
+  //
+  //       // Validate each file
+  //       const validAttachments: MediaFile[] = [];
+  //       for (const attachment of newAttachments) {
+  //         const validation = validateMediaFile(attachment);
+  //         if (validation.valid) {
+  //           validAttachments.push(attachment);
+  //         } else {
+  //           Alert.alert('Invalid file', validation.error || 'File validation failed');
+  //         }
+  //       }
+  //
+  //       if (validAttachments.length > 0) {
+  //         setAttachments((prev) => [...prev, ...validAttachments]);
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error('Error picking document:', error);
+  //     Alert.alert('Error', 'Failed to pick file');
+  //   }
+  // };
+
+  // Start audio recording
+  const startRecording = async () => {
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ['audio/*', 'video/*', 'image/*'],
-        multiple: true,
-        copyToCacheDirectory: true,
+      console.log('🎙️ Starting audio recording...');
+
+      // Check if app is in foreground
+      const appState = AppState.currentState;
+      if (appState !== 'active') {
+        Alert.alert(
+          'App must be active',
+          'Please ensure the app is in the foreground to start recording.'
+        );
+        return;
+      }
+
+      // Check if audio recording is supported
+      const isSupported = await AudioRecorder.isSupported();
+      if (!isSupported) {
+        Alert.alert('Permission required', 'Please grant permission to access your microphone');
+        return;
+      }
+
+      // Create new audio recorder
+      const audioRecorder = new AudioRecorder({
+        onStop: (audioFile) => {
+          console.log('🎵 Audio file created:', {
+            name: audioFile.name,
+            type: audioFile.type,
+            size: audioFile.size,
+          });
+
+          // Check if recording is too short (less than 1 second)
+          if (recordingTime < 1) {
+            console.log('Recording too short, discarding...');
+            resetRecordingState();
+            return;
+          }
+
+          // Add audio file to attachments
+          setAttachments((prev) => [...prev, audioFile]);
+
+          // Reset state
+          resetRecordingState();
+        },
+        onError: (error: Error) => {
+          console.error('Recording error:', error);
+          Alert.alert('Recording Error', error.message);
+          resetRecordingState();
+        },
       });
 
-      if (!result.canceled && result.assets) {
-        const newAttachments: MediaFile[] = result.assets.map((asset) => ({
-          uri: asset.uri,
-          name: asset.name,
-          type: 'file',
-          size: asset.size || 0,
-          mimeType: asset.mimeType,
-        }));
+      audioRecorderRef.current = audioRecorder;
 
-        // Validate each file
-        const validAttachments: MediaFile[] = [];
-        for (const attachment of newAttachments) {
-          const validation = validateMediaFile(attachment);
-          if (validation.valid) {
-            validAttachments.push(attachment);
-          } else {
-            Alert.alert('Invalid file', validation.error || 'File validation failed');
-          }
-        }
+      // Start recording
+      await audioRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
 
-        if (validAttachments.length > 0) {
-          setAttachments((prev) => [...prev, ...validAttachments]);
-        }
-      }
+      // Start timer
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime((prev) => prev + 1);
+      }, 1000);
     } catch (error) {
-      console.error('Error picking document:', error);
-      Alert.alert('Error', 'Failed to pick file');
+      console.error('Error starting recording:', error);
+      if (error instanceof Error) {
+        Alert.alert('Recording Error', error.message);
+      }
+      resetRecordingState();
     }
   };
+
+  // Stop recording and save
+  const stopRecording = async () => {
+    if (audioRecorderRef.current) {
+      await audioRecorderRef.current.stop();
+    }
+  };
+
+  // Cancel recording without saving
+  const cancelRecording = async () => {
+    if (audioRecorderRef.current) {
+      await audioRecorderRef.current.cancel();
+    }
+    resetRecordingState();
+  };
+
 
   const handleRemoveAttachment = (index: number) => {
     setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const canSend = (message.trim() || attachments.length > 0) && !isSending && !disabled;
+  const canSend = (message.trim() || attachments.length > 0) && !isSending && !disabled && !isRecording;
 
   return (
     <View
@@ -283,62 +465,86 @@ export function Composer({
           gap: theme.spacing.gap.sm,
         }}
       >
-        {/* Attachment buttons */}
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: theme.spacing.gap.xs,
-          }}
-        >
-          <TouchableOpacity
-            onPress={handlePickImage}
-            disabled={disabled || isSending}
+        {/* Attachment buttons - Camera, Photo, Microphone (like Messenger) */}
+        {!isRecording && !message.trim() && (
+          <View
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
-              justifyContent: 'center',
+              flexDirection: 'row',
               alignItems: 'center',
-              backgroundColor: theme.colors.background.secondary,
+              gap: theme.spacing.gap.sm,
             }}
           >
-            <Icon
-              name="camera"
-              size={20}
-              color={disabled || isSending ? theme.colors.text.disabled : theme.colors.text.secondary}
-            />
-          </TouchableOpacity>
+            {/* Camera button */}
+            <TouchableOpacity
+              onPress={handleTakePhoto}
+              disabled={disabled || isSending}
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: theme.colors.background.secondary,
+              }}
+            >
+              <Icon
+                name="camera"
+                size={20}
+                color={disabled || isSending ? theme.colors.text.disabled : theme.colors.text.muted}
+              />
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={handlePickDocument}
-            disabled={disabled || isSending}
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
-              justifyContent: 'center',
-              alignItems: 'center',
-              backgroundColor: theme.colors.background.secondary,
-            }}
-          >
-            <Icon
-              name="upload"
-              size={20}
-              color={disabled || isSending ? theme.colors.text.disabled : theme.colors.text.secondary}
-            />
-          </TouchableOpacity>
-        </View>
+            {/* Photo/Gallery button */}
+            <TouchableOpacity
+              onPress={handlePickImage}
+              disabled={disabled || isSending}
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: theme.colors.background.secondary,
+              }}
+            >
+              <Icon
+                name="image"
+                size={20}
+                color={disabled || isSending ? theme.colors.text.disabled : theme.colors.text.muted}
+              />
+            </TouchableOpacity>
+
+            {/* Microphone/Audio recording button */}
+            <TouchableOpacity
+              onPress={startRecording}
+              disabled={disabled || isSending}
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: theme.colors.background.secondary,
+              }}
+            >
+              <Icon
+                name="microphone"
+                size={20}
+                color={disabled || isSending ? theme.colors.text.disabled : theme.colors.text.muted}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Message input */}
         <View style={{ flex: 1 }}>
           <Input
             value={message}
             onChangeText={handleTextChange}
-            placeholder="Type a message..."
+            placeholder={isRecording ? 'Recording audio...' : 'Type a message...'}
             multiline
             maxLength={5000}
-            disabled={disabled || isSending}
+            disabled={disabled || isSending || isRecording}
             containerStyle={{
               marginBottom: 0,
             }}
@@ -351,28 +557,108 @@ export function Composer({
           />
         </View>
 
-        {/* Send button */}
-        <TouchableOpacity
-          onPress={handleSend}
-          disabled={!canSend}
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 22,
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginBottom: theme.spacing.gap.xs,
-          }}
-        >
-          <Text
+        {/* Send button or Recording controls */}
+        {isRecording ? (
+          <View
             style={{
-              fontSize: 20,
-              color: canSend ? 'white' : theme.colors.text.secondary,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: theme.spacing.gap.sm,
             }}
           >
-            →
-          </Text>
-        </TouchableOpacity>
+            {/* Cancel button */}
+            <TouchableOpacity
+              onPress={cancelRecording}
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: '#ef4444',
+              }}
+            >
+              <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>×</Text>
+            </TouchableOpacity>
+
+            {/* Recording indicator and timer */}
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: theme.spacing.gap.xs,
+                paddingHorizontal: theme.spacing.gap.sm,
+                paddingVertical: theme.spacing.gap.xs,
+                backgroundColor: theme.colors.background.secondary,
+                borderRadius: 18,
+              }}
+            >
+              <View
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: '#ef4444',
+                }}
+              />
+              <Text
+                variant="caption"
+                style={{
+                  color: theme.colors.text.primary,
+                  fontFamily: 'monospace',
+                  fontSize: 12,
+                }}
+              >
+                {formatTime(recordingTime)}
+              </Text>
+            </View>
+
+            {/* Stop/Send button */}
+            <TouchableOpacity
+              onPress={stopRecording}
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: theme.colors.primary || '#007AFF',
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 20,
+                  color: 'white',
+                }}
+              >
+                →
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            onPress={handleSend}
+            disabled={!canSend}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 22,
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginBottom: theme.spacing.gap.xs,
+              backgroundColor: canSend ? theme.colors.primary : theme.colors.background.secondary,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 20,
+                color: canSend ? 'white' : theme.colors.text.secondary,
+              }}
+            >
+              →
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );

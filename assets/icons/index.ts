@@ -30,6 +30,9 @@ import LockIcon from './lock.svg';
 import LogOutIcon from './log-out.svg';
 import EyeIcon from './eye.svg';
 import EyeOffIcon from './eye-off.svg';
+import { ImageGallery } from '@/components/icons/image-gallery';
+import { Microphone } from '@/components/icons/microphone';
+import { Camera } from '@/components/icons/camera';
 
 // Icon component type
 type IconComponent = React.ComponentType<SvgProps>;
@@ -66,6 +69,8 @@ export const iconNames = {
   log_out: 'logOut',
   eye: 'eye',
   eye_off: 'eyeOff',
+  image: 'image',
+  microphone: 'microphone',
 } as const;
 
 // Icons object with proper typing
@@ -94,7 +99,7 @@ const icons: Record<string, IconComponent> = {
   [iconNames.mobile_signal]: MobileSignalIcon,
   [iconNames.message_dots_square]: MessageDotsSquareIcon,
   [iconNames.chevron_left]: ChevronLeftIcon,
-  [iconNames.camera]: CameraIcon,
+  [iconNames.camera]: Camera,
   [iconNames.user_plus]: UserPlusIcon,
   [iconNames.check_circle_broken]: CheckCircleBrokenIcon,
   [iconNames.hourglass]: HourglassIcon,
@@ -105,6 +110,8 @@ const icons: Record<string, IconComponent> = {
   [iconNames.log_out]: LogOutIcon,
   [iconNames.eye]: EyeIcon,
   [iconNames.eye_off]: EyeOffIcon,
+  [iconNames.image]: ImageGallery,
+  [iconNames.microphone]: Microphone,
 } as const;
 
 // Export icon names as type for better TypeScript support

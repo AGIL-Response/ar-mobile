@@ -109,7 +109,7 @@ export function observeMessages(
       .query(
         Q.where('room_id', validRoomId),
         Q.where('deleted_at', null),
-        Q.sortBy('created_at', Q.desc),
+        Q.sortBy('created_at', Q.asc),
         Q.take(limit)
       );
 
@@ -124,12 +124,13 @@ export function observeMessages(
           return [];
         }
 
-        // Sort messages by created_at descending (newest first, oldest last)
+        // Sort messages by created_at ascending (oldest first, newest last)
+        // This ensures new messages appear at the bottom of the chat
         const sortedMessages = [...messages].sort((a, b) => {
           const timeA = a.createdAt?.getTime() || (a.serverCreatedAt ? new Date(a.serverCreatedAt).getTime() : 0);
           const timeB = b.createdAt?.getTime() || (b.serverCreatedAt ? new Date(b.serverCreatedAt).getTime() : 0);
-          // Descending: larger time (newer) comes first
-          return timeB - timeA;
+          // Ascending: smaller time (older) comes first
+          return timeA - timeB;
         });
 
         console.log('📋 [MessageOperator] Transforming messages:', {
@@ -183,18 +184,18 @@ export async function getMessages(
     .query(
       Q.where('room_id', validRoomId),
       Q.where('deleted_at', null),
-      Q.sortBy('created_at', Q.desc),
+      Q.sortBy('created_at', Q.asc),
       Q.take(limit)
     )
     .fetch();
 
-  // Sort messages by created_at descending (newest first, oldest last)
-  // Ensure we sort by timestamp to guarantee correct order
+  // Sort messages by created_at ascending (oldest first, newest last)
+  // This ensures new messages appear at the bottom of the chat
   const sortedMessages = [...messages].sort((a, b) => {
     const timeA = a.createdAt?.getTime() || (a.serverCreatedAt ? new Date(a.serverCreatedAt).getTime() : 0);
     const timeB = b.createdAt?.getTime() || (b.serverCreatedAt ? new Date(b.serverCreatedAt).getTime() : 0);
-    // Descending: larger time (newer) comes first
-    return timeB - timeA;
+    // Ascending: smaller time (older) comes first
+    return timeA - timeB;
   });
 
   return Promise.all(sortedMessages.map((message) => messageToChatMessageFn(message)));

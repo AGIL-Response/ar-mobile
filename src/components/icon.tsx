@@ -14,7 +14,7 @@ interface IconProps extends SvgProps {
   size?: number;
 }
 
-export function Icon({ name, size = 24, width, height, ...props }: IconProps) {
+export function Icon({ name, size = 24, width, height, color, fill, ...props }: IconProps) {
   const IconComponent = icons[name];
 
   if (!IconComponent) {
@@ -22,8 +22,18 @@ export function Icon({ name, size = 24, width, height, ...props }: IconProps) {
     return null;
   }
 
+  // Use fill if explicitly provided, otherwise use color
+  // Manual components (like Camera, Microphone, ImageGallery) use color prop
+  // SVG transformer components may use either color or fill
+  const finalColor = fill || color;
+
   return (
-    <IconComponent width={width ?? size} height={height ?? size} {...props} />
+    <IconComponent
+      width={width ?? size}
+      height={height ?? size}
+      {...props}
+      color={finalColor}
+    />
   );
 }
 
