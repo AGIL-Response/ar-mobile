@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const chatSchema = appSchema({
-  version: 2,
+  version: 3,
   tables: [
     tableSchema({
       name: 'rooms',
@@ -37,6 +37,8 @@ export const chatSchema = appSchema({
         { name: 'is_synced', type: 'boolean' },
         { name: 'server_created_at', type: 'string', isOptional: true },
         { name: 'server_updated_at', type: 'string', isOptional: true },
+        { name: 'status', type: 'string', isOptional: true }, // 'sending' | 'sent' | 'error'
+        { name: 'client_id', type: 'string', isOptional: true },
       ],
     }),
     tableSchema({

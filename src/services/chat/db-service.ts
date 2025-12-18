@@ -148,8 +148,8 @@ export class ChatDbService {
   /**
    * Get observable for messages in a room
    */
-  observeMessages(roomId: string, limit: number = 50) {
-    return MessageEntity.observeMessages(roomId, limit, async (message: Message) => {
+  observeMessages(roomId: string) {
+    return MessageEntity.observeMessages(roomId, async (message: Message) => {
       return await messageToChatMessage(message, getUser);
     });
   }

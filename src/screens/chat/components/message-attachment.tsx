@@ -26,13 +26,7 @@ export function MessageAttachment({
 }: MessageAttachmentProps) {
   const theme = useTheme();
 
-  console.log('🖼️ MessageAttachment rendered:', {
-    attachmentCount: attachments?.length,
-    attachments,
-  });
-
   if (!attachments || attachments.length === 0) {
-    console.log('⚠️ MessageAttachment: No attachments to display');
     return null;
   }
 
@@ -40,12 +34,6 @@ export function MessageAttachment({
     <View style={{ gap: 8 }}>
       {attachments.map((attachment, index) => {
         const mediaType = getMediaType(attachment.filename);
-        console.log(`📎 Rendering attachment ${index}:`, {
-          id: attachment.id,
-          filename: attachment.filename,
-          mediaType,
-          url: attachment.url,
-        });
 
         return (
           <TouchableOpacity

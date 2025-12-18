@@ -11,10 +11,22 @@ export interface FileUploadOptions {
   mimeType: string;
 }
 
+export interface ChatFileUploadOptions {
+  fileUri: string;
+  fileName: string;
+  mimeType: string;
+  onProgress?: (progress: number) => void;
+}
+
 export interface FileUploadResponse {
   code: string;
   data?: any;
   message?: string;
+}
+
+export interface ChatFileUploadResponse {
+  fileId: string;
+  url?: string;
 }
 
 export interface FileViewOptions {
@@ -339,6 +351,75 @@ export const filesApi = {
       return response.data;
     } catch (error) {
       console.error('❌ File Upload Error:', error);
+      throw handleApiError(error);
+    }
+  },
+
+  /**
+   * Upload a file for chat message
+   * Returns fileId that can be used in message:send
+   */
+  uploadChatFile: async (
+    options: ChatFileUploadOptions
+  ): Promise<ChatFileUploadResponse> => {
+    try {
+      const { fileUri, fileName, mimeType, onProgress } = options;
+      console.log('🚀 Chat File Upload Request:', {
+        fileName,
+        mimeType,
+        fileUri: fileUri.substring(0, 50) + '...',
+      });
+
+      // Read file as base64
+      const fileBase64 = await FileSystemLegacy.readAsStringAsync(fileUri, {
+        encoding: FileSystemLegacy.EncodingType.Base64,
+      });
+
+      // Convert base64 to binary string (Uint8Array)
+      const binaryString = atob(fileBase64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      console.log('📁 Chat File Info:', {
+        size: bytes.length,
+        type: mimeType,
+      });
+
+      // Upload with progress tracking
+      const response = await mediaApiClient.post<FileUploadResponse>(
+        '/files',
+        bytes,
+        {
+          headers: {
+            'x-file-name': fileName,
+            'x-attached-type': 'chat_message',
+            'Content-Type': mimeType,
+          },
+          onUploadProgress: (progressEvent) => {
+            if (onProgress && progressEvent.total) {
+              const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              onProgress(progress);
+            }
+          },
+        }
+      );
+
+      // Extract fileId from response
+      const fileId = response.data.data?.id || response.data.data?.fileId || response.data.data?.key;
+      if (!fileId) {
+        throw new Error('File upload response missing fileId');
+      }
+
+      console.log('✅ Chat File Uploaded:', { fileId, fileName });
+
+      return {
+        fileId: String(fileId),
+        url: response.data.data?.url || response.data.data?.key,
+      };
+    } catch (error) {
+      console.error('❌ Chat File Upload Error:', error);
       throw handleApiError(error);
     }
   },

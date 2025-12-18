@@ -5,23 +5,26 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { View, TouchableOpacity, Keyboard, Alert, AppState } from 'react-native';
+import { View, TouchableOpacity, Keyboard, Alert, AppState, StyleSheet } from 'react-native';
 import { Input, Icon, Text } from '@/components';
-import { useTheme } from '@/theme';
+import { useTheme, type Theme } from '@/theme';
 import * as ImagePicker from 'expo-image-picker';
-import type { SendMessageData } from '@/services/chat';
+import type { SendMessageData, ChatMessage, ChatAttachment } from '@/services/chat';
 import type { MediaFile } from '@/utils/media';
 import { validateMediaFile, getMediaType, getMimeType, ensureFileExtension } from '@/utils/media';
 import { AttachmentPreview } from './attachment-preview';
 import { AudioRecorder } from '@/utils/audioRecorder';
 import { useCameraPermission, useMediaLibraryPermission } from '@/lib/media-permissions';
+import { filesApi } from '@/api/files';
+import useAuthStore from '@/stores/auth';
 
 export interface ComposerProps {
-  onSend: (data: Omit<SendMessageData, 'roomId'>) => Promise<void>;
+  onSend: (data: Omit<SendMessageData, 'roomId'> & { localMessage?: ChatMessage }) => Promise<void>;
   onTyping?: (isTyping: boolean) => void;
   replyTo?: { messageId: string; content: string };
   onCancelReply?: () => void;
   disabled?: boolean;
+  roomId?: string; // Room ID for creating local messages
 }
 
 export function Composer({
@@ -30,11 +33,15 @@ export function Composer({
   replyTo,
   onCancelReply,
   disabled = false,
+  roomId,
 }: ComposerProps) {
   const theme = useTheme();
+  const currentUser = useAuthStore((state) => state.user);
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [attachments, setAttachments] = useState<MediaFile[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [uploadingFiles, setUploadingFiles] = useState<Set<string>>(new Set());
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Audio recording state
@@ -55,15 +62,11 @@ export function Composer({
     const messageToSend = message.trim();
     const attachmentsToSend = attachments;
 
-    console.log('📤 Sending message with attachments:', {
-      messageLength: messageToSend.length,
-      attachmentCount: attachmentsToSend.length,
-      attachments: attachmentsToSend,
-    });
-
     setMessage('');
     setAttachments([]);
     setIsSending(true);
+    setUploadProgress({});
+    setUploadingFiles(new Set(attachmentsToSend.map((a, i) => `file-${i}`)));
 
     if (onTyping) {
       onTyping(false);
@@ -77,36 +80,100 @@ export function Composer({
         messageType = firstAttachmentType === 'image' || firstAttachmentType === 'video'
           ? 'image'
           : 'file';
-        console.log('📎 Message type determined:', messageType, 'from', firstAttachmentType);
       }
 
-      // Convert MediaFile to File objects for the API
-      const files: File[] = attachmentsToSend.map((attachment) => {
-        // For React Native, we need to create a File-like object
-        return {
-          uri: attachment.uri,
-          name: attachment.name,
-          type: attachment.mimeType || getMimeType(attachment.name),
-        } as any;
-      });
+      // Upload files first and get fileIds
+      const fileIds: string[] = [];
+      const localAttachments: ChatAttachment[] = [];
 
-      console.log('📤 Sending to API with files:', files);
+      if (attachmentsToSend.length > 0) {
+        for (let i = 0; i < attachmentsToSend.length; i++) {
+          const attachment = attachmentsToSend[i];
+          const fileKey = `file-${i}`;
 
+          try {
+            setUploadProgress((prev) => ({ ...prev, [fileKey]: 0 }));
+
+            const uploadResult = await filesApi.uploadChatFile({
+              fileUri: attachment.uri,
+              fileName: attachment.name,
+              mimeType: attachment.mimeType || getMimeType(attachment.name),
+              onProgress: (progress) => {
+                setUploadProgress((prev) => ({ ...prev, [fileKey]: progress }));
+              },
+            });
+
+            fileIds.push(uploadResult.fileId);
+
+            // Create local attachment with local path
+            localAttachments.push({
+              id: uploadResult.fileId,
+              filename: attachment.name,
+              url: '', // Will be updated from server
+              size: attachment.size,
+              mimeType: attachment.mimeType || getMimeType(attachment.name),
+              uploadedAt: new Date(),
+            });
+
+            setUploadProgress((prev) => ({ ...prev, [fileKey]: 100 }));
+          } catch (error) {
+            console.error(`❌ Failed to upload file ${attachment.name}:`, error);
+            throw error;
+          }
+        }
+      }
+
+      // Generate client message ID for status tracking
+      const clientId = `client-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Create local message with local paths (for immediate display)
+      let localMessage: ChatMessage | undefined;
+      if (roomId && currentUser) {
+        const tempMessageId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        localMessage = {
+          id: tempMessageId,
+          roomId,
+          senderId: currentUser.id || '',
+          sender: {
+            id: currentUser.id || '',
+            username: currentUser.username,
+            displayName: (currentUser as any).displayName,
+            avatarUrl: (currentUser as any).avatarUrl,
+          },
+          content: messageToSend || '',
+          type: messageType,
+          attachments: localAttachments.length > 0
+            ? localAttachments.map((att, idx) => ({
+                ...att,
+                url: attachmentsToSend[idx].uri, // Use local URI temporarily
+              }))
+            : undefined,
+          timestamp: new Date(),
+          replyTo: replyTo?.messageId,
+          status: 'sending', // Set initial status to 'sending'
+          clientId, // Store clientId for status tracking
+        };
+      }
+
+      // Send message with fileIds and clientId
       await onSend({
         content: messageToSend || (attachmentsToSend.length > 0 ? '' : ''),
         type: messageType,
         replyTo: replyTo?.messageId,
-        attachments: files.length > 0 ? files : undefined,
+        fileIds: fileIds.length > 0 ? fileIds : undefined,
+        clientId, // Pass clientId for socket emission
+        localMessage, // Pass local message for immediate DB save
       });
-
-      console.log('✅ Message sent successfully');
     } catch (error) {
       console.error('❌ Failed to send message:', error);
       // Restore message and attachments on error
       setMessage(messageToSend);
       setAttachments(attachmentsToSend);
+      Alert.alert('Error', 'Failed to send message. Please try again.');
     } finally {
       setIsSending(false);
+      setUploadProgress({});
+      setUploadingFiles(new Set());
       Keyboard.dismiss();
     }
   };
@@ -253,9 +320,7 @@ export function Composer({
         const validation = validateMediaFile(newAttachment);
         if (validation.valid) {
           setAttachments((prev) => [...prev, newAttachment]);
-          console.log('📷 Added image/video from gallery');
         } else {
-          console.error('❌ Validation failed:', validation.error, newAttachment);
           Alert.alert('Invalid file', validation.error || 'File validation failed');
         }
       }
@@ -307,8 +372,6 @@ export function Composer({
   // Start audio recording
   const startRecording = async () => {
     try {
-      console.log('🎙️ Starting audio recording...');
-
       // Check if app is in foreground
       const appState = AppState.currentState;
       if (appState !== 'active') {
@@ -329,15 +392,8 @@ export function Composer({
       // Create new audio recorder
       const audioRecorder = new AudioRecorder({
         onStop: (audioFile) => {
-          console.log('🎵 Audio file created:', {
-            name: audioFile.name,
-            type: audioFile.type,
-            size: audioFile.size,
-          });
-
           // Check if recording is too short (less than 1 second)
           if (recordingTime < 1) {
-            console.log('Recording too short, discarding...');
             resetRecordingState();
             return;
           }
@@ -397,6 +453,8 @@ export function Composer({
 
   const canSend = (message.trim() || attachments.length > 0) && !isSending && !disabled && !isRecording;
 
+  const styles = createStyles(theme, !!message.trim(), isSending, disabled);
+
   return (
     <View style={styles.container}>
       {replyTo && (
@@ -424,7 +482,12 @@ export function Composer({
       {/* Attachment Preview */}
       {
         attachments.length > 0 && (
-          <AttachmentPreview attachments={attachments} onRemove={handleRemoveAttachment} />
+          <AttachmentPreview
+            attachments={attachments}
+            onRemove={handleRemoveAttachment}
+            uploadProgress={uploadProgress}
+            isUploading={isSending && uploadingFiles.size > 0}
+          />
         )
       }
 

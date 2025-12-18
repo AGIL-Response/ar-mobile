@@ -58,35 +58,80 @@ export async function upsertMessage(messageData: ChatMessage, roomId: string): P
         }
         message.isSynced = messageDataTransformed.isSynced;
         message.serverUpdatedAt = messageDataTransformed.serverUpdatedAt;
+        // Update status and clientId if provided (for status tracking)
+        // Only update if the value is explicitly provided (not undefined)
+        // Wrap in try-catch to handle case where columns don't exist yet (migration not applied)
+        try {
+          if (messageDataTransformed.status !== undefined && messageDataTransformed.status !== null) {
+            message.status = messageDataTransformed.status;
+          }
+          if (messageDataTransformed.clientId !== undefined && messageDataTransformed.clientId !== null) {
+            message.clientId = messageDataTransformed.clientId;
+          }
+        } catch (error: any) {
+          // If status/client_id columns don't exist yet, log warning but continue
+          if (error?.message?.includes('no column named status') || error?.message?.includes('no column named client_id')) {
+            console.warn('⚠️ [MessageOperator] Status/clientId columns not available yet. Migration may not have run. Please restart the app.', {
+              messageId,
+              error: error.message,
+            });
+          } else {
+            throw error; // Re-throw if it's a different error
+          }
+        }
       });
       return existingMessage;
     });
   } else {
     return await db.write(async () => {
       return await db.get<Message>('messages').create((message) => {
+        // Set all required fields first
         message.messageId = messageDataTransformed.messageId;
         message.roomId = messageDataTransformed.roomId;
         message.senderId = messageDataTransformed.senderId;
-        message.content = messageDataTransformed.content;
-        message.type = messageDataTransformed.type;
-        message.replyToId = messageDataTransformed.replyToId;
-        if (messageDataTransformed.editedAt !== undefined) {
-          message.editedAt = messageDataTransformed.editedAt;
-        }
+        message.content = messageDataTransformed.content || '';
+        message.type = messageDataTransformed.type || 'text'; // Ensure type is always set
         message.isSynced = messageDataTransformed.isSynced;
         message.serverCreatedAt = messageDataTransformed.serverCreatedAt;
         message.serverUpdatedAt = messageDataTransformed.serverUpdatedAt;
+        
+        // Set optional fields
+        if (messageDataTransformed.replyToId !== undefined) {
+          message.replyToId = messageDataTransformed.replyToId;
+        }
+        if (messageDataTransformed.editedAt !== undefined) {
+          message.editedAt = messageDataTransformed.editedAt;
+        }
+        // Only set status and clientId if they are provided
+        // Wrap in try-catch to handle case where columns don't exist yet (migration not applied)
+        try {
+          if (messageDataTransformed.status !== undefined && messageDataTransformed.status !== null) {
+            message.status = messageDataTransformed.status;
+          }
+          if (messageDataTransformed.clientId !== undefined && messageDataTransformed.clientId !== null) {
+            message.clientId = messageDataTransformed.clientId;
+          }
+        } catch (error: any) {
+          // If status/client_id columns don't exist yet, log warning but continue
+          if (error?.message?.includes('no column named status') || error?.message?.includes('no column named client_id')) {
+            console.warn('⚠️ [MessageOperator] Status/clientId columns not available yet. Migration may not have run. Please restart the app.', {
+              messageId: messageDataTransformed.messageId,
+              error: error.message,
+            });
+          } else {
+            throw error; // Re-throw if it's a different error
+          }
+        }
       });
     });
   }
 }
 
 /**
- * Get observable for messages in a room
+ * Get observable for messages in a room (observes ALL messages, sorted by created_at)
  */
 export function observeMessages(
   roomId: string,
-  limit: number,
   messageToChatMessageFn: (message: Message) => Promise<ChatMessage>
 ) {
   // Validate roomId
@@ -104,22 +149,17 @@ export function observeMessages(
   }
 
   try {
+    // Observe ALL messages for the room, sorted by created_at ascending (oldest first)
     const query = db
       .get<Message>('messages')
       .query(
         Q.where('room_id', validRoomId),
         Q.where('deleted_at', null),
-        Q.sortBy('created_at', Q.asc),
-        Q.take(limit)
+        Q.sortBy('created_at', Q.asc)
       );
 
     return query.observe().pipe(
       switchMap(async (messages) => {
-        console.log('🔄 [MessageOperator] observeMessages triggered:', {
-          roomId: validRoomId,
-          messageCount: messages?.length || 0,
-        });
-        
         if (!messages || messages.length === 0) {
           return [];
         }
@@ -133,27 +173,10 @@ export function observeMessages(
           return timeA - timeB;
         });
 
-        console.log('📋 [MessageOperator] Transforming messages:', {
-          count: sortedMessages.length,
-          firstMessageId: sortedMessages[0]?.messageId,
-          lastMessageId: sortedMessages[sortedMessages.length - 1]?.messageId,
-          firstMessageTime: sortedMessages[0]?.createdAt,
-          lastMessageTime: sortedMessages[sortedMessages.length - 1]?.createdAt,
-        });
-
         // Transform all messages (attachments will be fetched in messageToChatMessageFn)
         const transformed = await Promise.all(
           sortedMessages.map((message) => messageToChatMessageFn(message))
         );
-        
-        console.log('✅ [MessageOperator] Messages transformed:', {
-          count: transformed.length,
-          withAttachments: transformed.filter(m => (m.attachments?.length ?? 0) > 0).length,
-          sample: transformed.filter(m => (m.attachments?.length ?? 0) > 0).slice(0, 2).map(m => ({
-            id: m.id,
-            attachmentCount: m.attachments?.length,
-          })),
-        });
         
         return transformed;
       })

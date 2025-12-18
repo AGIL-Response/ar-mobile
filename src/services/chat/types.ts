@@ -35,6 +35,8 @@ export interface ChatMessage {
   editedAt?: Date;
   replyTo?: string;
   reactions?: ChatMessageReaction[];
+  status?: 'sending' | 'sent' | 'error';
+  clientId?: string; // Client-generated ID for tracking message status
 }
 
 export interface ChatAttachment {
@@ -57,7 +59,9 @@ export interface SendMessageData {
   content: string;
   type: 'text' | 'file' | 'image';
   attachments?: File[];
+  fileIds?: string[]; // File IDs from uploaded files
   replyTo?: string;
+  clientId?: string; // Client-generated ID for tracking message status
 }
 
 export interface CreateRoomData {

@@ -13,9 +13,11 @@ import type { MediaFile } from '@/utils/media';
 export interface AttachmentPreviewProps {
   attachments: MediaFile[];
   onRemove: (index: number) => void;
+  uploadProgress?: Record<string, number>;
+  isUploading?: boolean;
 }
 
-export function AttachmentPreview({ attachments, onRemove }: AttachmentPreviewProps) {
+export function AttachmentPreview({ attachments, onRemove, uploadProgress = {}, isUploading = false }: AttachmentPreviewProps) {
   const theme = useTheme();
 
   if (attachments.length === 0) {
@@ -135,6 +137,51 @@ export function AttachmentPreview({ attachments, onRemove }: AttachmentPreviewPr
               >
                 <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: 'bold' }}>✕</Text>
               </TouchableOpacity>
+
+              {/* Upload progress overlay */}
+              {isUploading && uploadProgress[`file-${index}`] !== undefined && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text
+                    variant="caption"
+                    style={{
+                      color: '#FFFFFF',
+                      fontSize: 12,
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    {uploadProgress[`file-${index}`]}%
+                  </Text>
+                  <View
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: 4,
+                      backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                    }}
+                  >
+                    <View
+                      style={{
+                        height: '100%',
+                        width: `${uploadProgress[`file-${index}`]}%`,
+                        backgroundColor: theme.colors.primary || '#007AFF',
+                      }}
+                    />
+                  </View>
+                </View>
+              )}
 
               {/* File size label */}
               <View

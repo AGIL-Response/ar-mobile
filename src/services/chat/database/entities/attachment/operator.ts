@@ -44,25 +44,16 @@ export async function upsertAttachments(messageId: string, attachments: ChatAtta
     ![...existingIds].every(id => newIds.has(id));
 
   if (!hasChanged) {
-    console.log('⏭️  [AttachmentOperator] Attachments unchanged, skipping update:', {
-      messageId: validMessageId,
-      attachmentCount: uniqueAttachments.length,
-    });
     return;
   }
 
-  console.log('💾 [AttachmentOperator] Upserting attachments:', {
-    messageId: validMessageId,
-    attachmentCount: uniqueAttachments.length,
-    attachments: uniqueAttachments.map(a => ({
-      id: a.id,
-      filename: a.filename,
-      mimeType: a.mimeType,
-      url: a.url,
-    })),
-  });
-
-  console.log('🗑️ [AttachmentOperator] Deleting existing attachments:', existingAttachments.length);
+  // Preserve localPath from existing attachments before deleting
+  const localPathMap = new Map<string, string>();
+  for (const existingAttachment of existingAttachments) {
+    if (existingAttachment.localPath) {
+      localPathMap.set(existingAttachment.attachmentId, existingAttachment.localPath);
+    }
+  }
 
   await db.write(async () => {
     for (const attachment of existingAttachments) {
@@ -71,6 +62,10 @@ export async function upsertAttachments(messageId: string, attachments: ChatAtta
 
     for (const attachmentData of uniqueAttachments) {
       const attachmentDataTransformed = chatAttachmentToAttachmentData(attachmentData, validMessageId);
+      
+      // Preserve localPath from existing attachment if it exists
+      const preservedLocalPath = localPathMap.get(attachmentDataTransformed.attachmentId) || attachmentDataTransformed.localPath;
+      
       await db.get<Attachment>('attachments').create((attachment) => {
         attachment.attachmentId = attachmentDataTransformed.attachmentId;
         attachment.messageId = attachmentDataTransformed.messageId;
@@ -79,14 +74,13 @@ export async function upsertAttachments(messageId: string, attachments: ChatAtta
         attachment.size = attachmentDataTransformed.size;
         attachment.mimeType = attachmentDataTransformed.mimeType;
         attachment.uploadedAt = attachmentDataTransformed.uploadedAt;
-        if (attachmentDataTransformed.localPath) {
-          attachment.localPath = attachmentDataTransformed.localPath;
+        if (preservedLocalPath) {
+          attachment.localPath = preservedLocalPath;
         }
       });
     }
   });
 
-  console.log('✅ [AttachmentOperator] Attachments saved successfully');
 }
 
 /**
@@ -117,17 +111,6 @@ export async function getAttachments(messageId: string): Promise<ChatAttachment[
       duplicates: attachments.length - uniqueAttachments.length,
     });
   }
-
-  console.log('📤 [AttachmentOperator] Retrieved attachments from DB:', {
-    messageId: validMessageId,
-    attachmentCount: uniqueAttachments.length,
-    attachments: uniqueAttachments.map(a => ({
-      id: a.attachmentId,
-      filename: a.filename,
-      mimeType: a.mimeType,
-      url: a.url,
-    })),
-  });
 
   return uniqueAttachments.map(attachmentToChatAttachment);
 }

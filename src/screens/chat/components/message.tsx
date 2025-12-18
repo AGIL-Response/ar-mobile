@@ -4,12 +4,13 @@
  */
 
 import React from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import type { ChatMessage, ChatAttachment } from '@/services/chat';
-import { Avatar, Text } from '@/components';
-import { useTheme } from '@/theme';
+import { Avatar, Text, Icon } from '@/components';
+import { useTheme, type Theme } from '@/theme';
 import useAuthStore from '@/stores/auth';
 import { MessageAttachment } from './message-attachment';
+import { chatService } from '@/services/chat';
 
 export interface MessageProps {
   message: ChatMessage;
@@ -33,17 +34,41 @@ export function Message({
   const theme = useTheme();
   const currentUsername = useAuthStore((state) => state.user?.username);
   const isOwnMessage = message.sender.username === currentUsername;
-
+  const messageStatus = message.status || 'sent';
   const hasAttachments = message.attachments && message.attachments.length > 0;
 
-  // Debug logging
-  if (hasAttachments) {
-    console.log('📎 Message has attachments:', {
-      messageId: message.id,
-      attachmentCount: message.attachments?.length,
-      attachments: message.attachments,
-    });
-  }
+  // Handle retry for failed messages
+  const handleRetry = async () => {
+    if (messageStatus === 'error' && message.clientId) {
+      try {
+        // Resend the message
+        const messageType = message.type === 'system' ? 'text' : message.type;
+        await chatService.sendMessage({
+          roomId: message.roomId,
+          content: message.content,
+          type: messageType as 'text' | 'file' | 'image',
+          fileIds: message.attachments?.map((att) => att.id),
+          clientId: message.clientId, // Use same clientId for retry
+        });
+      } catch (error) {
+        console.error('Failed to retry message:', error);
+      }
+    }
+  };
+
+  // Handle delete for failed messages
+  const handleDelete = async () => {
+    if (messageStatus === 'error' && message.id) {
+      try {
+        // Delete from local DB
+        const { chatDbService } = await import('@/services/chat');
+        await chatDbService.deleteMessage(message.id);
+      } catch (error) {
+        console.error('Failed to delete message:', error);
+      }
+    }
+  };
+
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('en-US', {
@@ -62,6 +87,8 @@ export function Message({
     }
     return name.charAt(0).toUpperCase();
   };
+
+  const styles = createStyles(theme, isOwnMessage, compact, showAvatar, messageStatus);
 
   return (
     <View style={styles.container}>
@@ -121,24 +148,29 @@ export function Message({
 
             {/* Message bubble */}
             <View
-              style={{
-                backgroundColor: isOwnMessage
-                  ? 'rgba(18, 94, 145, 1)' // iOS blue for own messages
-                  : 'rgba(11, 53, 86, 0.4)', // Dark gray for received messages
-                paddingHorizontal: hasAttachments ? 8 : 12,
-                paddingVertical: hasAttachments ? 8 : 8,
-                borderRadius: 18,
-                // More rounded corners, slightly different for own vs received
-                borderTopLeftRadius: isOwnMessage ? 18 : 4,
-                borderTopRightRadius: isOwnMessage ? 4 : 18,
-                borderBottomLeftRadius: 18,
-                borderBottomRightRadius: 18,
-                borderColor: 'rgba(23, 120, 186, 0.4)',
-                borderWidth: 1,
-                maxWidth: '100%',
-                flexShrink: 1,
-                gap: 8,
-              }}
+              style={[
+                {
+                  backgroundColor: isOwnMessage
+                    ? 'rgba(18, 94, 145, 1)' // iOS blue for own messages
+                    : 'rgba(11, 53, 86, 0.4)', // Dark gray for received messages
+                  paddingHorizontal: hasAttachments ? 8 : 12,
+                  paddingVertical: hasAttachments ? 8 : 8,
+                  borderRadius: 18,
+                  // More rounded corners, slightly different for own vs received
+                  borderTopLeftRadius: isOwnMessage ? 18 : 4,
+                  borderTopRightRadius: isOwnMessage ? 4 : 18,
+                  borderBottomLeftRadius: 18,
+                  borderBottomRightRadius: 18,
+                  borderColor: messageStatus === 'error' && isOwnMessage
+                    ? '#ef4444' // Error border color
+                    : 'rgba(23, 120, 186, 0.4)',
+                  borderWidth: messageStatus === 'error' && isOwnMessage ? 2 : 1,
+                  maxWidth: '100%',
+                  flexShrink: 1,
+                  gap: 8,
+                  opacity: messageStatus === 'error' && isOwnMessage ? 0.6 : 1, // Reduced opacity for error
+                },
+              ]}
             >
               {/* Attachments */}
               {hasAttachments && (
@@ -179,6 +211,44 @@ export function Message({
                   (edited)
                 </Text>
               )}
+
+              {/* Error status actions (retry and delete) */}
+              {isOwnMessage && messageStatus === 'error' && (
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: theme.spacing.gap.sm,
+                    marginTop: 4,
+                    paddingHorizontal: hasAttachments ? 4 : 0,
+                  }}
+                >
+                  <TouchableOpacity
+                    onPress={handleRetry}
+                    style={{
+                      padding: 4,
+                    }}
+                  >
+                    <Icon
+                      name="refresh"
+                      size={16}
+                      color={theme.colors.text.primary || '#FFFFFF'}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleDelete}
+                    style={{
+                      padding: 4,
+                    }}
+                  >
+                    <Icon
+                      name="trash"
+                      size={16}
+                      color={theme.colors.text.primary || '#FFFFFF'}
+                    />
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
 
             {/* Timestamp for received messages (right side of bubble) */}
@@ -194,7 +264,7 @@ export function Message({
   );
 }
 
-const createStyles = (theme: Theme, isOwnMessage: boolean, compact: boolean, showAvatar: boolean) =>
+const createStyles = (theme: Theme, isOwnMessage: boolean, compact: boolean, showAvatar: boolean, messageStatus?: 'sending' | 'sent' | 'error') =>
   StyleSheet.create({
     container: {
       width: '100%',

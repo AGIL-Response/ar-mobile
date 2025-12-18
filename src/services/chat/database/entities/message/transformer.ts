@@ -79,6 +79,8 @@ export function chatMessageToMessageData(messageData: ChatMessage, roomId: strin
   isSynced: boolean;
   serverCreatedAt: string;
   serverUpdatedAt: string;
+  status?: 'sending' | 'sent' | 'error';
+  clientId?: string;
 } {
   let messageId: string;
   if (typeof messageData.id === 'string') {
@@ -103,13 +105,15 @@ export function chatMessageToMessageData(messageData: ChatMessage, roomId: strin
     messageId,
     roomId: validRoomId,
     senderId: typeof messageData.senderId === 'string' ? messageData.senderId : String(messageData.senderId),
-    content: messageData.content,
-    type: messageData.type,
+    content: messageData.content || '',
+    type: messageData.type || 'text', // Ensure type is always set
     replyToId: messageData.replyTo,
     editedAt: messageData.editedAt ? messageData.editedAt.getTime() : undefined,
     isSynced: true,
     serverCreatedAt: timestamp.toISOString(),
     serverUpdatedAt: timestamp.toISOString(),
+    status: messageData.status,
+    clientId: messageData.clientId,
   };
 }
 
@@ -133,26 +137,6 @@ export async function messageToChatMessage(message: Message, getUserFn: (userId:
     return acc;
   }, [] as Attachment[]);
 
-  if (rawAttachments.length !== attachments.length) {
-    console.warn('⚠️ [MessageTransformer] Duplicate attachments found:', {
-      messageId: message.messageId,
-      original: rawAttachments.length,
-      unique: attachments.length,
-    });
-  }
-
-  if (attachments.length > 0) {
-    console.log('💾 Loading attachments from DB for message:', {
-      messageId: message.messageId,
-      attachmentCount: attachments.length,
-      attachments: attachments.map(a => ({
-        id: a.attachmentId,
-        filename: a.filename,
-        url: a.url,
-        mimeType: a.mimeType,
-      })),
-    });
-  }
 
   // Fetch sender from users table
   let sender: ChatUser = {
@@ -258,6 +242,8 @@ export async function messageToChatMessage(message: Message, getUserFn: (userId:
     editedAt: message.editedAt ? new Date(message.editedAt) : undefined,
     replyTo: message.replyToId,
     reactions: [], // TODO: Implement reactions if needed
+    status: message.status,
+    clientId: message.clientId,
   };
 }
 

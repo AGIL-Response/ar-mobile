@@ -120,29 +120,7 @@ export function transformMessageToChatMessage(message: any, roomId: string): Cha
         const attachmentsArray = [
           ...(Array.isArray(message.attachments) ? message.attachments : []),
           ...(Array.isArray(message.files) ? message.files : []),
-        ];
-        
-        // DEBUG: Log every message to see what's happening
-        console.log('🔍 [UTILS] Checking message for attachments:', {
-          messageId: message.id,
-          hasAttachmentsProperty: message.hasOwnProperty('attachments'),
-          hasFilesProperty: message.hasOwnProperty('files'),
-          attachmentsType: typeof message.attachments,
-          filesType: typeof message.files,
-          attachmentsValue: message.attachments,
-          filesValue: message.files,
-          attachmentsLength: message.attachments?.length,
-          filesLength: message.files?.length,
-          finalArrayLength: attachmentsArray.length,
-        });
-        
-        if (attachmentsArray.length > 0) {
-          console.log('🔍 Transforming message attachments:', {
-            messageId: message.id,
-            count: attachmentsArray.length,
-            raw: attachmentsArray,
-          });
-        }
+        ].filter((a) => a != null); // Filter out null and undefined values
         
         const transformed = attachmentsArray.map((a: any) => ({
           id: ensureStringId(a.id || a.fileId || a.key || '', 'attachment.id'),
@@ -152,15 +130,14 @@ export function transformMessageToChatMessage(message: any, roomId: string): Cha
           mimeType: a.mimeType || a.contentType || a.type || 'application/octet-stream',
           uploadedAt: a.uploadedAt ? new Date(a.uploadedAt) : new Date(),
         }));
-        if (transformed.length > 0) {
-          console.log('✅ Transformed attachments:', transformed);
-        }
         return transformed;
       })(),
       timestamp: message.createdAt ? new Date(message.createdAt) : new Date(),
       editedAt: message.editedAt ? new Date(message.editedAt) : undefined,
       replyTo: message.replyToId ? ensureStringId(message.replyToId, 'replyToId') : undefined,
       reactions: [],
+      status: message.status || 'sent', // Default to 'sent' for messages from server
+      clientId: message.clientId, // Preserve clientId if present
     };
   } catch (error) {
     console.error('Error transforming message to ChatMessage:', message, error);

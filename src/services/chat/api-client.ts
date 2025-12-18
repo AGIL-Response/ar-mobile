@@ -196,7 +196,7 @@ function transformMessageToChatMessage(message: any, roomId: string): ChatMessag
       const attachmentsArray = [
         ...(Array.isArray(message.attachments) ? message.attachments : []),
         ...(Array.isArray(message.files) ? message.files : []),
-      ];
+      ].filter((a) => a != null); // Filter out null and undefined values
       return attachmentsArray.map((a: any) => ({
         id: ensureStringId(a.id || a.fileId || a.key || '', 'attachment.id'),
         filename: a.filename || a.name || a.key || 'file',
@@ -298,19 +298,7 @@ export const chatApi = {
       params,
     });
     const messages = response.data.messages || response.data.data || [];
-    console.log('📡 [API] Fetched messages:', {
-      roomId,
-      messageCount: messages.length,
-      messagesWithAttachments: messages.filter((m: any) => m.attachments?.length > 0).length,
-      messagesWithFiles: messages.filter((m: any) => m.files?.length > 0).length,
-      sample: messages.length > 0 ? {
-        messageId: messages[0].id,
-        hasAttachments: !!messages[0].attachments,
-        hasFiles: !!messages[0].files,
-      } : null,
-    });
     const transformed = messages.map((msg: any) => transformMessageToChatMessage(msg, roomId));
-    console.log('✅ [API] Transformed messages with attachments:', transformed.filter((m: any) => m.attachments?.length > 0).length);
     return {
       ...response.data,
       data: transformed,
@@ -342,19 +330,7 @@ export const chatApi = {
       },
     });
     const message = response.data.message || response.data.data;
-    console.log('📡 [API] Sent message response:', {
-      messageId: message.id,
-      hasAttachments: !!message.attachments,
-      attachmentsCount: message.attachments?.length || 0,
-      hasFiles: !!message.files,
-      filesCount: message.files?.length || 0,
-      raw: message,
-    });
     const transformed = transformMessageToChatMessage(message, data.roomId);
-    console.log('✅ [API] Transformed sent message:', {
-      messageId: transformed.id,
-      attachmentCount: transformed.attachments?.length || 0,
-    });
     return transformed;
   },
 

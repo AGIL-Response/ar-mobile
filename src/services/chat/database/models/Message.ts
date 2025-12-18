@@ -26,6 +26,8 @@ export default class Message extends Model {
   @field('is_synced') isSynced!: boolean;
   @field('server_created_at') serverCreatedAt?: string;
   @field('server_updated_at') serverUpdatedAt?: string;
+  @field('status') status?: 'sending' | 'sent' | 'error';
+  @field('client_id') clientId?: string;
 
   @relation('rooms', 'room_id') room!: Room;
   @relation('users', 'sender_id') sender!: User;

@@ -2,6 +2,7 @@ import { Database } from '@nozbe/watermelondb';
 import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
 import { chatSchema } from './schema';
 import * as models from './models';
+import migrations from './migrations';
 
 let database: Database | null = null;
 
@@ -9,10 +10,10 @@ export const getDatabase = (): Database => {
   if (!database) {
     const adapter = new SQLiteAdapter({
       schema: chatSchema,
-      // migrations: migrations, // Add migrations if needed
-      // onSetUpError: (error) => {
-      //   console.error('Database setup error:', error);
-      // },
+      migrations,
+      onSetUpError: (error) => {
+        console.error('❌ [Database] Setup error:', error);
+      },
     });
 
     database = new Database({
