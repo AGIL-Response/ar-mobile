@@ -21,21 +21,21 @@ export interface MessageProps {
   onAttachmentPress?: (attachment: ChatAttachment, index: number) => void;
 }
 
-export function Message({ 
-  message, 
-  showAvatar = true, 
-  showSenderName = false, 
-  compact = false, 
-  showDateSeparator = false, 
+export function Message({
+  message,
+  showAvatar = true,
+  showSenderName = false,
+  compact = false,
+  showDateSeparator = false,
   dateSeparatorText,
   onAttachmentPress,
 }: MessageProps) {
   const theme = useTheme();
   const currentUsername = useAuthStore((state) => state.user?.username);
   const isOwnMessage = message.sender.username === currentUsername;
-  
+
   const hasAttachments = message.attachments && message.attachments.length > 0;
-  
+
   // Debug logging
   if (hasAttachments) {
     console.log('📎 Message has attachments:', {
@@ -64,48 +64,19 @@ export function Message({
   };
 
   return (
-    <View style={{ width: '100%' }}>
+    <View style={styles.container}>
       {/* Date Separator */}
       {showDateSeparator && dateSeparatorText && (
-        <View
-          style={{
-            alignItems: 'center',
-            marginVertical: 16,
-            paddingHorizontal: 16,
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: theme.colors.background.secondary || 'rgba(0,0,0,0.3)',
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderRadius: 12,
-            }}
-          >
-            <Text
-              variant="caption"
-              style={{
-                color: theme.colors.text.secondary || '#8E8E93',
-                fontSize: 12,
-                fontWeight: '500',
-              }}
-            >
+        <View style={styles.dateSeparatorContainer}>
+          <View style={styles.dateSeparatorBadge}>
+            <Text variant="caption" style={styles.dateSeparatorText}>
               {dateSeparatorText}
             </Text>
           </View>
         </View>
       )}
 
-      <View
-        style={{
-          flexDirection: 'row',
-          marginBottom: compact ? 4 : 12,
-          paddingHorizontal: 16,
-          justifyContent: isOwnMessage ? 'flex-end' : 'flex-start',
-          alignItems: 'flex-end',
-          width: '100%',
-        }}
-      >
+      <View style={styles.messageRow}>
         {/* Left side: Avatar for received messages */}
         {!isOwnMessage && (
           <Avatar
@@ -113,52 +84,25 @@ export function Message({
             size="small"
             fallback={getInitials(message.sender.displayName || message.sender.username)}
             showStatus={false}
-            style={{ marginRight: 8, opacity: showAvatar ? 1 : 0 }}
+            style={styles.avatar}
           />
         )}
 
         {/* Message content container */}
-        <View
-          style={{
-            flexShrink: 1,
-            maxWidth: '75%',
-            alignItems: isOwnMessage ? 'flex-end' : 'flex-start',
-          }}
-        >
+        <View style={styles.contentContainer}>
           {/* Sender name for group chats (left-aligned messages only) */}
           {!isOwnMessage && showSenderName && (
-            <Text
-              variant="caption"
-              style={{
-                color: theme.colors.text.secondary || '#8E8E93',
-                marginBottom: 4,
-                marginLeft: 4,
-                fontSize: 13,
-                fontWeight: '500',
-              }}
-            >
+            <Text variant="caption" style={styles.senderName}>
               {message.sender.displayName || message.sender.username || 'Unknown'}
             </Text>
           )}
 
           {/* Reply preview */}
           {message.replyTo && (
-            <View
-              style={{
-                marginBottom: 4,
-                padding: 8,
-                backgroundColor: isOwnMessage ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
-                borderRadius: 8,
-                borderLeftWidth: 3,
-                borderLeftColor: theme.colors.primary || '#007AFF',
-              }}
-            >
+            <View style={styles.replyPreview}>
               <Text
                 variant="caption"
-                style={{
-                  color: isOwnMessage ? 'rgba(255,255,255,0.8)' : theme.colors.text.secondary,
-                  fontSize: 11,
-                }}
+                style={styles.replyPreviewText}
                 numberOfLines={1}
               >
                 Replying to message
@@ -167,28 +111,10 @@ export function Message({
           )}
 
           {/* Bubble and timestamp container - horizontal alignment */}
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'flex-end',
-              maxWidth: '100%',
-              flexShrink: 1,
-            }}
-          >
+          <View style={styles.bubbleContainer}>
             {/* Timestamp for own messages (left side of bubble) */}
             {isOwnMessage && (
-              <Text
-                variant="caption"
-                style={{
-                  color: theme.colors.text.secondary,
-                  opacity: 0.5,
-                  fontSize: 11,
-                  marginRight: 12,
-                  minWidth: 40,
-                  textAlign: 'right',
-                  flexShrink: 0,
-                }}
-              >
+              <Text variant="caption" style={styles.timestampOwn}>
                 {formatTime(message.timestamp)}
               </Text>
             )}
@@ -257,25 +183,123 @@ export function Message({
 
             {/* Timestamp for received messages (right side of bubble) */}
             {!isOwnMessage && (
-              <Text
-                variant="caption"
-                style={{
-                  color: theme.colors.text.secondary,
-                  opacity: 0.5,
-                  fontSize: 11,
-                  marginLeft: 12,
-                  minWidth: 40,
-                  textAlign: 'left',
-                  flexShrink: 0,
-                }}
-              >
+              <Text variant="caption" style={styles.timestampReceived}>
                 {formatTime(message.timestamp)}
               </Text>
             )}
           </View>
         </View>
-      </View>
-    </View>
+      </View >
+    </View >
   );
 }
 
+const createStyles = (theme: Theme, isOwnMessage: boolean, compact: boolean, showAvatar: boolean) =>
+  StyleSheet.create({
+    container: {
+      width: '100%',
+    },
+    dateSeparatorContainer: {
+      alignItems: 'center',
+      marginVertical: 16,
+      paddingHorizontal: 16,
+    },
+    dateSeparatorBadge: {
+      backgroundColor: theme.colors.background.secondary || 'rgba(0,0,0,0.3)',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 12,
+    },
+    dateSeparatorText: {
+      color: theme.colors.text.secondary || '#8E8E93',
+      fontSize: 12,
+      fontWeight: '500',
+    },
+    messageRow: {
+      flexDirection: 'row',
+      marginBottom: compact ? 4 : 12,
+      paddingHorizontal: 16,
+      justifyContent: isOwnMessage ? 'flex-end' : 'flex-start',
+      alignItems: 'flex-end',
+      width: '100%',
+    },
+    avatar: {
+      marginRight: 8,
+      opacity: showAvatar ? 1 : 0,
+    },
+    contentContainer: {
+      flexShrink: 1,
+      maxWidth: '75%',
+      alignItems: isOwnMessage ? 'flex-end' : 'flex-start',
+    },
+    senderName: {
+      color: theme.colors.text.secondary || '#8E8E93',
+      marginBottom: 4,
+      marginLeft: 4,
+      fontSize: 13,
+      fontWeight: '500',
+    },
+    replyPreview: {
+      marginBottom: 4,
+      padding: 8,
+      backgroundColor: isOwnMessage ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+      borderRadius: 8,
+      borderLeftWidth: 3,
+      borderLeftColor: theme.colors.primary || '#007AFF',
+    },
+    replyPreviewText: {
+      color: isOwnMessage ? 'rgba(255,255,255,0.8)' : theme.colors.text.secondary,
+      fontSize: 11,
+    },
+    bubbleContainer: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      maxWidth: '100%',
+      flexShrink: 1,
+    },
+    timestampOwn: {
+      color: theme.colors.text.secondary,
+      opacity: 0.5,
+      fontSize: 11,
+      marginRight: 12,
+      minWidth: 40,
+      textAlign: 'right',
+      flexShrink: 0,
+    },
+    timestampReceived: {
+      color: theme.colors.text.secondary,
+      opacity: 0.5,
+      fontSize: 11,
+      marginLeft: 12,
+      minWidth: 40,
+      textAlign: 'left',
+      flexShrink: 0,
+    },
+    bubble: {
+      backgroundColor: isOwnMessage
+        ? 'rgba(18, 94, 145, 1)'
+        : 'rgba(11, 53, 86, 0.4)',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 18,
+      borderTopLeftRadius: isOwnMessage ? 18 : 4,
+      borderTopRightRadius: isOwnMessage ? 4 : 18,
+      borderBottomLeftRadius: 18,
+      borderBottomRightRadius: 18,
+      borderColor: 'rgba(23, 120, 186, 0.4)',
+      borderWidth: 1,
+      maxWidth: '100%',
+      flexShrink: 1,
+    },
+    messageText: {
+      color: '#FFFFFF',
+      fontSize: 15,
+      lineHeight: 20,
+    },
+    editedText: {
+      color: 'rgba(255,255,255,0.7)',
+      fontSize: 11,
+      marginTop: 2,
+      fontStyle: 'italic',
+    },
+  });

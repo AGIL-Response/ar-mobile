@@ -7,6 +7,7 @@ import { MembersScreen } from '@/screens/members';
 import { useAuthStore } from '@/stores/auth';
 import { useUsersStore } from '@/stores/users';
 import { useMapStore } from '@/stores/map';
+import type { Theme } from '@/theme';
 import { useTheme } from '@/theme';
 import type { User } from '@/types';
 
@@ -108,7 +109,7 @@ export function MembersSection(): React.JSX.Element {
   );
 }
 
-const createStyles = (theme: any) =>
+const createStyles = (theme: Theme) =>
   StyleSheet.create({
     container: {},
     header: {

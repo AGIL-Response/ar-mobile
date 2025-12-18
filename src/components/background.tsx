@@ -7,7 +7,7 @@ import images from '@assets/images';
 import React from 'react';
 import { ImageBackground, StyleSheet } from 'react-native';
 
-import { useTheme } from '@/theme';
+import { useIsDarkTheme } from '@/theme';
 
 import type { BaseContainerProps } from './types';
 import { View } from './view';
@@ -39,15 +39,16 @@ export function Background({
   flex = 1,
   ...props
 }: BackgroundProps) {
-  const theme = useTheme();
+  const isDarkTheme = useIsDarkTheme();
 
   // For dark theme, use ImageBackground with bg_dark.jpg
-  if (theme.isDark) {
+  if (isDarkTheme) {
     return (
       <ImageBackground
         source={images.bg_dark}
         style={[styles.container, styles.imageBackground, style]}
         resizeMode="stretch"
+        testID="background-image"
         {...props}
       >
         <View style={styles.content} flex={flex}>
@@ -62,6 +63,7 @@ export function Background({
     <View
       style={[styles.container, styles.whiteBackground, style]}
       flex={flex}
+      testID="background-view"
       {...props}
     >
       <View style={styles.content}>{children}</View>

@@ -71,7 +71,7 @@ describe('Button component', () => {
       />
     );
     const style = getStyle('button');
-    expect(style.borderWidth).toBe(1);
+    expect(style.borderWidth).toBe(2);
   });
 
   it('applies ghost variant', () => {

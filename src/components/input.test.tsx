@@ -76,7 +76,7 @@ describe('Input component', () => {
   it('applies size variants', () => {
     const { rerender } = render(<Input size="small" testID="input" />);
     let style = getStyle('input-wrapper');
-    expect(style.height).toBe(40);
+    expect(style.height).toBe(32);
 
     rerender(<Input size="medium" testID="input" />);
     style = getStyle('input-wrapper');

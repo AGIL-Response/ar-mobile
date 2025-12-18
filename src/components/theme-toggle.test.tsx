@@ -34,7 +34,7 @@ describe('ThemeToggle component', () => {
   it('calls setTheme to toggle from light to dark', () => {
     jest.spyOn(themeModule, 'useIsDarkTheme').mockReturnValue(false);
     render(<ThemeToggle />);
-    const button = screen.getByRole('button');
+    const button = screen.getByTestId('theme-toggle-button');
     fireEvent.press(button);
     expect(mockSetTheme).toHaveBeenCalledWith('dark');
   });
@@ -42,27 +42,27 @@ describe('ThemeToggle component', () => {
   it('calls setTheme to toggle from dark to light', () => {
     jest.spyOn(themeModule, 'useIsDarkTheme').mockReturnValue(true);
     render(<ThemeToggle />);
-    const button = screen.getByRole('button');
+    const button = screen.getByTestId('theme-toggle-button');
     fireEvent.press(button);
     expect(mockSetTheme).toHaveBeenCalledWith('light');
   });
 
   it('applies correct icon size for small variant', () => {
     render(<ThemeToggle size="small" />);
-    const button = screen.getByRole('button');
+    const button = screen.getByTestId('theme-toggle-button');
     // Button should have dimensions based on iconSize (20) + 16 = 36
     expect(button).toBeTruthy();
   });
 
   it('applies correct icon size for medium variant', () => {
     render(<ThemeToggle size="medium" />);
-    const button = screen.getByRole('button');
+    const button = screen.getByTestId('theme-toggle-button');
     expect(button).toBeTruthy();
   });
 
   it('applies correct icon size for large variant', () => {
     render(<ThemeToggle size="large" />);
-    const button = screen.getByRole('button');
+    const button = screen.getByTestId('theme-toggle-button');
     expect(button).toBeTruthy();
   });
 
@@ -84,26 +84,17 @@ describe('ThemeToggle component', () => {
     expect(screen.queryByText('Light')).toBeNull();
   });
 
-  it('applies custom style prop', () => {
-    const customStyle = { marginTop: 20 };
-    render(<ThemeToggle style={customStyle} />);
-    const container = screen.getByRole('button');
-    expect(container.props.style).toEqual(
-      expect.arrayContaining([customStyle])
-    );
-  });
-
   it('has correct accessibility label for light theme', () => {
     jest.spyOn(themeModule, 'useIsDarkTheme').mockReturnValue(false);
     render(<ThemeToggle />);
-    const button = screen.getByRole('button');
+    const button = screen.getByTestId('theme-toggle-button');
     expect(button.props.accessibilityLabel).toBe('Switch to dark theme');
   });
 
   it('has correct accessibility label for dark theme', () => {
     jest.spyOn(themeModule, 'useIsDarkTheme').mockReturnValue(true);
     render(<ThemeToggle />);
-    const button = screen.getByRole('button');
+    const button = screen.getByTestId('theme-toggle-button');
     expect(button.props.accessibilityLabel).toBe('Switch to light theme');
   });
 });

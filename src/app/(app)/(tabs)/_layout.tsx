@@ -1,4 +1,4 @@
-import { Tabs, useRouter } from 'expo-router';
+import { RelativePathString, Tabs, useRouter } from 'expo-router';
 import React from 'react';
 import { TouchableOpacity, View } from 'react-native';
 
@@ -76,7 +76,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <TouchableOpacity
               activeOpacity={0.7}
-              onPress={() => router.navigate('/incidents/create' as any)}
+              onPress={() => router.navigate('/incidents/create' as RelativePathString)}
               accessibilityRole="button"
               accessibilityLabel="Create Incident"
               style={{

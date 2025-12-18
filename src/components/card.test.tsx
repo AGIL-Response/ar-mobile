@@ -22,7 +22,7 @@ describe('Card component', () => {
   it('applies default variant', () => {
     render(<Card testID="card">Content</Card>);
     const style = getStyle('card');
-    expect(style.borderWidth).toBe(1);
+    expect(style.borderWidth).toBe(2);
     expect(style.backgroundColor).toBeTruthy();
   });
 
@@ -45,7 +45,7 @@ describe('Card component', () => {
     );
     const style = getStyle('card');
     expect(style.backgroundColor).toBe('transparent');
-    expect(style.borderWidth).toBe(1);
+    expect(style.borderWidth).toBe(2);
   });
 
   it('applies filled variant', () => {

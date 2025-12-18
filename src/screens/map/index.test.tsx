@@ -93,11 +93,11 @@ describe('Home MapScreen', () => {
       incidents: [
         createIncident({
           id: 'incident-1',
-          location: { coordinates: [12.34, 56.78] },
+          location: { type: 'Point', coordinates: [12.34, 56.78] },
         }),
         createIncident({
           id: 'incident-2',
-          location: { coordinates: [98.76, 54.32] },
+          location: { type: 'Point', coordinates: [98.76, 54.32] },
         }),
       ],
       actions: {

@@ -494,26 +494,17 @@ export function useFirebaseNotification(
       checkPermission();
     }
 
-    // Get initial notification (if app was opened from quit state)
-    messaging()
-      .getInitialNotification()
-      .then((remoteMessage) => {
-        if (remoteMessage) {
-          console.log('🔥 App opened from quit state via notification:', remoteMessage);
-          callbacksRef.current.onInitialNotification?.(remoteMessage);
-        } else {
-          callbacksRef.current.onInitialNotification?.(null);
-        }
-      })
-      .catch((error) => {
-        console.error('🔥 Error getting initial notification:', error);
-      });
-
-    // Listen for foreground messages
+    // NOTE: With notifee v7.0.0+, notification taps are handled by notifee's event handlers.
+    // We no longer need to listen to Firebase's onNotificationOpenedApp or getInitialNotification
+    // because notifee intercepts those events. All notification handling is now in useNotifee hook.
+    
+    // Listen for foreground messages - these will be displayed by notifee in useNotifee hook
+    // We still need this listener to receive the messages, but display is handled by useNotifee
     const unsubscribeForeground = messaging().onMessage(
       async (remoteMessage) => {
         console.log('🔥 Foreground message received:', remoteMessage);
         callbacksRef.current.onForegroundMessage?.(remoteMessage);
+        // Note: Display is handled by useNotifee hook
       }
     );
 
@@ -535,14 +526,18 @@ export function useFirebaseNotification(
       }
     });
 
-    // Listen for notifications that open app from background
+    // NOTE: onNotificationOpenedApp is no longer needed with notifee v7.0.0+
+    // Notifee intercepts notification taps and handles them via onBackgroundEvent
+    // This listener is kept for backwards compatibility but won't fire for notifee notifications
     const unsubscribeNotificationOpened = messaging().onNotificationOpenedApp(
-      (remoteMessage) => {
+      async (remoteMessage) => {
         console.log(
-          '🔥 Notification caused app to open from background state:',
-          remoteMessage
+          '🔥 [useFirebaseNotification] Notification caused app to open from background state:',
+          JSON.stringify(remoteMessage, null, 2)
         );
+        console.log('🔥 [useFirebaseNotification] Note: This may not fire if notification was displayed by notifee');
         callbacksRef.current.onNotificationOpenedApp?.(remoteMessage);
+        // Note: Navigation is handled by useNotifee hook
       }
     );
 

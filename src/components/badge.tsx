@@ -5,8 +5,10 @@
 
 import React from 'react';
 import type { ViewProps } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import type { Theme } from '@/theme';
+import { useTheme } from '@/theme';
 
 import {
   createAccessibilityProps,
@@ -178,6 +180,9 @@ export const Badge = React.forwardRef<any, BadgeProps & ViewProps>(
       size,
     });
 
+    const theme = useTheme();
+    const styles = createStyles(theme, { hasLabel: !!label });
+
     // Merge with user-provided styles
     const finalStyle = mergeStyles(badgeStyles, userStyle);
 
@@ -195,7 +200,7 @@ export const Badge = React.forwardRef<any, BadgeProps & ViewProps>(
       ) : null;
 
       const iconElement = icon ? (
-        <View style={{ marginRight: label ? 4 : 0 }}>{icon}</View>
+        <View style={styles.iconContainer}>{icon}</View>
       ) : null;
 
       return (
@@ -293,3 +298,10 @@ export const OverdueBadge = React.forwardRef<
   <Badge ref={ref} colorVariant="error" label="Overdue" {...props} />
 ));
 OverdueBadge.displayName = 'OverdueBadge';
+
+const createStyles = (theme: Theme, props: { hasLabel: boolean }) =>
+  StyleSheet.create({
+    iconContainer: {
+      marginRight: props.hasLabel ? theme.spacing.gap.xs : 0,
+    },
+  });

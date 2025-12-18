@@ -3,15 +3,15 @@
  * Display incident cards and reports
  */
 
-import { useRouter } from 'expo-router';
+import { RelativePathString, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { TouchableOpacity } from 'react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 
 import type { Incident } from '@/api/incidents/types';
 import { Text, View } from '@/components';
 import { IncidentListCard } from '@/screens/incidents/components';
 import { useIncidentsStore } from '@/stores/incidents';
-import { Palette, useTheme } from '@/theme';
+import { Palette, type Theme, useTheme } from '@/theme';
 
 export function IncidentsSection() {
   const theme = useTheme();
@@ -20,6 +20,7 @@ export function IncidentsSection() {
   const setSelectedIncident = useIncidentsStore((state) => state.actions.setSelectedIncident);
   const isLoading = useIncidentsStore((state) => state.isLoading);
   const incidents = useIncidentsStore((state) => state.incidents);
+  const styles = createStyles(theme, isLoading && incidents.length === 0, incidents.length === 0);
 
   useEffect(() => {
     // Fetch incidents with default parameters (fire type, reported status)
@@ -30,44 +31,28 @@ export function IncidentsSection() {
   }, []);
 
   const handleViewAll = () => {
-    router.navigate('/incidents');
+    router.navigate('/incidents' as RelativePathString);
   };
 
   const handleIncidentPress = (incident: Incident) => {
     setSelectedIncident(incident);
-    router.navigate(`/incidents/${incident.id}`);
+    router.navigate(`/incidents/${incident.id}` as RelativePathString);
   };
 
   if (isLoading && incidents.length === 0) {
     return (
-      <View style={{ gap: 16 }}>
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <Text
-            variant="h4"
-            style={{
-              color: theme.colors.text.primary,
-            }}
-          >
+      <View style={styles.container}>
+        <View style={styles.headerRow}>
+          <Text variant="h4" style={styles.title}>
             Incidents
           </Text>
           <TouchableOpacity onPress={handleViewAll}>
-            <Text
-              variant="caption"
-              style={{
-                color: Palette.primary,
-              }}
-            >
+            <Text variant="caption" style={styles.viewAll}>
               View All
             </Text>
           </TouchableOpacity>
         </View>
-        <Text variant="body" style={{ color: theme.colors.text.muted }}>
+        <Text variant="body" style={styles.loadingText}>
           Loading incidents...
         </Text>
       </View>
@@ -75,39 +60,23 @@ export function IncidentsSection() {
   }
 
   return (
-    <View style={{ gap: 16 }}>
+    <View style={styles.container}>
       {/* Header Row */}
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <Text
-          variant="h4"
-          style={{
-            color: theme.colors.text.primary,
-          }}
-        >
+      <View style={styles.headerRow}>
+        <Text variant="h4" style={styles.title}>
           Incidents
         </Text>
         <TouchableOpacity onPress={handleViewAll}>
-          <Text
-            variant="caption"
-            style={{
-              color: Palette.primary,
-            }}
-          >
+          <Text variant="caption" style={styles.viewAll}>
             View All
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* Incident Cards */}
-      <View style={{ gap: 12 }}>
+      <View style={styles.incidentsContainer}>
         {incidents.length === 0 ? (
-          <Text variant="body" style={{ color: theme.colors.text.muted }}>
+          <Text variant="body" style={styles.emptyText}>
             No incidents found
           </Text>
         ) : (
@@ -123,3 +92,30 @@ export function IncidentsSection() {
     </View>
   );
 }
+
+const createStyles = (theme: Theme, isLoading: boolean, isEmpty: boolean) =>
+  StyleSheet.create({
+    container: {
+      gap: 16,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    title: {
+      color: theme.colors.text.primary,
+    },
+    viewAll: {
+      color: Palette.primary,
+    },
+    loadingText: {
+      color: theme.colors.text.muted,
+    },
+    incidentsContainer: {
+      gap: 12,
+    },
+    emptyText: {
+      color: theme.colors.text.muted,
+    },
+  });

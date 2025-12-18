@@ -93,6 +93,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ['react-native-edge-to-edge'],
     'expo-video',
     "@react-native-firebase/app",
+    "./plugins/withNotifee.js",
     [
       "expo-build-properties",
       {

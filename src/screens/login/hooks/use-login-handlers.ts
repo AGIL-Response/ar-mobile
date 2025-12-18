@@ -1,4 +1,4 @@
-import type { Router } from 'expo-router';
+import type { RelativePathString, Router } from 'expo-router';
 import { Alert } from 'react-native';
 
 import { showError } from '@/components/utils';
@@ -43,7 +43,7 @@ export const useLoginHandlers = ({
     console.log('Login screen: Starting login process for username:', username);
     try {
       await authState.actions.loginWithPassword(username, password);
-      router.navigate('/');
+      router.navigate('/' as RelativePathString);
     } catch (error: any) {
       const errorMessage =
         error?.message ||

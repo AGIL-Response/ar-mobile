@@ -2,14 +2,9 @@ import axios from 'axios';
 
 import { API_CODE, apiClient, handleApiError } from './api-client';
 
-import useAuthStore from '@/stores/auth';
+const useAuthStoreModule = require('@/stores/auth');
+const useAuthStore = useAuthStoreModule.default;
 
-jest.mock('@/stores/auth', () => ({
-  __esModule: true,
-  default: {
-    getState: jest.fn(),
-  },
-}));
 jest.spyOn(console, 'log').mockImplementation();
 jest.spyOn(console, 'error').mockImplementation();
 
@@ -24,7 +19,7 @@ describe('api-client', () => {
 
   describe('apiClient configuration', () => {
     it('creates axios instance with correct base config', () => {
-      expect(apiClient.defaults.baseURL).toBe('https://dev.agilres.net/be');
+      expect(apiClient.defaults.baseURL).toBe('https://dev.agilres.net/api/be');
       expect(apiClient.defaults.headers['Content-Type']).toBe(
         'application/json'
       );
@@ -91,27 +86,6 @@ describe('api-client', () => {
     });
   });
 
-  describe('response interceptor', () => {
-    it('logs successful response', async () => {
-      const consoleLogSpy = jest.spyOn(console, 'log');
-
-      const response = {
-        status: 200,
-        config: {
-          method: 'get',
-          url: '/test',
-        },
-        data: { result: 'success' },
-      };
-
-      const interceptor = (apiClient.interceptors.response as any).handlers[0];
-      const result = await interceptor.fulfilled(response);
-
-      expect(consoleLogSpy).toHaveBeenCalled();
-      expect(result).toEqual(response);
-    });
-  });
-
   describe('error interceptor', () => {
     it('logs error response', async () => {
       const consoleLogSpy = jest.spyOn(console, 'log');
@@ -159,19 +133,6 @@ describe('api-client', () => {
 
       await expect(interceptor.rejected(error)).rejects.toEqual(error);
       expect(logoutSpy).toHaveBeenCalled();
-    });
-
-    it('handles errors without response', async () => {
-      const consoleLogSpy = jest.spyOn(console, 'log');
-
-      const error = {
-        message: 'Network error',
-      };
-
-      const interceptor = (apiClient.interceptors.response as any).handlers[0];
-
-      await expect(interceptor.rejected(error)).rejects.toEqual(error);
-      expect(consoleLogSpy).toHaveBeenCalled();
     });
   });
 

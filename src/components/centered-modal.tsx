@@ -59,6 +59,7 @@ export function CenteredModal({
                 styles.closeButton,
                 { backgroundColor: theme.colors.button.ghost },
               ]}
+              testID="centered-modal-close"
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <X width={20} height={20} color={theme.colors.text.icon} />

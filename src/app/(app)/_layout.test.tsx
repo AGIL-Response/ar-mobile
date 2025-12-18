@@ -21,6 +21,8 @@ describe('AppLayout', () => {
     mockAuthState = createAuthState({
       token: {
         accessToken: 'test-access-token',
+        expiresIn: 1000,
+        refreshToken: 'test-refresh-token',
       },
     });
 

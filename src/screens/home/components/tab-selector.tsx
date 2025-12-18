@@ -4,9 +4,10 @@
  */
 
 import React from 'react';
-import { TouchableOpacity } from 'react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 
 import { Text, View } from '@/components';
+import type { Theme } from '@/theme';
 import { useTheme } from '@/theme';
 
 interface TabSelectorProps {
@@ -16,88 +17,62 @@ interface TabSelectorProps {
 
 export function TabSelector({ activeTab, onTabChange }: TabSelectorProps) {
   const theme = useTheme();
+  const styles = createStyles(theme, activeTab);
 
   return (
-    <View
-      style={{
-        height: 56,
-        backgroundColor: theme.colors.background.primary,
-        flexDirection: 'row',
-        alignItems: 'center',
-      }}
-    >
-      <TouchableOpacity
-        style={{
-          flex: 1,
-          height: '100%',
-          justifyContent: 'center',
-          alignItems: 'center',
-          position: 'relative',
-        }}
-        onPress={() => onTabChange('flat')}
-      >
-        <Text
-          variant="label"
-          style={{
-            color:
-              activeTab === 'flat'
-                ? theme.colors.text.primary
-                : theme.colors.text.tertiary,
-            textAlign: 'center',
-          }}
-        >
+    <View style={styles.container}>
+      <TouchableOpacity style={styles.tab} onPress={() => onTabChange('flat')}>
+        <Text variant="label" style={styles.tabTextFlat}>
           Flat View
         </Text>
-        <View
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            height: 2,
-            width: '100%',
-            backgroundColor:
-              activeTab === 'flat'
-                ? theme.colors.text.primary
-                : theme.colors.text.muted,
-          }}
-        />
+        <View style={styles.indicatorFlat} />
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={{
-          flex: 1,
-          height: '100%',
-          justifyContent: 'center',
-          alignItems: 'center',
-          position: 'relative',
-        }}
-        onPress={() => onTabChange('map')}
-      >
-        <Text
-          variant="label"
-          style={{
-            color:
-              activeTab === 'map'
-                ? theme.colors.text.primary
-                : theme.colors.text.tertiary,
-            textAlign: 'center',
-          }}
-        >
+      <TouchableOpacity style={styles.tab} onPress={() => onTabChange('map')}>
+        <Text variant="label" style={styles.tabTextMap}>
           Map View
         </Text>
-
-        <View
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            height: 2,
-            width: '100%',
-            backgroundColor:
-              activeTab === 'map'
-                ? theme.colors.text.primary
-                : theme.colors.text.muted,
-          }}
-        />
+        <View style={styles.indicatorMap} />
       </TouchableOpacity>
     </View>
   );
 }
+
+const createStyles = (theme: Theme, activeTab: 'flat' | 'map') =>
+  StyleSheet.create({
+    container: {
+      height: 56,
+      backgroundColor: theme.colors.background.primary,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    tab: {
+      flex: 1,
+      height: '100%',
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'relative',
+    },
+    tabTextFlat: {
+      color: activeTab === 'flat' ? theme.colors.text.primary : theme.colors.text.tertiary,
+      textAlign: 'center',
+    },
+    tabTextMap: {
+      color: activeTab === 'map' ? theme.colors.text.primary : theme.colors.text.tertiary,
+      textAlign: 'center',
+    },
+    indicatorFlat: {
+      position: 'absolute',
+      bottom: 0,
+      height: 2,
+      width: '100%',
+      backgroundColor: activeTab === 'flat' ? theme.colors.text.primary : theme.colors.text.muted,
+    },
+    indicatorMap: {
+      position: 'absolute',
+      bottom: 0,
+      height: 2,
+      width: '100%',
+      backgroundColor: activeTab === 'map' ? theme.colors.text.primary : theme.colors.text.muted,
+    },
+  });

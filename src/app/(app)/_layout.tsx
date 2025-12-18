@@ -6,14 +6,22 @@
 import { Redirect, Stack } from 'expo-router';
 import React from 'react';
 
-import useAuthStore from '@/stores/auth';
+import { useAuthStore } from '@/stores/auth';
+import { handleAppOpenEvent } from '@/lib/hooks';
 
 export default function AppLayout() {
   const authState = useAuthStore();
 
+  // Check for initial notification when app layout mounts (user is authenticated)
+  React.useEffect(() => {
+    if (authState.token?.accessToken) {
+      handleAppOpenEvent().catch(console.error);
+    }
+  }, [authState.token?.accessToken]);
+
   // Redirect to login if not authenticated
   if (!authState.token.accessToken) {
-    return <Redirect href="/login" />;
+    return <Redirect href={'/login' as any} />;
   }
 
   return (

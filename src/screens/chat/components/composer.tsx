@@ -398,45 +398,14 @@ export function Composer({
   const canSend = (message.trim() || attachments.length > 0) && !isSending && !disabled && !isRecording;
 
   return (
-    <View
-      style={{
-        backgroundColor: theme.colors.background.primary,
-        borderTopWidth: 1,
-        borderTopColor: theme.colors.surface.border,
-        paddingBottom: theme.spacing.gap.md,
-      }}
-    >
+    <View style={styles.container}>
       {replyTo && (
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingHorizontal: theme.spacing.gap.md,
-            paddingTop: theme.spacing.gap.sm,
-            paddingBottom: theme.spacing.gap.xs,
-            borderBottomWidth: 1,
-            borderBottomColor: theme.colors.surface.border,
-          }}
-        >
-          <View style={{ flex: 1 }}>
-            <Text
-              variant="caption"
-              style={{
-                color: theme.colors.text.secondary,
-                marginBottom: 2,
-              }}
-            >
+        <View style={styles.replyContainer}>
+          <View style={styles.replyContent}>
+            <Text variant="caption" style={styles.replyLabel}>
               Replying to
             </Text>
-            <Text
-              variant="body"
-              style={{
-                color: theme.colors.text.primary,
-                fontSize: 12,
-              }}
-              numberOfLines={1}
-            >
+            <Text variant="body" style={styles.replyText} numberOfLines={1}>
               {replyTo.content}
             </Text>
           </View>
@@ -449,12 +418,15 @@ export function Composer({
             <Text style={{ color: theme.colors.text.secondary, fontSize: 20 }}>✕</Text>
           </TouchableOpacity>
         </View>
-      )}
+      )
+      }
 
       {/* Attachment Preview */}
-      {attachments.length > 0 && (
-        <AttachmentPreview attachments={attachments} onRemove={handleRemoveAttachment} />
-      )}
+      {
+        attachments.length > 0 && (
+          <AttachmentPreview attachments={attachments} onRemove={handleRemoveAttachment} />
+        )
+      }
 
       <View
         style={{
@@ -558,109 +530,174 @@ export function Composer({
         </View>
 
         {/* Send button or Recording controls */}
-        {isRecording ? (
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: theme.spacing.gap.sm,
-            }}
-          >
-            {/* Cancel button */}
-            <TouchableOpacity
-              onPress={cancelRecording}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundColor: '#ef4444',
-              }}
-            >
-              <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>×</Text>
-            </TouchableOpacity>
-
-            {/* Recording indicator and timer */}
+        {
+          isRecording ? (
             <View
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                gap: theme.spacing.gap.xs,
-                paddingHorizontal: theme.spacing.gap.sm,
-                paddingVertical: theme.spacing.gap.xs,
-                backgroundColor: theme.colors.background.secondary,
-                borderRadius: 18,
+                gap: theme.spacing.gap.sm,
               }}
             >
-              <View
+              {/* Cancel button */}
+              <TouchableOpacity
+                onPress={cancelRecording}
                 style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  justifyContent: 'center',
+                  alignItems: 'center',
                   backgroundColor: '#ef4444',
                 }}
-              />
-              <Text
-                variant="caption"
+              >
+                <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>×</Text>
+              </TouchableOpacity>
+
+              {/* Recording indicator and timer */}
+              <View
                 style={{
-                  color: theme.colors.text.primary,
-                  fontFamily: 'monospace',
-                  fontSize: 12,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: theme.spacing.gap.xs,
+                  paddingHorizontal: theme.spacing.gap.sm,
+                  paddingVertical: theme.spacing.gap.xs,
+                  backgroundColor: theme.colors.background.secondary,
+                  borderRadius: 18,
                 }}
               >
-                {formatTime(recordingTime)}
-              </Text>
-            </View>
+                <View
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor: '#ef4444',
+                  }}
+                />
+                <Text
+                  variant="caption"
+                  style={{
+                    color: theme.colors.text.primary,
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                  }}
+                >
+                  {formatTime(recordingTime)}
+                </Text>
+              </View>
 
-            {/* Stop/Send button */}
+              {/* Stop/Send button */}
+              <TouchableOpacity
+                onPress={stopRecording}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  backgroundColor: theme.colors.primary || '#007AFF',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 20,
+                    color: 'white',
+                  }}
+                >
+                  →
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
             <TouchableOpacity
-              onPress={stopRecording}
+              onPress={handleSend}
+              disabled={!canSend}
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
+                width: 44,
+                height: 44,
+                borderRadius: 22,
                 justifyContent: 'center',
                 alignItems: 'center',
-                backgroundColor: theme.colors.primary || '#007AFF',
+                marginBottom: theme.spacing.gap.xs,
+                backgroundColor: canSend ? theme.colors.primary : theme.colors.background.secondary,
               }}
             >
               <Text
                 style={{
                   fontSize: 20,
-                  color: 'white',
+                  color: canSend ? 'white' : theme.colors.text.secondary,
                 }}
               >
                 →
               </Text>
             </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity
-            onPress={handleSend}
-            disabled={!canSend}
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 22,
-              justifyContent: 'center',
-              alignItems: 'center',
-              marginBottom: theme.spacing.gap.xs,
-              backgroundColor: canSend ? theme.colors.primary : theme.colors.background.secondary,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 20,
-                color: canSend ? 'white' : theme.colors.text.secondary,
-              }}
-            >
-              →
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    </View>
+          )
+        }
+      </View >
+    </View >
   );
 }
 
+const createStyles = (theme: Theme, hasMessage: boolean, isSending: boolean, disabled: boolean) =>
+  StyleSheet.create({
+    container: {
+      backgroundColor: theme.colors.background.primary,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.surface.border,
+      paddingBottom: theme.spacing.gap.md,
+    },
+    replyContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: theme.spacing.gap.md,
+      paddingTop: theme.spacing.gap.sm,
+      paddingBottom: theme.spacing.gap.xs,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.surface.border,
+    },
+    replyContent: {
+      flex: 1,
+    },
+    replyLabel: {
+      color: theme.colors.text.secondary,
+      marginBottom: 2,
+    },
+    replyText: {
+      color: theme.colors.text.primary,
+      fontSize: 12,
+    },
+    cancelButton: {
+      padding: theme.spacing.gap.xs,
+    },
+    inputContainer: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      paddingHorizontal: theme.spacing.gap.md,
+      paddingTop: theme.spacing.gap.md,
+    },
+    inputWrapper: {
+      flex: 1,
+      marginRight: theme.spacing.gap.sm,
+    },
+    inputContainerStyle: {
+      marginBottom: 0,
+    },
+    inputStyle: {
+      maxHeight: 100,
+      paddingTop: theme.spacing.gap.sm,
+      paddingBottom: theme.spacing.gap.sm,
+    },
+    sendButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: theme.spacing.gap.xs,
+    },
+    sendButtonText: {
+      fontSize: 20,
+      color: hasMessage && !isSending && !disabled ? 'white' : theme.colors.text.secondary,
+    },
+  });

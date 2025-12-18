@@ -12,7 +12,6 @@ import { router, type RelativePathString } from 'expo-router';
 import React, {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
 } from 'react';
 import { StyleSheet } from 'react-native';
@@ -31,7 +30,7 @@ Mapbox.setAccessToken(
 
 export function MapView() {
   const theme = useTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  const styles = createStyles(theme);
   const incidents = useIncidentsStore((state) => state.incidents);
   const users = useUsersStore((state) => state.users);
   const incidentsLoading = useIncidentsStore((state) => state.isLoading);
@@ -162,13 +161,8 @@ export function MapView() {
 
   if (isLoading) {
     return (
-      <Center style={{ flex: 1 }}>
-        <Text
-          variant="body"
-          style={{
-            color: theme.colors.text.secondary,
-          }}
-        >
+      <Center style={styles.loadingContainer}>
+        <Text variant="body" style={styles.loadingText}>
           Loading map...
         </Text>
       </Center>
@@ -177,7 +171,7 @@ export function MapView() {
 
   return (
     <View style={styles.container}>
-      <View style={{ flex: 1, width: '100%' }}>
+      <View style={styles.mapContainer}>
         <MapboxMapView
           style={styles.map}
           styleURL={theme.isDark ? Mapbox.StyleURL.Dark : Mapbox.StyleURL.Light}
@@ -236,12 +230,22 @@ export function MapView() {
   );
 }
 
-const createStyles = (theme: Theme) => {
-  return StyleSheet.create({
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
     container: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
+    },
+    loadingContainer: {
+      flex: 1,
+    },
+    loadingText: {
+      color: theme.colors.text.secondary,
+    },
+    mapContainer: {
+      flex: 1,
+      width: '100%',
     },
     map: {
       flex: 1,
@@ -274,4 +278,3 @@ const createStyles = (theme: Theme) => {
       justifyContent: 'center',
     },
   });
-};

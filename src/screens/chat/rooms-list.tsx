@@ -4,13 +4,14 @@
  */
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { FlatList, RefreshControl } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet } from 'react-native';
 import { Background, View } from '@/components';
+import type { Theme } from '@/theme';
 import { useTheme } from '@/theme';
 import { chatService } from '@/services/chat';
 import { RoomCard } from './components';
 import type { ChatRoom } from '@/services/chat';
-import { useRouter } from 'expo-router';
+import { RelativePathString, useRouter } from 'expo-router';
 import { useObservable } from '@/lib/hooks/use-observable';
 import { AppHeader } from '@/screens/home/components/app-header';
 
@@ -19,6 +20,7 @@ export default function ChatRoomsListScreen() {
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const styles = createStyles(theme);
 
   // Memoize the observable to prevent recreation on every render
   const observableRooms = useMemo(() => chatService.observeRooms(), []);
@@ -55,22 +57,20 @@ export default function ChatRoomsListScreen() {
   };
 
   const handleRoomPress = (room: ChatRoom) => {
-    router.push(`/chat/${room.id}`);
+    router.push(`/chat/${room.id}` as RelativePathString);
   };
 
   return (
     <Background>
-      <AppHeader title="Chat" />
-      <View style={{ flex: 1 }}>
+      <AppHeader />
+      <View style={styles.container}>
         <FlatList
           data={rooms}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <RoomCard room={item} onPress={handleRoomPress} />
           )}
-          contentContainerStyle={{
-            paddingBottom: theme.spacing.gap.md,
-          }}
+          contentContainerStyle={styles.listContent}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
@@ -80,14 +80,7 @@ export default function ChatRoomsListScreen() {
           }
           ListEmptyComponent={
             !isInitializing ? (
-              <View
-                style={{
-                  flex: 1,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  paddingTop: theme.spacing.gap.xl * 2,
-                }}
-              >
+              <View style={styles.emptyContainer}>
                 {/* TODO: Add empty state component */}
               </View>
             ) : null
@@ -98,3 +91,18 @@ export default function ChatRoomsListScreen() {
   );
 }
 
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    listContent: {
+      paddingBottom: theme.spacing.gap.md,
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingTop: theme.spacing.gap.xl * 2,
+    },
+  });

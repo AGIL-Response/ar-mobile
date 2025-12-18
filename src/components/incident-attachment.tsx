@@ -200,6 +200,7 @@ const IncidentAttachmentBase = ({
         justifyContent: 'center',
         alignItems: 'center',
       }}
+      testID={`incident-attachment-${fileId}`}
     >
       {isLoading ? (
         getLoadingIndicator()

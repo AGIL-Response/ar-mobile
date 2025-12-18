@@ -3,6 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
+    "tsc": "pnpm exec tsc -p tsconfig.json --noEmit",
     "preinstall": "npx only-allow pnpm",
     "start": "APP_VARIANT=development npx expo start",
     "start:clear": "APP_VARIANT=development npx expo start --clear",
@@ -10,9 +11,13 @@
     "android:pro": "APP_VARIANT=production expo run:android",
     "ios": "APP_VARIANT=development expo run:ios",
     "ios:pro": "APP_VARIANT=production expo run:ios",
+    "test": "jest src/app --silent",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "clean": "npx expo prebuild --clean",
     "lint": "expo lint",
-    "generate:env-types": "node scripts/generate-env-types.js"
+    "generate:env-types": "node scripts/generate-env-types.js",
+    "buildApk": "bash scripts/build-apk.sh"
   },
   "dependencies": {
     "@expo-google-fonts/goldman": "^0.4.2",
@@ -24,6 +29,7 @@
     "@expo/config": "^12.0.10",
     "@expo/vector-icons": "^15.0.3",
     "@gorhom/bottom-sheet": "^5.2.6",
+    "@notifee/react-native": "^9.1.8",
     "@nozbe/watermelondb": "^0.28.0",
     "@nozbe/with-observables": "^1.6.0",
     "@react-native-community/datetimepicker": "8.4.4",
@@ -86,10 +92,16 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@babel/core": "^7.28.5",
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.3.3",
+    "@types/jest": "^30.0.0",
     "@types/lodash.memoize": "^4.1.9",
     "@types/react": "~19.1.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
+    "jest": "^29.7.0",
+    "jest-expo": "^54.0.16",
     "patch-package": "^8.0.1",
     "react-native-svg-transformer": "^1.5.2",
     "typescript": "~5.9.2"

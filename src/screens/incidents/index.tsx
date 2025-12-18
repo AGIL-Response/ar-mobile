@@ -5,7 +5,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { FlatList, RefreshControl } from 'react-native';
-import { useRouter } from 'expo-router';
+import { RelativePathString, useRouter } from 'expo-router';
 
 import { IncidentListCard } from './components';
 import { Text, View, Background } from '@/components';
@@ -39,7 +39,7 @@ export default function IncidentsScreen() {
 
   const handleIncidentPress = (incident: Incident) => {
     setSelectedIncident(incident);
-    router.navigate(`/incidents/${incident.id}`);
+    router.navigate(`/incidents/${incident.id}` as RelativePathString);
   };
 
   const handleRefresh = useCallback(async () => {

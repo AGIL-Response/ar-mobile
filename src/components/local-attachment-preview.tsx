@@ -124,6 +124,7 @@ export function LocalAttachmentPreview({
           justifyContent: 'center',
           alignItems: 'center',
         }}
+        testID={`local-attachment-preview-${attachment.id}`}
       >
         {isVideoFile ? (
           <>
@@ -178,6 +179,7 @@ export function LocalAttachmentPreview({
             alignItems: 'center',
             zIndex: 10,
           }}
+          testID={`local-attachment-preview-remove-${attachment.id}`}
         >
           <X
             width={20}
