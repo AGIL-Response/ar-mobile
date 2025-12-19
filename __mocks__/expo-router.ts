@@ -12,6 +12,7 @@ const useRouterMock = jest.fn(() => ({
   dismiss: jest.fn(),
   dismissAll: jest.fn(),
   setParams: jest.fn(),
+  navigate: jest.fn(),
 }));
 
 const redirectMock = jest.fn();
@@ -76,7 +77,9 @@ module.exports = {
     dismiss: jest.fn(),
     dismissAll: jest.fn(),
     setParams: jest.fn(),
+    navigate: jest.fn(),
   },
+  RelativePathString: jest.fn(),
   useLocalSearchParams: useLocalSearchParamsMock,
   useSegments: useSegmentsMock,
   usePathname: usePathnameMock,

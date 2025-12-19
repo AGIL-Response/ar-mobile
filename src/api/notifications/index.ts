@@ -3,7 +3,7 @@
  * API endpoints for notification management
  */
 
-import { apiClient, handleApiError } from '../api-client';
+import { apiClient, handleApiError } from '@/api/api-client';
 import type {
   MarkNotificationReadRequest,
   MarkNotificationReadResponse,

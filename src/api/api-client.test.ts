@@ -1,14 +1,19 @@
 import axios from 'axios';
 
+// Unmock api-client for this test file since we're testing the actual implementation
+jest.unmock('./api-client');
+
 import { API_CODE, apiClient, handleApiError } from './api-client';
 
 const useAuthStoreModule = require('@/stores/auth');
 const useAuthStore = useAuthStoreModule.default;
 
-jest.spyOn(console, 'log').mockImplementation();
-jest.spyOn(console, 'error').mockImplementation();
-
 describe('api-client', () => {
+  beforeAll(() => {
+    jest.spyOn(console, 'log').mockImplementation();
+    jest.spyOn(console, 'error').mockImplementation();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
   });

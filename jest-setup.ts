@@ -34,10 +34,30 @@ jest.mock('@/api', () => ({
     getUserRoles: jest.fn(),
     getUsersByTenant: jest.fn(),
   },
+  filesApi: {
+    uploadIncidentAttachment: jest.fn(),
+  },
+}));
+
+jest.mock('@/api/files', () => ({
+  __esModule: true,
+  blobToUri: jest.fn(async () => 'data:image/png;base64,mock'),
+  cacheFileUri: jest.fn(),
+  getCachedFileUri: jest.fn(async () => null),
+  filesApi: {
+    viewFile: jest.fn(async () => ({
+      blob: { type: 'image/png' },
+      type: 'image/png',
+    })),
+  },
 }));
 
 jest.mock('@/stores/auth', () => {
   const defaultAuthStoreState = {
+    selectedTeam: {
+      id: 'team-1',
+      name: 'Alpha Team',
+    },
     token: { accessToken: undefined },
     user: undefined,
     tenants: [],
@@ -47,13 +67,22 @@ jest.mock('@/stores/auth', () => {
     },
   };
 
-  const useAuthStoreMock = jest.fn(() => defaultAuthStoreState);
+  const useAuthStore: any = jest.fn((selector?: any) => {
+    if (typeof selector === 'function') {
+      return selector(defaultAuthStoreState);
+    }
+    return defaultAuthStoreState;
+  });
+
+  // Add Zustand store methods
+  useAuthStore.getState = jest.fn(() => defaultAuthStoreState);
+  useAuthStore.setState = jest.fn();
+  useAuthStore.subscribe = jest.fn(() => jest.fn());
+
   return {
     __esModule: true,
-    useAuthStore: useAuthStoreMock,
-    default: {
-      getState: jest.fn(() => defaultAuthStoreState),
-    },
+    useAuthStore,
+    default: useAuthStore,
   };
 });
 
@@ -156,6 +185,70 @@ jest.mock('@/stores/location', () => {
   };
 });
 
+jest.mock('@/stores/map', () => {
+  const defaultMapStoreState = {
+    mapFocusIncidentId: null,
+    mapFocusUserId: null,
+    flatViewFocusUserId: null,
+    isMapReady: false,
+    actions: {
+      setMapFocusIncident: jest.fn(),
+      setMapFocusUserId: jest.fn(),
+      setFlatViewFocusUserId: jest.fn(),
+      setIsMapReady: jest.fn(),
+    },
+  };
+
+  const useMapStoreMock = jest.fn((selector?: any) => {
+    if (typeof selector === 'function') {
+      return selector(defaultMapStoreState);
+    }
+    return defaultMapStoreState;
+  });
+
+  return {
+    __esModule: true,
+    useMapStore: useMapStoreMock,
+    default: {
+      getState: jest.fn(() => defaultMapStoreState),
+      subscribe: jest.fn(() => jest.fn()),
+    },
+  };
+});
+
+jest.mock('@/stores/notifications', () => {
+  const defaultNotificationsStoreState = {
+    unreadCount: 0,
+    notifications: [],
+    isLoading: false,
+    error: null,
+    actions: {
+      fetchNotifications: jest.fn().mockResolvedValue(undefined),
+      markNotificationRead: jest.fn().mockResolvedValue(undefined),
+      markAllNotificationsRead: jest.fn().mockResolvedValue(undefined),
+      getUnreadCount: jest.fn().mockResolvedValue(undefined),
+      clearError: jest.fn(),
+      reset: jest.fn(),
+    },
+  };
+
+  const useNotificationsStoreMock = jest.fn((selector?: any) => {
+    if (typeof selector === 'function') {
+      return selector(defaultNotificationsStoreState);
+    }
+    return defaultNotificationsStoreState;
+  });
+
+  return {
+    __esModule: true,
+    useNotificationsStore: useNotificationsStoreMock,
+    default: {
+      getState: jest.fn(() => defaultNotificationsStoreState),
+      subscribe: jest.fn(() => jest.fn()),
+    },
+  };
+});
+
 // Minimal theme mock compatible with our styles; useTheme() returns design tokens
 jest.mock('@/theme', () => {
   const minimalTheme = {
@@ -205,6 +298,11 @@ jest.mock('@/theme', () => {
         border: '#6b7280',
         borderPrimary: '#111827',
         borderSecondary: 'rgba(111, 127, 140, 0.2)',
+      },
+      status: {
+        success: '#00ff00',
+        error: '#ff0000',
+        warning: '#ffaa00',
       },
     },
     typography: {
@@ -387,52 +485,12 @@ jest.mock('@/components/icon', () => {
 
 jest.mock('@assets/images', () => ({
   __esModule: true,
-  default: { avatar_image: 'avatar.png' },
+  default: {
+    avatar_image: 'avatar.png',
+    img_login_background: 'login_background.png',
+    img_login_logo: 'login_logo.png',
+  },
 }));
-
-// jest.mock('@react-navigation/native', () => {
-//   const React = require('react');
-//   // Don't use jest.requireActual - it loads untransformed ES modules
-//   // Create a complete mock instead
-//   return {
-//     __esModule: true,
-//     NavigationContainer: ({ children }: any) =>
-//       React.createElement(React.Fragment, null, children),
-//     ThemeProvider: ({ children }: any) =>
-//       React.createElement(React.Fragment, null, children),
-//     useIsFocused: jest.fn(() => true),
-//     useNavigation: jest.fn(() => ({
-//       navigate: jest.fn(),
-//       goBack: jest.fn(),
-//       dispatch: jest.fn(),
-//       setOptions: jest.fn(),
-//       addListener: jest.fn(),
-//       removeListener: jest.fn(),
-//     })),
-//     useRoute: jest.fn(() => ({})),
-//     useFocusEffect: jest.fn((callback) => callback()),
-//     DefaultTheme: {
-//       colors: {
-//         primary: '#1068eb',
-//         background: '#ffffff',
-//         card: '#ffffff',
-//         text: '#111827',
-//         border: '#e5e7eb',
-//         notification: '#ef4444',
-//       },
-//     },
-//     DarkTheme: {
-//       colors: {
-//         primary: '#1068eb',
-//         background: '#000000',
-//         card: '#1a1a1a',
-//         text: '#ffffff',
-//         border: '#333333',
-//         notification: '#ef4444',
-//       },
-//     },
-//   };
-// });
 
 jest.mock('@/lib/socket', () => ({
   initMapSocket: jest.fn(),
@@ -527,3 +585,11 @@ jest.mock('@/stores/media-viewer', () => {
     useMediaViewerStore: jest.fn(() => ({ actions })),
   };
 });
+
+jest.mock('@/lib/storage', () => ({
+  storage: {
+    getString: jest.fn(() => null),
+    set: jest.fn(),
+    remove: jest.fn(),
+  },
+}));

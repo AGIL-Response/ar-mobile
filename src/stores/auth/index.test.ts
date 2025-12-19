@@ -72,6 +72,8 @@ describe('AuthStore', () => {
         realm: 'realm',
         roles: [],
         permissions: [],
+        avatarId: 'avatar-1',
+        updatedAt: '2021-01-01',
       };
 
       act(() => {

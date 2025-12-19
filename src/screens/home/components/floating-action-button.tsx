@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { RelativePathString, useRouter } from 'expo-router';
 
 import { Icon, iconNames } from '@/components';
 import { Palette, type Theme, useTheme } from '@/theme';
@@ -17,7 +17,7 @@ export function FloatingActionButton() {
 
   const handlePress = () => {
     // Navigate to create incident screen (location permission will be handled there)
-    router.navigate('/incidents/create');
+    router.navigate('/incidents/create' as RelativePathString);
   };
   
   return (

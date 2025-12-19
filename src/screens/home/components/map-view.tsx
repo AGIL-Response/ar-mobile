@@ -13,6 +13,7 @@ import React, {
   useCallback,
   useEffect,
   useRef,
+  useMemo,
 } from 'react';
 import { StyleSheet } from 'react-native';
 import { Avatar, Center, Icon, Text, View, iconNames } from '@/components';

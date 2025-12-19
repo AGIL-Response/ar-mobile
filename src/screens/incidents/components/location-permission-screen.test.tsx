@@ -12,19 +12,6 @@ import {
 
 import { LocationPermissionScreen } from './location-permission-screen';
 
-jest.mock('react-native/Libraries/Components/Switch/Switch', () => {
-  const React = require('react');
-  const MockSwitch = React.forwardRef((props: SwitchProps, ref: Ref<Switch>) =>
-    React.createElement('RCTSwitch', { ...props, ref })
-  );
-  MockSwitch.displayName = 'MockSwitch';
-
-  return {
-    __esModule: true,
-    default: MockSwitch,
-  };
-});
-
 describe('LocationPermissionScreen', () => {
   const originalPlatform = Platform.OS;
 

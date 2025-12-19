@@ -15,6 +15,16 @@ module.exports = {
   get PermissionStatus() {
     return PermissionStatusValue;
   },
+  permissions: {
+    UNDETERMINED: 'undetermined',
+    DENIED: 'denied',
+    GRANTED: 'granted',
+  },
+  MediaTypeOptions: {
+    All: 'All',
+    Images: 'Images',
+    Videos: 'Videos',
+  },
   useCameraPermissions: jest.fn(() => [
     { status: PermissionStatusValue.UNDETERMINED },
     requestCameraPermissionMock,

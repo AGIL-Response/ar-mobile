@@ -4,6 +4,11 @@ module.exports = {
     GRANTED: 'granted',
     DENIED: 'denied',
   },
+  permissions: {
+    UNDETERMINED: 'undetermined',
+    DENIED: 'denied',
+    GRANTED: 'granted',
+  },
   Accuracy: {
     Lowest: 1,
     Low: 2,
@@ -17,4 +22,8 @@ module.exports = {
   getCurrentPositionAsync: jest.fn(),
   watchPositionAsync: jest.fn(),
   openSettings: jest.fn(),
+  useForegroundPermissions: jest.fn(),
+  useBackgroundPermissions: jest.fn(),
+  useBackgroundPermissionsAsync: jest.fn(),
+  getBackgroundPermissionsAsync: jest.fn(),
 };

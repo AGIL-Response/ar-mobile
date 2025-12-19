@@ -8,7 +8,7 @@ import { StyleSheet, TouchableOpacity } from 'react-native';
 
 import type { Task } from '@/api/tasks/types';
 import { Avatar, Text, View } from '@/components';
-import { Palette, type Theme, useTheme } from '@/theme';
+import { type Theme, useTheme } from '@/theme';
 import { formatDateTime, getBackgroundColor, getStatusColor } from '../detail';
 
 interface TaskCardProps {
