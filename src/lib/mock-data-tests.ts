@@ -5,6 +5,13 @@ import type { AuthState } from '@/stores/auth';
 import type { LocationState } from '@/stores/location';
 import type { IncidentsState } from '@/stores/incidents';
 import type { UseLocationReturn } from '@/lib/hooks/use-location';
+import type {
+  UserNotification,
+  NotificationData,
+  NotificationMetadata,
+  NotificationActor,
+  NotificationType,
+} from '@/api/notifications/types';
 import { UsersState } from '@/stores/users';
 import { TasksState } from '@/stores/tasks';
 
@@ -290,4 +297,181 @@ export const createTasksState = (
     },
     ...restOverrides,
   };
+};
+
+/**
+ * Create a mock NotificationActor
+ */
+export const createNotificationActor = (
+  overrides: Partial<NotificationActor> = {}
+): NotificationActor => ({
+  id: `actor-${Math.random()}`,
+  email: 'actor@example.com',
+  roles: [],
+  tenant: {
+    id: 'tenant-1',
+    name: 'Tenant 1',
+  },
+  isAdmin: false,
+  teamIds: ['team-1'],
+  fullName: 'Actor User',
+  username: 'actor',
+  idpUserId: `idp-${Math.random()}`,
+  emailVerified: true,
+  ...overrides,
+});
+
+/**
+ * Create a mock NotificationMetadata
+ */
+export const createNotificationMetadata = (
+  overrides: Partial<NotificationMetadata> = {}
+): NotificationMetadata => ({
+  id: `metadata-${Math.random()}`,
+  name: 'Notification Metadata',
+  actor: createNotificationActor(),
+  entityType: 'task',
+  ...overrides,
+});
+
+/**
+ * Create a mock NotificationData
+ */
+export const createNotificationData = (
+  overrides: Partial<NotificationData> = {}
+): NotificationData => ({
+  tenantId: 'tenant-1',
+  id: `notification-data-${Math.random()}`,
+  soundFileId: `sound-${Math.random()}`,
+  type: 'task_assigned',
+  message: 'Task assigned to you',
+  metadata: createNotificationMetadata(),
+  createdAt: new Date().toISOString(),
+  updatedAt: null,
+  deletedAt: null,
+  createdBy: 'user-1',
+  updatedBy: null,
+  deletedBy: null,
+  ...overrides,
+});
+
+/**
+ * Create a mock UserNotification
+ */
+export const createNotification = (
+  overrides: Partial<UserNotification> = {}
+): UserNotification => {
+  const notificationData = createNotificationData(overrides.notifications || {});
+  
+  return {
+    tenantId: 'tenant-1',
+    userId: `user-${Math.random()}`,
+    notificationId: `notification-${Math.random()}`,
+    status: 'unread',
+    createdAt: new Date().toISOString(),
+    updatedAt: null,
+    deletedAt: null,
+    createdBy: 'user-1',
+    updatedBy: null,
+    deletedBy: null,
+    notifications: notificationData,
+    message: notificationData.message,
+    type: notificationData.type,
+    soundFileId: notificationData.soundFileId,
+    metadata: notificationData.metadata,
+    ...overrides,
+  };
+};
+
+/**
+ * Default actor for notifications (can be reused)
+ */
+const defaultNotificationActor: NotificationActor = createNotificationActor({
+  id: 'actor-1',
+  email: 'actor@example.com',
+  fullName: 'Actor',
+  username: 'actor',
+  idpUserId: 'idp-1',
+});
+
+/**
+ * Create a notification with task metadata
+ */
+export const createTaskNotification = (
+  overrides: Partial<UserNotification> & {
+    notificationId?: string;
+    taskId?: string;
+    taskName?: string;
+    type?: NotificationType;
+    status?: 'read' | 'unread';
+    message?: string;
+    createdAt?: string;
+  } = {}
+): UserNotification => {
+  const {
+    taskId = 'task-1',
+    taskName = 'Task 1',
+    notificationId,
+    type = 'task_assigned',
+    status = 'unread',
+    message,
+    createdAt,
+    ...restOverrides
+  } = overrides;
+
+  return createNotification({
+    notificationId: notificationId || `notification-${Math.random()}`,
+    type,
+    status,
+    message: message || `${type.replace('_', ' ')}: ${taskName}`,
+    createdAt: createdAt || new Date().toISOString(),
+    metadata: {
+      id: taskId,
+      name: taskName,
+      actor: defaultNotificationActor,
+      entityType: 'task',
+    },
+    ...restOverrides,
+  });
+};
+
+/**
+ * Create a notification with incident metadata
+ */
+export const createIncidentNotification = (
+  overrides: Partial<UserNotification> & {
+    notificationId?: string;
+    incidentId?: string;
+    incidentName?: string;
+    type?: NotificationType;
+    status?: 'read' | 'unread';
+    message?: string;
+    createdAt?: string;
+  } = {}
+): UserNotification => {
+  const {
+    incidentId = 'incident-1',
+    incidentName = 'Incident 1',
+    notificationId,
+    type = 'incident_resolved',
+    status = 'unread',
+    message,
+    createdAt,
+    ...restOverrides
+  } = overrides;
+
+  return createNotification({
+    notificationId: notificationId || `notification-${Math.random()}`,
+    type,
+    status,
+    message: message || `${type.replace('_', ' ')}: ${incidentName}`,
+    createdAt: createdAt || new Date().toISOString(),
+    metadata: {
+      id: incidentId,
+      name: incidentName,
+      actor: defaultNotificationActor,
+      entityType: 'incident',
+    },
+    ...restOverrides,
+  });
 };

@@ -137,6 +137,7 @@ describe('NotificationsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    jest.spyOn(console, 'error').mockImplementation(() => {});
 
     (routerModule.useRouter as jest.Mock) = jest.fn(() => ({
       navigate: mockRouterNavigate,

@@ -11,16 +11,13 @@ global.window = global;
 // Global mocks for common modules
 // ------------------------------
 
-jest.mock('zustand/middleware/immer', () => ({
-  immer: (fn: any) => fn,
-}));
-
 jest.mock('@/api', () => ({
   authApi: {
     getAllTenantsByUsername: jest.fn(),
     loginWithKeycloak: jest.fn(),
     getUserProfile: jest.fn(),
     register: jest.fn(),
+    getUserTeams: jest.fn(),
   },
   handleApiError: jest.fn((error) => ({
     message: error.message || 'API Error',
@@ -29,6 +26,8 @@ jest.mock('@/api', () => ({
     getTasks: jest.fn(),
     getTask: jest.fn(),
     updateTask: jest.fn(),
+    createTask: jest.fn(),
+    updateChecklistItem: jest.fn(),
   },
   userApi: {
     getUserRoles: jest.fn(),
@@ -246,6 +245,78 @@ jest.mock('@/stores/notifications', () => {
       getState: jest.fn(() => defaultNotificationsStoreState),
       subscribe: jest.fn(() => jest.fn()),
     },
+  };
+});
+
+// Mock device-info store
+jest.mock('@/stores/device-info', () => {
+  const defaultDeviceInfoStoreState = {
+    networkSpeedConfig: {
+      token: 'mock-token',
+      timeout: 10000,
+      https: true,
+      urlCount: 5,
+      bufferSize: 8,
+    },
+    networkSpeedIntervalMs: 30000,
+    networkSpeed: null,
+    networkSpeedText: '',
+    isCheckingNetworkSpeed: false,
+    networkSpeedError: null,
+    networkSpeedInterval: null,
+    checkNetworkSpeedCallback: null,
+    batteryIntervalMs: 60000,
+    batteryPercentage: null,
+    isCharging: false,
+    isCheckingBattery: false,
+    batteryError: null,
+    batteryInterval: null,
+    batteryLevelSubscription: null,
+    batteryStateSubscription: null,
+    actions: {
+      initialize: jest.fn(),
+      setNetworkSpeedConfig: jest.fn(),
+      setNetworkSpeedIntervalMs: jest.fn(),
+      setCheckNetworkSpeedCallback: jest.fn(),
+      setNetworkSpeed: jest.fn(),
+      setNetworkSpeedError: jest.fn(),
+      setCheckingNetworkSpeed: jest.fn(),
+      triggerNetworkSpeedCheck: jest.fn(),
+      startNetworkSpeedMonitoring: jest.fn(),
+      stopNetworkSpeedMonitoring: jest.fn(),
+      checkBattery: jest.fn().mockResolvedValue(undefined),
+      setBatteryIntervalMs: jest.fn(),
+      startBatteryMonitoring: jest.fn(),
+      stopBatteryMonitoring: jest.fn(),
+      clearError: jest.fn(),
+      reset: jest.fn(),
+    },
+  };
+
+  const mockGetState = jest.fn(() => defaultDeviceInfoStoreState);
+  const useDeviceInfoStoreMock = jest.fn((selector?: any) => {
+    if (typeof selector === 'function') {
+      return selector(defaultDeviceInfoStoreState);
+    }
+    return defaultDeviceInfoStoreState;
+  });
+  (useDeviceInfoStoreMock as any).getState = mockGetState;
+  return {
+    __esModule: true,
+    useDeviceInfoStore: useDeviceInfoStoreMock,
+    default: {
+      getState: mockGetState,
+    },
+  };
+});
+
+jest.mock('@/stores/media-viewer', () => {
+  const actions = {
+    openMediaViewer: jest.fn(),
+  };
+  return {
+    __esModule: true,
+    useMediaViewerStore: jest.fn(() => ({ actions })),
   };
 });
 
@@ -503,68 +574,6 @@ jest.mock('@/lib/storage', () => ({
   storage: {},
 }));
 
-// Mock device-info store
-jest.mock('@/stores/device-info', () => {
-  const defaultDeviceInfoStoreState = {
-    networkSpeedConfig: {
-      token: 'mock-token',
-      timeout: 10000,
-      https: true,
-      urlCount: 5,
-      bufferSize: 8,
-    },
-    networkSpeedIntervalMs: 30000,
-    networkSpeed: null,
-    networkSpeedText: '',
-    isCheckingNetworkSpeed: false,
-    networkSpeedError: null,
-    networkSpeedInterval: null,
-    checkNetworkSpeedCallback: null,
-    batteryIntervalMs: 60000,
-    batteryPercentage: null,
-    isCharging: false,
-    isCheckingBattery: false,
-    batteryError: null,
-    batteryInterval: null,
-    batteryLevelSubscription: null,
-    batteryStateSubscription: null,
-    actions: {
-      initialize: jest.fn(),
-      setNetworkSpeedConfig: jest.fn(),
-      setNetworkSpeedIntervalMs: jest.fn(),
-      setCheckNetworkSpeedCallback: jest.fn(),
-      setNetworkSpeed: jest.fn(),
-      setNetworkSpeedError: jest.fn(),
-      setCheckingNetworkSpeed: jest.fn(),
-      triggerNetworkSpeedCheck: jest.fn(),
-      startNetworkSpeedMonitoring: jest.fn(),
-      stopNetworkSpeedMonitoring: jest.fn(),
-      checkBattery: jest.fn().mockResolvedValue(undefined),
-      setBatteryIntervalMs: jest.fn(),
-      startBatteryMonitoring: jest.fn(),
-      stopBatteryMonitoring: jest.fn(),
-      clearError: jest.fn(),
-      reset: jest.fn(),
-    },
-  };
-
-  const mockGetState = jest.fn(() => defaultDeviceInfoStoreState);
-  const useDeviceInfoStoreMock = jest.fn((selector?: any) => {
-    if (typeof selector === 'function') {
-      return selector(defaultDeviceInfoStoreState);
-    }
-    return defaultDeviceInfoStoreState;
-  });
-  (useDeviceInfoStoreMock as any).getState = mockGetState;
-  return {
-    __esModule: true,
-    useDeviceInfoStore: useDeviceInfoStoreMock,
-    default: {
-      getState: mockGetState,
-    },
-  };
-});
-
 // Mock hooks
 jest.mock('@/lib/hooks', () => ({
   __esModule: true,
@@ -576,15 +585,7 @@ jest.mock('@/lib/hooks', () => ({
   handleAppOpenEvent: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('@/stores/media-viewer', () => {
-  const actions = {
-    openMediaViewer: jest.fn(),
-  };
-  return {
-    __esModule: true,
-    useMediaViewerStore: jest.fn(() => ({ actions })),
-  };
-});
+
 
 jest.mock('@/lib/storage', () => ({
   storage: {

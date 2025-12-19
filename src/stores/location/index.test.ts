@@ -451,7 +451,9 @@ describe('LocationStore', () => {
 
       expect(SocketModule.sendLocationToSocket).toHaveBeenCalledWith(
         mockSocket,
-        mockCoordinates
+        mockCoordinates,
+        undefined,
+        undefined
       );
     });
 

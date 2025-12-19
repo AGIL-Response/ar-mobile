@@ -105,10 +105,27 @@ describe('loginWithPassword', () => {
       },
     };
 
+    beforeEach(() => {
+      jest.clearAllMocks();
+      (authApi.getUserTeams as jest.Mock).mockResolvedValue({
+        data: [
+          {
+            id: 'team-1',
+            name: 'Test Team',
+            tenantId: 'tenant-1',
+          },
+        ],
+      });
+    });
+
     it('successfully logs in with user profile', async () => {
       (authApi.loginWithKeycloak as jest.Mock).mockResolvedValue(mockTokenData);
       (decodeJWT as jest.Mock).mockReturnValue(mockJwtPayload);
       (authApi.getUserProfile as jest.Mock).mockResolvedValue(mockUserProfile);
+      // Ensure createGeoEntityIfNeeded resolves successfully
+      (mockState.actions.createGeoEntityIfNeeded as jest.Mock).mockResolvedValue(
+        undefined
+      );
 
       const result = await action('testuser', 'password123');
 
@@ -138,6 +155,15 @@ describe('loginWithPassword', () => {
       expect(userArg.id).toBe('user-1');
       expect(userArg.username).toBe('testuser');
       expect(userArg.roles).toEqual(['admin', 'user']);
+
+      // Verify team was set
+      expect(authApi.getUserTeams).toHaveBeenCalledWith('user-1');
+      const setSelectedTeamCall = mockGet().actions.setSelectedTeam;
+      expect(setSelectedTeamCall).toHaveBeenCalledWith({
+        id: 'team-1',
+        name: 'Test Team',
+        tenantId: 'tenant-1',
+      });
 
       // Verify location monitoring was initialized
       expect(mockLocationStore.actions.connectToWebSocket).toHaveBeenCalledWith(
@@ -207,7 +233,7 @@ describe('loginWithPassword', () => {
       expect(mockGet().actions.createGeoEntityIfNeeded).toHaveBeenCalled();
     });
 
-    it('continues login even if geo entity creation fails', async () => {
+    it('throws error when geo entity creation fails', async () => {
       (authApi.loginWithKeycloak as jest.Mock).mockResolvedValue(mockTokenData);
       (decodeJWT as jest.Mock).mockReturnValue(mockJwtPayload);
       (authApi.getUserProfile as jest.Mock).mockResolvedValue(mockUserProfile);
@@ -215,25 +241,25 @@ describe('loginWithPassword', () => {
       mockGet.mockReturnValue({
         ...mockState,
         actions: {
+          ...mockState.actions,
           setTokens: jest.fn(),
           setUser: jest.fn(),
+          setSelectedTeam: jest.fn(),
           createGeoEntityIfNeeded: jest
             .fn()
             .mockRejectedValue(new Error('Geo entity failed')),
         },
       });
 
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      (handleApiError as jest.Mock).mockReturnValue({
+        message: 'Failed to create geo entity',
+      });
 
-      const result = await action('testuser', 'password123');
+      await expect(action('testuser', 'password123')).rejects.toEqual({
+        message: 'Failed to create geo entity',
+      });
 
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        'Geo entity creation failed, continuing with login:',
-        expect.any(Error)
-      );
-      expect(result).toBeDefined();
-
-      consoleWarnSpy.mockRestore();
+      expect(handleApiError).toHaveBeenCalled();
     });
 
     it('initializes location monitoring after login', async () => {
