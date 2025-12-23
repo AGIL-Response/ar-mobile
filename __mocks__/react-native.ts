@@ -26,6 +26,28 @@ module.exports = {
   TextInput: (props: any) => React.createElement('TextInput', props),
   Modal: ({ children, visible, ...props }: any) =>
     visible ? React.createElement('Modal', props, children) : null,
+  KeyboardAvoidingView: ({ children, ...props }: any) => React.createElement('KeyboardAvoidingView', props, children),
+  FlatList: (props: any) => {
+    const { data = [], renderItem, keyExtractor, ...rest } = props;
+    let items: any[] = [];
+    if (typeof renderItem === "function" && Array.isArray(data)) {
+      items = data.map((item: any, index: number) => {
+        const key =
+          (typeof keyExtractor === "function"
+            ? keyExtractor(item, index)
+            : item.key) ?? index;
+        return React.createElement(
+          React.Fragment,
+          { key },
+          renderItem({ item, index })
+        );
+      });
+    } else if (props.children) {
+      items = props.children;
+    }
+    return React.createElement("FlatList", rest, items);
+  },
+  RefreshControl: ({ children, ...props }: any) => React.createElement('RefreshControl', props, children),
   StyleSheet: {
     create: (styles: any) => styles,
     flatten: (style: any) => style,
@@ -52,6 +74,19 @@ module.exports = {
   Linking: {
     openURL: jest.fn(),
     canOpenURL: jest.fn().mockResolvedValue(true),
+    openSettings: jest.fn(),
+  },
+  PermissionsAndroid: {
+    check: jest.fn(),
+    request: jest.fn(),
+    PERMISSIONS: {
+      POST_NOTIFICATIONS: 'android.permission.POST_NOTIFICATIONS',
+    },
+    RESULTS: {
+      GRANTED: 'granted',
+      DENIED: 'denied',
+      NEVER_ASK_AGAIN: 'never_ask_again',
+    },
   },
   I18nManager: {
     isRTL: false,

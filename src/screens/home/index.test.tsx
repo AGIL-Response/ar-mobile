@@ -1,8 +1,6 @@
 import React from 'react';
 
 import {
-  findPressableParent,
-  fireEvent,
   reactNativeRender as render,
   screen,
 } from '@/lib/test-utils';

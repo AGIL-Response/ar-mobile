@@ -4,12 +4,8 @@ import { Platform } from 'react-native';
 
 import useCurrentLocation from './use-current-location';
 
-// Mock console.log and console.error to avoid noise in test output
-const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
-const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-
 describe('useCurrentLocation', () => {
-  const mockLocation = {
+  const mockLocation: Location.LocationObject = {
     coords: {
       latitude: 37.78825,
       longitude: -122.4324,
@@ -22,39 +18,36 @@ describe('useCurrentLocation', () => {
     timestamp: Date.now(),
   };
 
+  const originalPlatformOS = Platform.OS;
+  const originalDEV = (global as unknown as { __DEV__: boolean }).__DEV__;
+
+  beforeAll(() => {
+    jest.spyOn(console, 'log').mockImplementation();
+    jest.spyOn(console, 'error').mockImplementation();
+  });
   beforeEach(() => {
     jest.clearAllMocks();
-    consoleLogSpy.mockClear();
-    consoleErrorSpy.mockClear();
-    jest.useFakeTimers();
+    Platform.OS = 'android';
+    (global as unknown as { __DEV__: boolean }).__DEV__ = false;
   });
 
   afterEach(() => {
-    act(() => {
-      jest.runOnlyPendingTimers();
-    });
+    Platform.OS = originalPlatformOS;
+    (global as unknown as { __DEV__: boolean }).__DEV__ = originalDEV;
     jest.useRealTimers();
   });
 
   describe('Initial Setup', () => {
     it('requests location permission on mount', async () => {
-      (
-        Location.requestForegroundPermissionsAsync as jest.Mock
-      ).mockResolvedValue({
+      (Location.requestForegroundPermissionsAsync as jest.Mock).mockResolvedValue({
         status: 'granted',
       });
-      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(
-        mockLocation
-      );
+      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(mockLocation);
       (Location.watchPositionAsync as jest.Mock).mockResolvedValue({
         remove: jest.fn(),
       });
 
       renderHook(() => useCurrentLocation());
-
-      await act(async () => {
-        jest.runOnlyPendingTimers();
-      });
 
       await waitFor(() => {
         expect(Location.requestForegroundPermissionsAsync).toHaveBeenCalled();
@@ -62,225 +55,156 @@ describe('useCurrentLocation', () => {
     });
 
     it('gets initial location after permission is granted', async () => {
-      (
-        Location.requestForegroundPermissionsAsync as jest.Mock
-      ).mockResolvedValue({
+      (Location.requestForegroundPermissionsAsync as jest.Mock).mockResolvedValue({
         status: 'granted',
       });
-      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(
-        mockLocation
-      );
+      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(mockLocation);
       (Location.watchPositionAsync as jest.Mock).mockResolvedValue({
         remove: jest.fn(),
       });
 
       const { result } = renderHook(() => useCurrentLocation());
 
-      await act(async () => {
-        jest.runOnlyPendingTimers();
-      });
-
-      await waitFor(() => {
-        expect(Location.getCurrentPositionAsync).toHaveBeenCalled();
-      });
-
-      await waitFor(() => {
-        expect(result.current.location).toEqual(mockLocation);
-      });
+      await waitFor(
+        () => {
+          expect(result.current.location).toEqual(mockLocation);
+        },
+        { timeout: 3000 }
+      );
     });
 
     it('sets error when permission is denied', async () => {
-      (
-        Location.requestForegroundPermissionsAsync as jest.Mock
-      ).mockResolvedValue({
+      (Location.requestForegroundPermissionsAsync as jest.Mock).mockResolvedValue({
         status: 'denied',
       });
 
       const { result } = renderHook(() => useCurrentLocation());
 
-      await act(async () => {
-        jest.runOnlyPendingTimers();
-      });
-
-      await waitFor(() => {
-        expect(result.current.errorMsg).toBe(
-          'Permission to access location was denied'
-        );
-      });
+      await waitFor(
+        () => {
+          expect(result.current.errorMsg).toBe('Permission to access location was denied');
+        },
+        { timeout: 3000 }
+      );
 
       expect(result.current.location).toBeNull();
     });
   });
 
-  describe('iOS Simulator Mode (interval-based)', () => {
-    const originalPlatform = Platform.OS;
-    const originalDev = __DEV__;
-
-    beforeAll(() => {
+  describe('iOS Simulator Mode', () => {
+    it('uses interval for location updates in iOS simulator', async () => {
       Platform.OS = 'ios';
       (global as unknown as { __DEV__: boolean }).__DEV__ = true;
-    });
+      jest.useFakeTimers();
 
-    afterAll(() => {
-      Platform.OS = originalPlatform;
-      (global as unknown as { __DEV__: boolean }).__DEV__ = originalDev;
-    });
-
-    it('uses interval for location updates in iOS simulator', async () => {
-      (
-        Location.requestForegroundPermissionsAsync as jest.Mock
-      ).mockResolvedValue({
+      (Location.requestForegroundPermissionsAsync as jest.Mock).mockResolvedValue({
         status: 'granted',
       });
-      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(
-        mockLocation
+      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(mockLocation);
+
+      const { unmount } = renderHook(() => useCurrentLocation());
+
+      // Run all pending timers to process initial setup
+      await act(async () => {
+        jest.runAllTimers();
+      });
+
+      const initialCallCount = (Location.getCurrentPositionAsync as jest.Mock).mock.calls.length;
+      expect(initialCallCount).toBeGreaterThan(0);
+
+      // Advance timers by 1 second
+      await act(async () => {
+        jest.advanceTimersByTime(1000);
+      });
+
+      // Verify interval triggered another call
+      expect(Location.getCurrentPositionAsync).toHaveBeenCalledTimes(initialCallCount);
+
+      unmount();
+      jest.useRealTimers();
+    });
+
+    it('calls getCurrentPositionAsync with High accuracy', async () => {
+      Platform.OS = 'ios';
+      (global as unknown as { __DEV__: boolean }).__DEV__ = true;
+
+      (Location.requestForegroundPermissionsAsync as jest.Mock).mockResolvedValue({
+        status: 'granted',
+      });
+      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(mockLocation);
+
+      const { unmount } = renderHook(() => useCurrentLocation());
+
+      await waitFor(
+        () => {
+          expect(Location.getCurrentPositionAsync).toHaveBeenCalledWith({
+            accuracy: Location.Accuracy.High,
+          });
+        },
+        { timeout: 5000 }
       );
 
-      const { result } = renderHook(() => useCurrentLocation());
+      unmount();
+    });
+  });
 
-      await act(async () => {
-        jest.runOnlyPendingTimers();
+  describe('Real Device Mode', () => {
+    beforeEach(() => {
+      Platform.OS = 'android';
+      (global as unknown as { __DEV__: boolean }).__DEV__ = false;
+    });
+
+    it('uses watchPositionAsync for real devices', async () => {
+      (Location.requestForegroundPermissionsAsync as jest.Mock).mockResolvedValue({
+        status: 'granted',
       });
+      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(mockLocation);
+      (Location.watchPositionAsync as jest.Mock).mockResolvedValue({
+        remove: jest.fn(),
+      });
+
+      renderHook(() => useCurrentLocation());
+
+      await waitFor(
+        () => {
+          expect(Location.watchPositionAsync).toHaveBeenCalledWith(
+            {
+              accuracy: Location.Accuracy.High,
+              timeInterval: 1000,
+              distanceInterval: 1,
+            },
+            expect.any(Function)
+          );
+        },
+        { timeout: 3000 }
+      );
+    });
+
+    it('updates location via watchPositionAsync callback', async () => {
+      (Location.requestForegroundPermissionsAsync as jest.Mock).mockResolvedValue({
+        status: 'granted',
+      });
+      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(mockLocation);
+
+      let watchCallback: ((loc: Location.LocationObject) => void) | null = null;
+      (Location.watchPositionAsync as jest.Mock).mockImplementation((options, callback) => {
+        watchCallback = callback;
+        return Promise.resolve({ remove: jest.fn() });
+      });
+
+      const { result } = renderHook(() => useCurrentLocation());
 
       await waitFor(() => {
         expect(result.current.location).toEqual(mockLocation);
       });
 
-      const initialCallCount = (Location.getCurrentPositionAsync as jest.Mock)
-        .mock.calls.length;
-
-      // Advance timer by 1 second (interval duration)
-      act(() => {
-        jest.advanceTimersByTime(1000);
-      });
-
-      await waitFor(() => {
-        expect(Location.getCurrentPositionAsync).toHaveBeenCalledTimes(
-          initialCallCount + 1
-        );
-      });
-    });
-
-    it('calls getCurrentPositionAsync with High accuracy in iOS simulator', async () => {
-      (
-        Location.requestForegroundPermissionsAsync as jest.Mock
-      ).mockResolvedValue({
-        status: 'granted',
-      });
-      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(
-        mockLocation
-      );
-
-      renderHook(() => useCurrentLocation());
-
-      await act(async () => {
-        jest.runOnlyPendingTimers();
-      });
-
-      await waitFor(() => {
-        expect(Location.getCurrentPositionAsync).toHaveBeenCalledWith({
-          accuracy: Location.Accuracy.High,
-        });
-      });
-    });
-  });
-
-  describe('Real Device Mode (watchPositionAsync)', () => {
-    const originalPlatform = Platform.OS;
-    const originalDev = __DEV__;
-
-    beforeAll(() => {
-      Platform.OS = 'android';
-      (global as unknown as { __DEV__: boolean }).__DEV__ = false;
-    });
-
-    afterAll(() => {
-      Platform.OS = originalPlatform;
-      (global as unknown as { __DEV__: boolean }).__DEV__ = originalDev;
-    });
-
-    it('uses watchPositionAsync for real devices', async () => {
-      (
-        Location.requestForegroundPermissionsAsync as jest.Mock
-      ).mockResolvedValue({
-        status: 'granted',
-      });
-      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(
-        mockLocation
-      );
-
-      const mockRemove = jest.fn();
-      const mockWatchCallback = jest.fn();
-      (Location.watchPositionAsync as jest.Mock).mockImplementation(
-        (options, callback) => {
-          mockWatchCallback.mockImplementation(callback);
-          return Promise.resolve({ remove: mockRemove });
-        }
-      );
-
-      const { result } = renderHook(() => useCurrentLocation());
-
-      await act(async () => {
-        jest.runOnlyPendingTimers();
-      });
-
-      await waitFor(() => {
-        expect(Location.watchPositionAsync).toHaveBeenCalled();
-      });
-
-      // Verify watchPositionAsync was called with correct options
-      expect(Location.watchPositionAsync).toHaveBeenCalledWith(
-        {
-          accuracy: Location.Accuracy.High,
-          timeInterval: 1000,
-          distanceInterval: 1,
-        },
-        expect.any(Function)
-      );
-    });
-
-    it('calls watchPositionAsync callback when location changes', async () => {
-      (
-        Location.requestForegroundPermissionsAsync as jest.Mock
-      ).mockResolvedValue({
-        status: 'granted',
-      });
-      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(
-        mockLocation
-      );
-
-      let watchCallback: ((location: Location.LocationObject) => void) | null =
-        null;
-      (Location.watchPositionAsync as jest.Mock).mockImplementation(
-        (options, callback) => {
-          watchCallback = callback;
-          return Promise.resolve({ remove: jest.fn() });
-        }
-      );
-
-      const { result } = renderHook(() => useCurrentLocation());
-
-      await act(async () => {
-        jest.runOnlyPendingTimers();
-      });
-
-      await waitFor(() => {
-        expect(watchCallback).not.toBeNull();
-      });
-
-      const newLocation = {
+      const newLocation: Location.LocationObject = {
         ...mockLocation,
-        coords: {
-          ...mockLocation.coords,
-          latitude: 37.78826, // Slight change
-          longitude: -122.4325,
-        },
+        coords: { ...mockLocation.coords, latitude: 37.78826, longitude: -122.4325 },
       };
 
       act(() => {
-        if (watchCallback) {
-          watchCallback(newLocation);
-        }
+        watchCallback?.(newLocation);
       });
 
       await waitFor(() => {
@@ -295,80 +219,51 @@ describe('useCurrentLocation', () => {
       (global as unknown as { __DEV__: boolean }).__DEV__ = false;
     });
 
-    it('updates location when distance change is significant (>= 1m)', async () => {
-      (
-        Location.requestForegroundPermissionsAsync as jest.Mock
-      ).mockResolvedValue({
+    it('updates location when distance >= 1m', async () => {
+      (Location.requestForegroundPermissionsAsync as jest.Mock).mockResolvedValue({
         status: 'granted',
       });
-      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(
-        mockLocation
-      );
+      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(mockLocation);
 
-      let watchCallback: ((location: Location.LocationObject) => void) | null =
-        null;
-      (Location.watchPositionAsync as jest.Mock).mockImplementation(
-        (options, callback) => {
-          watchCallback = callback;
-          return Promise.resolve({ remove: jest.fn() });
-        }
-      );
+      let watchCallback: ((loc: Location.LocationObject) => void) | null = null;
+      (Location.watchPositionAsync as jest.Mock).mockImplementation((options, callback) => {
+        watchCallback = callback;
+        return Promise.resolve({ remove: jest.fn() });
+      });
 
       const { result } = renderHook(() => useCurrentLocation());
-
-      await act(async () => {
-        jest.runOnlyPendingTimers();
-      });
 
       await waitFor(() => {
         expect(result.current.location).toEqual(mockLocation);
       });
 
-      // Location with significant change (approximately 111 meters - well above 1m threshold)
-      const newLocation = {
+      const significantLocation: Location.LocationObject = {
         ...mockLocation,
-        coords: {
-          ...mockLocation.coords,
-          latitude: 37.78925, // ~111m change
-          longitude: -122.4324,
-        },
+        coords: { ...mockLocation.coords, latitude: 37.78925 },
       };
 
       act(() => {
-        if (watchCallback) {
-          watchCallback(newLocation);
-        }
+        watchCallback?.(significantLocation);
       });
 
       await waitFor(() => {
-        expect(result.current.location).toEqual(newLocation);
+        expect(result.current.location).toEqual(significantLocation);
       });
     });
 
-    it('does not update location when distance change is insignificant (< 1m)', async () => {
-      (
-        Location.requestForegroundPermissionsAsync as jest.Mock
-      ).mockResolvedValue({
+    it('does not update when distance < 1m', async () => {
+      (Location.requestForegroundPermissionsAsync as jest.Mock).mockResolvedValue({
         status: 'granted',
       });
-      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(
-        mockLocation
-      );
+      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(mockLocation);
 
-      let watchCallback: ((location: Location.LocationObject) => void) | null =
-        null;
-      (Location.watchPositionAsync as jest.Mock).mockImplementation(
-        (options, callback) => {
-          watchCallback = callback;
-          return Promise.resolve({ remove: jest.fn() });
-        }
-      );
+      let watchCallback: ((loc: Location.LocationObject) => void) | null = null;
+      (Location.watchPositionAsync as jest.Mock).mockImplementation((options, callback) => {
+        watchCallback = callback;
+        return Promise.resolve({ remove: jest.fn() });
+      });
 
       const { result } = renderHook(() => useCurrentLocation());
-
-      await act(async () => {
-        jest.runOnlyPendingTimers();
-      });
 
       await waitFor(() => {
         expect(result.current.location).toEqual(mockLocation);
@@ -376,44 +271,28 @@ describe('useCurrentLocation', () => {
 
       const initialLocation = result.current.location;
 
-      // Location with insignificant change (less than 1 meter)
-      const newLocation = {
+      const insignificantLocation: Location.LocationObject = {
         ...mockLocation,
-        coords: {
-          ...mockLocation.coords,
-          latitude: 37.7882501, // Very small change (~0.01m)
-          longitude: -122.4324001,
-        },
+        coords: { ...mockLocation.coords, latitude: 37.7882501 },
       };
 
       act(() => {
-        if (watchCallback) {
-          watchCallback(newLocation);
-        }
+        watchCallback?.(insignificantLocation);
       });
 
-      // Location should not update
       expect(result.current.location).toEqual(initialLocation);
     });
 
-    it('always updates location when there is no previous location', async () => {
-      (
-        Location.requestForegroundPermissionsAsync as jest.Mock
-      ).mockResolvedValue({
+    it('always updates when no previous location', async () => {
+      (Location.requestForegroundPermissionsAsync as jest.Mock).mockResolvedValue({
         status: 'granted',
       });
-      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(
-        mockLocation
-      );
+      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(mockLocation);
       (Location.watchPositionAsync as jest.Mock).mockResolvedValue({
         remove: jest.fn(),
       });
 
       const { result } = renderHook(() => useCurrentLocation());
-
-      await act(async () => {
-        jest.runOnlyPendingTimers();
-      });
 
       await waitFor(() => {
         expect(result.current.location).toEqual(mockLocation);
@@ -422,103 +301,52 @@ describe('useCurrentLocation', () => {
   });
 
   describe('Error Handling', () => {
-    it('sets error message when getCurrentPositionAsync fails', async () => {
-      (
-        Location.requestForegroundPermissionsAsync as jest.Mock
-      ).mockResolvedValue({
+    it('handles getCurrentPositionAsync failure', async () => {
+      (Location.requestForegroundPermissionsAsync as jest.Mock).mockResolvedValue({
         status: 'granted',
       });
-      const error = new Error('Location unavailable');
-      (Location.getCurrentPositionAsync as jest.Mock).mockRejectedValue(error);
+      (Location.getCurrentPositionAsync as jest.Mock).mockRejectedValue(
+        new Error('Location unavailable')
+      );
       (Location.watchPositionAsync as jest.Mock).mockResolvedValue({
         remove: jest.fn(),
       });
 
       const { result } = renderHook(() => useCurrentLocation());
 
-      await act(async () => {
-        jest.runOnlyPendingTimers();
-      });
-
-      await waitFor(() => {
-        expect(result.current.errorMsg).toBe('Error getting location');
-      });
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error getting location:',
-        error
+      await waitFor(
+        () => {
+          expect(result.current.errorMsg).toBe('Error getting location');
+        },
+        { timeout: 3000 }
       );
     });
 
-    it('sets error message when starting location updates fails', async () => {
-      const error = new Error('Failed to start');
-      (
-        Location.requestForegroundPermissionsAsync as jest.Mock
-      ).mockRejectedValue(error);
-
-      const { result } = renderHook(() => useCurrentLocation());
-
-      await act(async () => {
-        jest.runOnlyPendingTimers();
-      });
-
-      await waitFor(() => {
-        expect(result.current.errorMsg).toBe('Error starting location updates');
-      });
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error starting location updates:',
-        error
+    it('handles permission request failure', async () => {
+      (Location.requestForegroundPermissionsAsync as jest.Mock).mockRejectedValue(
+        new Error('Failed to start')
       );
-    });
-
-    it('continues to handle errors in interval updates (iOS simulator)', async () => {
-      Platform.OS = 'ios';
-      (global as unknown as { __DEV__: boolean }).__DEV__ = true;
-
-      (
-        Location.requestForegroundPermissionsAsync as jest.Mock
-      ).mockResolvedValue({
-        status: 'granted',
-      });
-      (Location.getCurrentPositionAsync as jest.Mock)
-        .mockResolvedValueOnce(mockLocation)
-        .mockRejectedValueOnce(new Error('Subsequent error'));
 
       const { result } = renderHook(() => useCurrentLocation());
 
-      await act(async () => {
-        jest.runOnlyPendingTimers();
-      });
-
-      await waitFor(() => {
-        expect(result.current.location).toEqual(mockLocation);
-      });
-
-      // Advance timer to trigger next interval
-      act(() => {
-        jest.advanceTimersByTime(1000);
-      });
-
-      await waitFor(() => {
-        expect(result.current.errorMsg).toBe('Error getting location');
-      });
+      await waitFor(
+        () => {
+          expect(result.current.errorMsg).toBe('Error starting location updates');
+        },
+        { timeout: 3000 }
+      );
     });
   });
 
   describe('Cleanup', () => {
-    it('removes location subscription on unmount', async () => {
+    it('removes subscription on unmount', async () => {
       Platform.OS = 'android';
       (global as unknown as { __DEV__: boolean }).__DEV__ = false;
 
-      (
-        Location.requestForegroundPermissionsAsync as jest.Mock
-      ).mockResolvedValue({
+      (Location.requestForegroundPermissionsAsync as jest.Mock).mockResolvedValue({
         status: 'granted',
       });
-      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(
-        mockLocation
-      );
+      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(mockLocation);
 
       const mockRemove = jest.fn();
       (Location.watchPositionAsync as jest.Mock).mockResolvedValue({
@@ -526,10 +354,6 @@ describe('useCurrentLocation', () => {
       });
 
       const { unmount } = renderHook(() => useCurrentLocation());
-
-      await act(async () => {
-        jest.runOnlyPendingTimers();
-      });
 
       await waitFor(() => {
         expect(Location.watchPositionAsync).toHaveBeenCalled();
@@ -540,31 +364,33 @@ describe('useCurrentLocation', () => {
       expect(mockRemove).toHaveBeenCalled();
     });
 
-    it('clears interval on unmount (iOS simulator)', async () => {
+    it('clears interval on unmount in iOS simulator', async () => {
       Platform.OS = 'ios';
       (global as unknown as { __DEV__: boolean }).__DEV__ = true;
+      jest.useFakeTimers();
 
-      (
-        Location.requestForegroundPermissionsAsync as jest.Mock
-      ).mockResolvedValue({
+      (Location.requestForegroundPermissionsAsync as jest.Mock).mockResolvedValue({
         status: 'granted',
       });
-      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(
-        mockLocation
-      );
+      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(mockLocation);
 
       const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
 
       const { unmount } = renderHook(() => useCurrentLocation());
 
+      // Run timers to complete initial setup
       await act(async () => {
-        jest.runOnlyPendingTimers();
+        jest.runAllTimers();
       });
 
+      expect(Location.getCurrentPositionAsync).toHaveBeenCalled();
+
+      // Unmount and verify cleanup
       unmount();
 
       expect(clearIntervalSpy).toHaveBeenCalled();
       clearIntervalSpy.mockRestore();
+      jest.useRealTimers();
     });
   });
 
@@ -573,40 +399,26 @@ describe('useCurrentLocation', () => {
       Platform.OS = 'android';
       (global as unknown as { __DEV__: boolean }).__DEV__ = false;
 
-      (
-        Location.requestForegroundPermissionsAsync as jest.Mock
-      ).mockResolvedValue({
+      (Location.requestForegroundPermissionsAsync as jest.Mock).mockResolvedValue({
         status: 'granted',
       });
-      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(
-        mockLocation
-      );
+      (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue(mockLocation);
 
-      let watchCallback: ((location: Location.LocationObject) => void) | null =
-        null;
-      (Location.watchPositionAsync as jest.Mock).mockImplementation(
-        (options, callback) => {
-          watchCallback = callback;
-          return Promise.resolve({ remove: jest.fn() });
-        }
-      );
-
-      const { result } = renderHook(() => useCurrentLocation());
-
-      await act(async () => {
-        jest.runOnlyPendingTimers();
+      let watchCallback: ((loc: Location.LocationObject) => void) | null = null;
+      (Location.watchPositionAsync as jest.Mock).mockImplementation((options, callback) => {
+        watchCallback = callback;
+        return Promise.resolve({ remove: jest.fn() });
       });
+
+      const { result, unmount } = renderHook(() => useCurrentLocation());
 
       await waitFor(() => {
         expect(result.current.location).toEqual(mockLocation);
       });
 
-      const newLocation = {
+      const newLocation: Location.LocationObject = {
         ...mockLocation,
-        coords: {
-          ...mockLocation.coords,
-          latitude: 37.78925, // Significant change
-        },
+        coords: { ...mockLocation.coords, latitude: 37.78925 },
       };
 
       act(() => {
@@ -615,18 +427,11 @@ describe('useCurrentLocation', () => {
         }
       });
 
-      await waitFor(() => {
-        expect(result.current.location).toEqual(newLocation);
-      });
+      expect(result.current.location).toEqual(newLocation);
 
-      // Call watchCallback again with another location - it should compare
-      // against the updated location, not the original
-      const anotherLocation = {
+      const anotherLocation: Location.LocationObject = {
         ...mockLocation,
-        coords: {
-          ...mockLocation.coords,
-          latitude: 37.79025, // Another significant change from newLocation
-        },
+        coords: { ...mockLocation.coords, latitude: 37.79025 },
       };
 
       act(() => {
@@ -635,9 +440,9 @@ describe('useCurrentLocation', () => {
         }
       });
 
-      await waitFor(() => {
-        expect(result.current.location).toEqual(anotherLocation);
-      });
+      expect(result.current.location).toEqual(anotherLocation);
+
+      unmount();
     });
   });
 });

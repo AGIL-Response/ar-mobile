@@ -7,6 +7,11 @@ describe('View component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
+
+  beforeAll(() => {
+    jest.spyOn(console, 'error').mockImplementation();
+  });
+  
   test('defaults: flexDirection column', () => {
     render(<View testID="v" />);
     const style = getStyle('v');

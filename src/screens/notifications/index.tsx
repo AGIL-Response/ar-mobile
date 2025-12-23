@@ -5,7 +5,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { useRouter } from 'expo-router';
+import { RelativePathString, useRouter } from 'expo-router';
 import {
   Alert,
   FlatList,
@@ -132,12 +132,12 @@ export default function NotificationsScreen() {
         const { type, metadata } = notification;
 
         if (type.includes('task') && metadata.entityType === 'task') {
-          router.navigate(`/task/${metadata.id}`);
+          router.navigate(`/task/${metadata.id}` as RelativePathString);
         } else if (
           type.includes('incident') &&
           metadata.entityType === 'incident'
         ) {
-          router.navigate(`/incidents/${metadata.id}`);
+          router.navigate(`/incidents/${metadata.id}` as RelativePathString);
         }
       } catch (error) {
         console.error('❌ Failed to handle notification press:', error);

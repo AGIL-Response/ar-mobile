@@ -12,6 +12,9 @@ import { handleApiError, mediaApiClient } from '../api-client';
 import * as FileSystemLegacy from 'expo-file-system/legacy';
 import { storage } from '@/lib/storage';
 
+// Unmock @/api/files to test actual implementation
+jest.unmock('@/api/files');
+
 // Mock dependencies
 jest.mock('../api-client');
 jest.mock('expo-file-system/legacy');

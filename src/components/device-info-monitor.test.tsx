@@ -9,6 +9,12 @@ const mockUseDeviceInfoStore = require('@/stores/device-info');
 const { actions } = mockUseDeviceInfoStore.default.getState();
 
 describe('DeviceInfoMonitor', () => {
+
+  beforeAll(() => {
+    jest.spyOn(console, 'log').mockImplementation();
+    jest.spyOn(console, 'error').mockImplementation();
+  });
+
   it('renders hidden WebView with generated source', () => {
     const { toJSON } = render(<DeviceInfoMonitor />);
     const tree = toJSON() as any;

@@ -58,6 +58,7 @@ module.exports = {
     Swipeable,
     DrawerLayout,
   },
+  Pressable: RNComponents.TouchableOpacity,
   GestureHandlerRootView,
   GestureDetector,
   Swipeable,

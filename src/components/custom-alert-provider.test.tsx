@@ -2,7 +2,7 @@
 import React from 'react';
 import { Alert, Text } from 'react-native';
 
-import { reactNativeRender as render, fireEvent, screen, waitFor } from '@/lib/test-utils';
+import { reactNativeRender as render, fireEvent, screen, waitFor, act } from '@/lib/test-utils';
 
 import { CustomAlertProvider } from './custom-alert-provider';
 
@@ -16,7 +16,9 @@ describe('CustomAlertProvider', () => {
       </CustomAlertProvider>
     );
 
-    Alert.alert('Title', 'Message', [{ text: 'OK', onPress: onOk }]);
+    act(() => {
+      Alert.alert('Title', 'Message', [{ text: 'OK', onPress: onOk }]);
+    });
 
     waitFor(() => {
       expect(screen.getByText('Title')).toBeTruthy();
@@ -38,8 +40,10 @@ describe('CustomAlertProvider', () => {
       </CustomAlertProvider>
     );
 
-    Alert.alert('First', 'One', [{ text: 'OK', onPress: first }]);
-    Alert.alert('Second', 'Two', [{ text: 'OK', onPress: second }]);
+    act(() => {
+      Alert.alert('First', 'One', [{ text: 'OK', onPress: first }]);
+      Alert.alert('Second', 'Two', [{ text: 'OK', onPress: second }]);
+    });
 
     waitFor(() => {
       expect(screen.getByText('First')).toBeTruthy();

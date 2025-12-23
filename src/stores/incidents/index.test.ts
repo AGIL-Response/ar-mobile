@@ -1,14 +1,21 @@
 // Unmock the store to test the real implementation (must be before imports)
 jest.unmock('@/stores/incidents');
+jest.unmock('@/api/incidents');
 
+// eslint-disable-next-line import/first
 import { act, renderHook } from '@testing-library/react-native';
 
+// eslint-disable-next-line import/first
 import { useIncidentsStore } from './index';
 
+// eslint-disable-next-line import/first
 import { incidentsApi } from '@/api/incidents';
+// eslint-disable-next-line import/first
 import { createIncident } from '@/lib/mock-data-tests';
-import { IncidentsQueryParams } from '@/api/incidents/types';
-import { IncidentStatus } from '@/types/incident';
+// eslint-disable-next-line import/first
+import type { IncidentsQueryParams } from '@/api/incidents/types';
+// eslint-disable-next-line import/first
+import type { IncidentStatus } from '@/api/incidents/types';
 
 jest.mock('@/api/incidents', () => ({
   incidentsApi: {
@@ -51,13 +58,10 @@ describe('IncidentsStore', () => {
       const { result } = renderHook(() => useIncidentsStore());
 
       await act(async () => {
-        await result.current.actions.fetchIncidents('tenant-1');
+        await result.current.actions.fetchIncidents();
       });
 
-      expect(incidentsApi.getIncidents).toHaveBeenCalledWith(
-        'tenant-1',
-        undefined
-      );
+      expect(incidentsApi.getIncidents).toHaveBeenCalledWith(undefined);
       expect(result.current.incidents).toEqual(mockIncidents);
       expect(result.current.isLoading).toBe(false);
       expect(result.current.error).toBeNull();
@@ -68,18 +72,15 @@ describe('IncidentsStore', () => {
 
       const { result } = renderHook(() => useIncidentsStore());
 
-      const params = {
-        status: 'active' as IncidentStatus,
+      const params: IncidentsQueryParams = {
+        status: 'reported',
         limit: 10,
-      } as IncidentsQueryParams;
+      };
       await act(async () => {
-        await result.current.actions.fetchIncidents('tenant-1', params);
+        await result.current.actions.fetchIncidents(params);
       });
 
-      expect(incidentsApi.getIncidents).toHaveBeenCalledWith(
-        'tenant-1',
-        params
-      );
+      expect(incidentsApi.getIncidents).toHaveBeenCalledWith(params);
     });
 
     it('handles fetch error correctly', async () => {
@@ -91,7 +92,7 @@ describe('IncidentsStore', () => {
       const { result } = renderHook(() => useIncidentsStore());
 
       await act(async () => {
-        await result.current.actions.fetchIncidents('tenant-1');
+        await result.current.actions.fetchIncidents();
       });
 
       expect(result.current.error).toBe(errorMessage);
@@ -101,16 +102,16 @@ describe('IncidentsStore', () => {
 
   describe('fetchIncident', () => {
     it('successfully fetches and sets selected incident', async () => {
-      const mockIncident = { id: '1', title: 'Incident 1' };
+      const mockIncident = createIncident({ id: '1', name: 'Incident 1' });
       (incidentsApi.getIncident as jest.Mock).mockResolvedValue(mockIncident);
 
       const { result } = renderHook(() => useIncidentsStore());
 
       await act(async () => {
-        await result.current.actions.fetchIncident('tenant-1', '1');
+        await result.current.actions.fetchIncident('1');
       });
 
-      expect(incidentsApi.getIncident).toHaveBeenCalledWith('tenant-1', '1');
+      expect(incidentsApi.getIncident).toHaveBeenCalledWith('1');
       expect(result.current.selectedIncident).toEqual(mockIncident);
       expect(result.current.isLoadingDetails).toBe(false);
     });
@@ -122,7 +123,7 @@ describe('IncidentsStore', () => {
       const { result } = renderHook(() => useIncidentsStore());
 
       act(() => {
-        result.current.incidents = [existingIncident];
+        useIncidentsStore.setState({ incidents: [existingIncident] });
       });
 
       (incidentsApi.getIncident as jest.Mock).mockResolvedValue(
@@ -130,7 +131,7 @@ describe('IncidentsStore', () => {
       );
 
       await act(async () => {
-        await result.current.actions.fetchIncident('tenant-1', '1');
+        await result.current.actions.fetchIncident('1');
       });
 
       expect(result.current.incidents[0]).toEqual(updatedIncident);
@@ -145,7 +146,7 @@ describe('IncidentsStore', () => {
       const { result } = renderHook(() => useIncidentsStore());
 
       await act(async () => {
-        await result.current.actions.fetchIncident('tenant-1', '1');
+        await result.current.actions.fetchIncident('1');
       });
 
       expect(result.current.error).toBe('Not found');
@@ -155,16 +156,18 @@ describe('IncidentsStore', () => {
 
   describe('createIncident', () => {
     it('successfully creates incident and adds to list', async () => {
-      const newIncident = { id: '1', title: 'New Incident' };
+      const newIncident = createIncident({ id: '1', name: 'New Incident' });
       (incidentsApi.createIncident as jest.Mock).mockResolvedValue(newIncident);
 
       const { result } = renderHook(() => useIncidentsStore());
 
       await act(async () => {
-        const created = await result.current.actions.createIncident(
-          'tenant-1',
-          { title: 'New Incident' }
-        );
+        const created = await result.current.actions.createIncident({
+          name: 'New Incident',
+          description: 'New incident description',
+          type: 'fire',
+          location: { coordinates: [103.8198, 1.3521, 0] },
+        });
         expect(created).toEqual(newIncident);
       });
 
@@ -183,7 +186,12 @@ describe('IncidentsStore', () => {
 
       await act(async () => {
         try {
-          await result.current.actions.createIncident('tenant-1', {});
+          await result.current.actions.createIncident({
+            name: 'Test',
+            description: 'Test description',
+            type: 'fire',
+            location: { coordinates: [103.8198, 1.3521, 0] },
+          });
         } catch (error) {
           expect(error).toBeDefined();
         }
@@ -202,8 +210,10 @@ describe('IncidentsStore', () => {
       const { result } = renderHook(() => useIncidentsStore());
 
       act(() => {
-        result.current.incidents = [existingIncident];
-        result.current.selectedIncident = existingIncident;
+        useIncidentsStore.setState({
+          incidents: [existingIncident],
+          selectedIncident: existingIncident,
+        });
       });
 
       (incidentsApi.updateIncident as jest.Mock).mockResolvedValue(
@@ -211,9 +221,9 @@ describe('IncidentsStore', () => {
       );
 
       await act(async () => {
-        await result.current.actions.updateIncident('tenant-1', {
+        await result.current.actions.updateIncident({
           id: '1',
-          title: 'New Title',
+          name: 'New Title',
         });
       });
 
@@ -224,13 +234,15 @@ describe('IncidentsStore', () => {
     it('only updates selected incident if it matches', async () => {
       const incident1 = createIncident({ id: '1', name: 'Incident 1' });
       const incident2 = createIncident({ id: '2', name: 'Incident 2' });
-      const updatedIncident1 = { id: '1', title: 'Updated 1' };
+      const updatedIncident1 = createIncident({ id: '1', name: 'Updated 1' });
 
       const { result } = renderHook(() => useIncidentsStore());
 
       act(() => {
-        result.current.incidents = [incident1, incident2];
-        result.current.selectedIncident = incident2;
+        useIncidentsStore.setState({
+          incidents: [incident1, incident2],
+          selectedIncident: incident2,
+        });
       });
 
       (incidentsApi.updateIncident as jest.Mock).mockResolvedValue(
@@ -238,9 +250,9 @@ describe('IncidentsStore', () => {
       );
 
       await act(async () => {
-        await result.current.actions.updateIncident('tenant-1', {
+        await result.current.actions.updateIncident({
           id: '1',
-          title: 'Updated 1',
+          name: 'Updated 1',
         });
       });
 
@@ -254,18 +266,21 @@ describe('IncidentsStore', () => {
       const { result } = renderHook(() => useIncidentsStore());
 
       act(() => {
-        result.current.incidents = [
-          createIncident({ id: '1', name: 'Incident 1' }),
-          createIncident({ id: '2', name: 'Incident 2' }),
-        ];
+        useIncidentsStore.setState({
+          incidents: [
+            createIncident({ id: '1', name: 'Incident 1' }),
+            createIncident({ id: '2', name: 'Incident 2' }),
+          ],
+        });
       });
 
       (incidentsApi.deleteIncident as jest.Mock).mockResolvedValue(undefined);
 
       await act(async () => {
-        await result.current.actions.deleteIncident('tenant-1', '1');
+        await result.current.actions.deleteIncident('1');
       });
 
+      expect(incidentsApi.deleteIncident).toHaveBeenCalledWith('1');
       expect(result.current.incidents).toHaveLength(1);
       expect(result.current.incidents[0].id).toBe('2');
     });
@@ -275,14 +290,16 @@ describe('IncidentsStore', () => {
       const { result } = renderHook(() => useIncidentsStore());
 
       act(() => {
-        result.current.incidents = [incident];
-        result.current.selectedIncident = incident;
+        useIncidentsStore.setState({
+          incidents: [incident],
+          selectedIncident: incident,
+        });
       });
 
       (incidentsApi.deleteIncident as jest.Mock).mockResolvedValue(undefined);
 
       await act(async () => {
-        await result.current.actions.deleteIncident('tenant-1', '1');
+        await result.current.actions.deleteIncident('1');
       });
 
       expect(result.current.selectedIncident).toBeNull();
@@ -297,7 +314,7 @@ describe('IncidentsStore', () => {
 
       await act(async () => {
         try {
-          await result.current.actions.deleteIncident('tenant-1', '1');
+          await result.current.actions.deleteIncident('1');
         } catch (error) {
           expect(error).toBeDefined();
         }
@@ -352,7 +369,7 @@ describe('IncidentsStore', () => {
       const { result } = renderHook(() => useIncidentsStore());
 
       act(() => {
-        result.current.error = 'Some error';
+        useIncidentsStore.setState({ error: 'Some error' });
       });
 
       act(() => {
@@ -368,16 +385,13 @@ describe('IncidentsStore', () => {
       const { result } = renderHook(() => useIncidentsStore());
 
       act(() => {
-        result.current.incidents = [
-          createIncident({ id: '1', name: 'Incident 1' }),
-        ];
-        result.current.selectedIncident = createIncident({
-          id: '1',
-          name: 'Incident 1',
+        useIncidentsStore.setState({
+          incidents: [createIncident({ id: '1', name: 'Incident 1' })],
+          selectedIncident: createIncident({ id: '1', name: 'Incident 1' }),
+          error: 'Error',
+          searchQuery: 'query',
+          filters: { status: 'active' },
         });
-        result.current.error = 'Error';
-        result.current.searchQuery = 'query';
-        result.current.filters = { status: 'active' };
       });
 
       act(() => {

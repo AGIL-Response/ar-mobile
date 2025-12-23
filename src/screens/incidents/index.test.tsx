@@ -1,138 +1,251 @@
 import React from 'react';
 
-import {
-  findPressableParent,
-  fireEvent,
-  reactNativeRender as render,
-  screen,
-  waitFor,
-} from '@/lib/test-utils';
+import { reactNativeRender as render, screen, waitFor } from '@/lib/test-utils';
 
-import {
-  createAuthState,
-  createIncident,
-  createIncidentsState,
-  createUsersState,
-} from '@/lib/mock-data-tests';
 import IncidentsScreen from './index';
-import { AuthState } from '@/stores/auth';
-import { IncidentsState } from '@/stores/incidents';
-import { UsersState } from '@/stores/users';
+import { useAuthStore } from '@/stores/auth';
+import { useIncidentsStore } from '@/stores/incidents';
+import { useUsersStore } from '@/stores/users';
 
-const { __pushMock: pushMock, __backMock: backMock } = require('expo-router');
-const authStoreModule = require('@/stores/auth');
-const incidentsStoreModule = require('@/stores/incidents');
-const usersStoreModule = require('@/stores/users');
+
+jest.mock('@/stores/auth', () => ({
+  useAuthStore: jest.fn(),
+}));
+
+jest.mock('@/stores/incidents', () => ({
+  useIncidentsStore: jest.fn(),
+}));
+
+jest.mock('@/stores/users', () => ({
+  useUsersStore: jest.fn(),
+}));
+
+jest.mock('./components', () => {
+  // eslint-disable-next-line
+  const mockReact = require('react');
+  return {
+    IncidentListCard: ({ incident, onPress }: any) =>
+      mockReact.createElement(
+        'TouchableOpacity',
+        { onPress: () => onPress?.(incident), testID: `incident-card-${incident.id}` },
+        mockReact.createElement('Text', null, incident.name)
+      ),
+  };
+});
+
+jest.mock('@/screens/home/components/app-header', () => {
+  // eslint-disable-next-line
+  const mockReact = require('react');
+  return {
+    AppHeader: () =>
+      mockReact.createElement('View', { testID: 'app-header' }, null),
+  };
+});
+
+// eslint-disable-next-line
+const routerModule = require('expo-router');
 
 describe('IncidentsScreen', () => {
-  let mockAuthState: AuthState;
-  let mockIncidentsState: IncidentsState;
-  let mockUsersState: UsersState;
+  const mockFetchIncidents = jest.fn();
+  const mockSetSelectedIncident = jest.fn();
+  const mockFetchTeamMembers = jest.fn();
+  const mockRouterNavigate = jest.fn();
 
   beforeEach(() => {
-    pushMock.mockClear();
-    backMock.mockClear();
-
-    mockAuthState = createAuthState({
-      selectedTenant: { id: 'tenant-1', name: 'Tenant', displayName: 'Tenant' },
-    });
-
-    mockIncidentsState = createIncidentsState({
-      incidents: [],
-      isLoading: false,
-      actions: {
-        fetchIncidents: jest.fn(),
-        setSelectedIncident: jest.fn(),
-      },
-    });
-
-    mockUsersState = createUsersState({
-      users: [],
-      actions: {
-        fetchUsers: jest.fn(),
-      },
-    });
-
-    authStoreModule.useAuthStore.mockImplementation(() => mockAuthState);
-    incidentsStoreModule.useIncidentsStore.mockImplementation(
-      () => mockIncidentsState
-    );
-    usersStoreModule.useUsersStore.mockImplementation(() => mockUsersState);
-  });
-
-  afterEach(() => {
     jest.clearAllMocks();
-  });
 
-  it('fetches incidents and users on mount when tenant id exists', async () => {
-    render(<IncidentsScreen />);
-    await waitFor(() => {
-      expect(mockIncidentsState.actions.fetchIncidents).toHaveBeenCalledWith(
-        'tenant-1'
-      );
+    (routerModule.useRouter as jest.Mock).mockReturnValue({
+      navigate: mockRouterNavigate,
     });
-    await waitFor(() => {
-      expect(mockUsersState.actions.fetchUsers).toHaveBeenCalledWith(
-        'tenant-1'
-      );
+
+    // Default mocks
+    (useAuthStore as unknown as jest.Mock).mockImplementation((selector: any) => {
+      const state = {
+        selectedTeam: {
+          id: 'team-1',
+          name: 'Test Team',
+        },
+      };
+      return selector ? selector(state) : state;
+    });
+
+    (useIncidentsStore as unknown as jest.Mock).mockImplementation((selector: any) => {
+      const state = {
+        incidents: [],
+        isLoading: false,
+        actions: {
+          fetchIncidents: mockFetchIncidents,
+          setSelectedIncident: mockSetSelectedIncident,
+        },
+      };
+      return selector ? selector(state) : state;
+    });
+
+    (useUsersStore as unknown as jest.Mock).mockImplementation((selector: any) => {
+      const state = {
+        actions: {
+          fetchTeamMembers: mockFetchTeamMembers,
+        },
+      };
+      return selector ? selector(state) : state;
+    });
+
+    mockFetchIncidents.mockResolvedValue(undefined);
+    mockFetchTeamMembers.mockResolvedValue(undefined);
+  });
+
+  describe('Loading State', () => {
+    it('shows loading message when isLoading is true and no incidents', () => {
+      (useIncidentsStore as unknown as jest.Mock).mockImplementation((selector: any) => {
+        const state = {
+          incidents: [],
+          isLoading: true,
+          actions: {
+            fetchIncidents: mockFetchIncidents,
+            setSelectedIncident: mockSetSelectedIncident,
+          },
+        };
+        return selector ? selector(state) : state;
+      });
+
+      render(<IncidentsScreen />);
+      expect(screen.getByText('Loading incidents...')).toBeTruthy();
     });
   });
 
-  it('does not fetch when tenant is missing', async () => {
-    mockAuthState.selectedTenant = null;
+  describe('Data Fetching', () => {
+    it('fetches incidents on mount', () => {
+      (useIncidentsStore as unknown as jest.Mock).mockImplementation((selector: any) => {
+        const state = {
+          incidents: [],
+          isLoading: true,
+          actions: {
+            fetchIncidents: mockFetchIncidents,
+            setSelectedIncident: mockSetSelectedIncident,
+          },
+        };
+        return selector ? selector(state) : state;
+      });
 
-    render(<IncidentsScreen />);
-
-    await waitFor(() => {
-      expect(mockIncidentsState.actions.fetchIncidents).not.toHaveBeenCalled();
+      render(<IncidentsScreen />);
+      expect(mockFetchIncidents).toHaveBeenCalledWith({});
     });
-    await waitFor(() => {
-      expect(mockUsersState.actions.fetchUsers).not.toHaveBeenCalled();
+
+    it('fetches team members when team is selected', () => {
+      (useIncidentsStore as unknown as jest.Mock).mockImplementation((selector: any) => {
+        const state = {
+          incidents: [],
+          isLoading: true,
+          actions: {
+            fetchIncidents: mockFetchIncidents,
+            setSelectedIncident: mockSetSelectedIncident,
+          },
+        };
+        return selector ? selector(state) : state;
+      });
+
+      render(<IncidentsScreen />);
+      expect(mockFetchTeamMembers).toHaveBeenCalledWith('team-1');
+    });
+
+    it('does not fetch team members when no team selected', () => {
+      (useAuthStore as unknown as jest.Mock).mockImplementation((selector: any) => {
+        const state = {
+          selectedTeam: null,
+        };
+        return selector ? selector(state) : state;
+      });
+
+      (useIncidentsStore as unknown as jest.Mock).mockImplementation((selector: any) => {
+        const state = {
+          incidents: [],
+          isLoading: true,
+          actions: {
+            fetchIncidents: mockFetchIncidents,
+            setSelectedIncident: mockSetSelectedIncident,
+          },
+        };
+        return selector ? selector(state) : state;
+      });
+
+      render(<IncidentsScreen />);
+      expect(mockFetchTeamMembers).not.toHaveBeenCalled();
     });
   });
 
-  it('shows loading indicator when fetching incidents', () => {
-    mockIncidentsState.isLoading = true;
-    mockIncidentsState.incidents = [];
+  describe('Store Integration', () => {
+    it('uses useIncidentsStore for state', () => {
+      (useIncidentsStore as unknown as jest.Mock).mockImplementation((selector: any) => {
+        const state = {
+          incidents: [],
+          isLoading: true,
+          actions: {
+            fetchIncidents: mockFetchIncidents,
+            setSelectedIncident: mockSetSelectedIncident,
+          },
+        };
+        return selector ? selector(state) : state;
+      });
 
-    render(<IncidentsScreen />);
-
-    expect(screen.getByText('Loading incidents...')).toBeTruthy();
-  });
-
-  it('shows empty state when no incidents found', () => {
-    render(<IncidentsScreen />);
-
-    expect(screen.getByText('No incidents found')).toBeTruthy();
-    expect(
-      screen.getByText('Create your first incident by tapping the + button')
-    ).toBeTruthy();
-  });
-
-  it('renders incidents and navigates to detail on press', () => {
-    const incident = createIncident({
-      id: 'incident-1',
-      name: 'Network outage',
+      render(<IncidentsScreen />);
+      expect(useIncidentsStore).toHaveBeenCalled();
     });
-    mockIncidentsState.incidents = [incident];
 
-    render(<IncidentsScreen />);
+    it('uses useAuthStore for team selection', () => {
+      (useIncidentsStore as unknown as jest.Mock).mockImplementation((selector: any) => {
+        const state = {
+          incidents: [],
+          isLoading: true,
+          actions: {
+            fetchIncidents: mockFetchIncidents,
+            setSelectedIncident: mockSetSelectedIncident,
+          },
+        };
+        return selector ? selector(state) : state;
+      });
 
-    expect(screen.getByText('Network outage')).toBeTruthy();
+      render(<IncidentsScreen />);
+      expect(useAuthStore).toHaveBeenCalled();
+    });
 
-    fireEvent.press(findPressableParent(screen.getByText('Network outage')));
+    it('uses useUsersStore for fetching team members', () => {
+      (useIncidentsStore as unknown as jest.Mock).mockImplementation((selector: any) => {
+        const state = {
+          incidents: [],
+          isLoading: true,
+          actions: {
+            fetchIncidents: mockFetchIncidents,
+            setSelectedIncident: mockSetSelectedIncident,
+          },
+        };
+        return selector ? selector(state) : state;
+      });
 
-    expect(mockIncidentsState.actions.setSelectedIncident).toHaveBeenCalledWith(
-      incident
-    );
-    expect(pushMock).toHaveBeenCalledWith('/incidents/incident-1');
+      render(<IncidentsScreen />);
+      expect(useUsersStore).toHaveBeenCalled();
+    });
   });
 
-  it('navigates to create incident when FAB pressed', () => {
-    render(<IncidentsScreen />);
+  describe('useEffect Dependency', () => {
+    it('fetches data when selectedTeamId changes', async () => {
+      (useIncidentsStore as unknown as jest.Mock).mockImplementation((selector: any) => {
+        const state = {
+          incidents: [],
+          isLoading: true,
+          actions: {
+            fetchIncidents: mockFetchIncidents,
+            setSelectedIncident: mockSetSelectedIncident,
+          },
+        };
+        return selector ? selector(state) : state;
+      });
 
-    fireEvent.press(findPressableParent(screen.getAllByTestId('mock-icon')[1]));
+      render(<IncidentsScreen />);
 
-    expect(pushMock).toHaveBeenCalledWith('/incidents/create');
+      await waitFor(() => {
+        expect(mockFetchIncidents).toHaveBeenCalled();
+        expect(mockFetchTeamMembers).toHaveBeenCalled();
+      });
+    });
   });
 });

@@ -132,7 +132,7 @@ export default function useCurrentLocation() {
 
   useEffect(() => {
     let locationSubscription: Location.LocationSubscription | null = null;
-    let intervalId: NodeJS.Timeout | null = null;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
 
     const startLocationUpdates = async () => {
       try {
@@ -147,10 +147,7 @@ export default function useCurrentLocation() {
 
         // For simulator, use interval to check location
         if (Platform.OS === 'ios' && __DEV__) {
-          intervalId = setInterval(
-            updateLocation(setLocation, setErrorMsg, locationRef),
-            1000
-          );
+          intervalId = setInterval(() => updateLocation(setLocation, setErrorMsg, locationRef), 1000);
         } else {
           // For real devices, use watchPositionAsync
           locationSubscription = await setupLocationWatch(
