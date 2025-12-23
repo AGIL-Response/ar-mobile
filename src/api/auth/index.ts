@@ -100,6 +100,51 @@ export const authApi = {
   },
 
   /**
+   * Refresh access token using refresh token grant
+   */
+  refreshToken: async (
+    refreshToken: string,
+    realm: string
+  ): Promise<any> => {
+    try {
+      const tokenEndpoint = `https://dev-auth.agilres.net/realms/${realm}/protocol/openid-connect/token`;
+
+      const tokenRequestBody = new URLSearchParams({
+        client_id: 'ar_app',
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+      });
+
+      const response = await fetch(tokenEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: tokenRequestBody.toString(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Token refresh failed:', response.status, errorData);
+
+        if (response.status === 401 || response.status === 400) {
+          throw new Error('Refresh token expired or invalid');
+        } else {
+          throw new Error(`Token refresh failed (${response.status})`);
+        }
+      }
+
+      const tokenData = await response.json();
+      return tokenData;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw handleApiError(error);
+    }
+  },
+
+  /**
    * Get user profile using tenant ID and user ID
    */
   getUserProfile: async (tenantId: string, userId: string): Promise<any> => {

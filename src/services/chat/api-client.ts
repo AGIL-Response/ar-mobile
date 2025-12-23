@@ -1,5 +1,6 @@
-import axios from 'axios';
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import Constants from 'expo-constants';
+import { requestQueue } from '@/api/request-queue';
 import type {
   ChatRoom,
   ChatMessage,
@@ -24,6 +25,19 @@ function getAuthStore() {
   return require('@/stores/auth').default;
 }
 
+/**
+ * Lazy getter for auth API to avoid circular dependency
+ */
+function getAuthApi() {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require('@/api/auth').authApi;
+}
+
+const getTimestamp = () => {
+  const now = new Date();
+  return `[${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}]`;
+};
+
 // Create separate axios instance for chat API
 const chatApiClient = axios.create({
   baseURL: CHAT_API_BASE_URL,
@@ -33,6 +47,142 @@ const chatApiClient = axios.create({
   },
   withCredentials: false,
 });
+
+/**
+ * Retry a request with updated token
+ */
+const retryRequest = async (
+  config: InternalAxiosRequestConfig
+): Promise<any> => {
+  const authStore = getAuthStore();
+  const accessToken = authStore.getState().token?.accessToken;
+
+  // Mark request as retried
+  (config as any).__retryCount = ((config as any).__retryCount || 0) + 1;
+
+  // Update authorization header
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  console.log(
+    `\x1b[33m${getTimestamp()} 🔁 Retrying chat request: ${config.method?.toUpperCase()} ${config.url}\x1b[0m`
+  );
+
+  // Retry the request
+  return axios(config);
+};
+
+/**
+ * Handle token refresh and retry failed request
+ */
+const handleTokenRefresh = async (
+  originalRequest: InternalAxiosRequestConfig
+): Promise<any> => {
+  const authStore = getAuthStore();
+  const authApi = getAuthApi();
+  const state = authStore.getState();
+
+  // Check if request has already been retried
+  const retryCount = (originalRequest as any).__retryCount || 0;
+  if (retryCount >= 1) {
+    // Already retried once, reject
+    console.log(
+      `\x1b[31m${getTimestamp()} ❌ Chat request already retried, rejecting: ${originalRequest.method?.toUpperCase()} ${originalRequest.url}\x1b[0m`
+    );
+    return Promise.reject(
+      new Error('Request failed after token refresh retry')
+    );
+  }
+
+  // Check if refresh token exists
+  if (!state.token?.refreshToken || !state.user?.realm) {
+    console.log(
+      `\x1b[31m${getTimestamp()} ❌ No refresh token available for chat, logging out\x1b[0m`
+    );
+    if (state.actions.logout) {
+      state.actions.logout();
+    }
+    return Promise.reject(new Error('No refresh token available'));
+  }
+
+  // If refresh is already in progress, queue this request
+  if (requestQueue.isRefreshInProgress()) {
+    console.log(
+      `\x1b[33m${getTimestamp()} ⏳ Token refresh in progress, queuing chat request: ${originalRequest.method?.toUpperCase()} ${originalRequest.url}\x1b[0m`
+    );
+    return new Promise((resolve, reject) => {
+      requestQueue.enqueue({
+        resolve,
+        reject,
+        config: originalRequest,
+      });
+    });
+  }
+
+  // Start token refresh
+  requestQueue.setRefreshing(true);
+  console.log(
+    `\x1b[33m${getTimestamp()} 🔄 Refreshing access token for chat...\x1b[0m`
+  );
+
+  try {
+    const tokenData = await authApi.refreshToken(
+      state.token.refreshToken,
+      state.user.realm
+    );
+
+    // Update tokens in store
+    const tokens = {
+      accessToken: tokenData.access_token || '',
+      refreshToken: tokenData.refresh_token || state.token.refreshToken || '',
+      idToken: tokenData.id_token || state.token.idToken || '',
+      expiresIn: tokenData.expires_in || state.token.expiresIn || 3600,
+    };
+
+    state.actions.setTokens(tokens);
+
+    console.log(
+      `\x1b[32m${getTimestamp()} ✅ Token refreshed successfully for chat\x1b[0m`
+    );
+
+    // Get queued requests and retry them
+    const queuedRequests = requestQueue.getQueuedRequests();
+    
+    // Retry the original request
+    const originalRetry = retryRequest(originalRequest);
+    
+    // Retry all queued requests - resolve their promises with the retry promise
+    queuedRequests.forEach((queued) => {
+      const retried = retryRequest(queued.config);
+      // Resolve with the retry promise so the caller can await it
+      queued.resolve(retried);
+    });
+
+    // Wait for original request retry
+    return originalRetry;
+  } catch (refreshError) {
+    console.log(
+      `\x1b[31m${getTimestamp()} ❌ Token refresh failed for chat: ${refreshError}\x1b[0m`
+    );
+
+    // Process queued requests with error
+    const queuedRequests = requestQueue.getQueuedRequests();
+    queuedRequests.forEach((queued) => {
+      queued.reject(refreshError);
+    });
+
+    // Logout on refresh failure
+    if (state.actions.logout) {
+      state.actions.logout();
+    }
+
+    return Promise.reject(refreshError);
+  } finally {
+    requestQueue.setRefreshing(false);
+    requestQueue.setRefreshPromise(null);
+  }
+};
 
 // Add request interceptor for auth token
 chatApiClient.interceptors.request.use((config) => {
@@ -44,17 +194,37 @@ chatApiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Add response interceptor for error handling
+// Add response interceptor for error handling with token refresh
 chatApiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      const authStore = getAuthStore();
-      const storeState = authStore.getState();
-      if (storeState.actions.logout) {
-        storeState.actions.logout();
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig;
+
+    // Handle 401 Unauthorized - attempt token refresh
+    if (error.response?.status === 401 && originalRequest) {
+      // Skip refresh for auth endpoints
+      const isAuthEndpoint =
+        originalRequest.url?.includes('/auth') ||
+        originalRequest.url?.includes('/token');
+
+      if (isAuthEndpoint) {
+        // For auth endpoints, just logout
+        const authStore = getAuthStore();
+        const storeState = authStore.getState();
+        if (storeState.actions.logout) {
+          storeState.actions.logout();
+        }
+        return Promise.reject(error);
+      }
+
+      // Attempt token refresh and retry
+      try {
+        return await handleTokenRefresh(originalRequest);
+      } catch (refreshError) {
+        return Promise.reject(refreshError);
       }
     }
+
     return Promise.reject(error);
   }
 );
