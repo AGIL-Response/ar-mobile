@@ -240,8 +240,8 @@ export class ChatService {
    * Send a message via socket (matching chat-client-js pattern)
    */
   async sendMessage(data: SendMessageData, fileIds?: string[], localMessage?: ChatMessage): Promise<void> {
-    // Emit to socket with fileIds and clientId if provided
-    this.socketService.sendMessage(data.roomId, data.content, data.type, data.replyTo, fileIds, data.clientId);
+    // Emit to socket with fileIds, clientId, and id if provided
+    this.socketService.sendMessage(data.roomId, data.content, data.type, data.replyTo, fileIds, data.clientId, localMessage?.id);
 
     // If localMessage is provided (with local paths), save it to DB immediately
     // This allows showing the message with local file paths while waiting for server response

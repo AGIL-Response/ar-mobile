@@ -14,6 +14,18 @@ export default schemaMigrations({
         }),
       ],
     },
+    {
+      toVersion: 4,
+      steps: [
+        addColumns({
+          table: 'attachments',
+          columns: [
+            { name: 'thumbnail', type: 'string', isOptional: true },
+            { name: 'duration', type: 'string', isOptional: true },
+          ],
+        }),
+      ],
+    },
   ],
 });
 

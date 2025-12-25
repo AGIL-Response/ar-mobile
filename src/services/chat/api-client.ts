@@ -374,6 +374,8 @@ function transformMessageToChatMessage(message: any, roomId: string): ChatMessag
         size: a.size || 0,
         mimeType: a.mimeType || a.contentType || a.type || 'application/octet-stream',
         uploadedAt: a.uploadedAt ? new Date(a.uploadedAt) : new Date(),
+        thumbnail: a.thumbnail || undefined,
+        duration: a.duration || undefined,
       }));
     })(),
     timestamp: message.createdAt ? new Date(message.createdAt) : new Date(),

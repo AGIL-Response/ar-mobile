@@ -4,19 +4,18 @@
  * Supports: camera photo, image/video upload, audio recording
  */
 
-import React, { useState, useRef, useEffect } from 'react';
-import { View, TouchableOpacity, Keyboard, Alert, AppState, StyleSheet } from 'react-native';
+import React, { useState, useRef, useCallback } from 'react';
+import { View, TouchableOpacity, Keyboard, Alert, StyleSheet } from 'react-native';
 import { Input, Icon, Text } from '@/components';
 import { useTheme, type Theme } from '@/theme';
-import * as ImagePicker from 'expo-image-picker';
-import type { SendMessageData, ChatMessage, ChatAttachment } from '@/services/chat';
+import type { SendMessageData, ChatMessage } from '@/services/chat';
 import type { MediaFile } from '@/utils/media';
-import { validateMediaFile, getMediaType, getMimeType, ensureFileExtension } from '@/utils/media';
 import { AttachmentPreview } from './attachment-preview';
-import { AudioRecorder } from '@/utils/audioRecorder';
-import { useCameraPermission, useMediaLibraryPermission } from '@/lib/media-permissions';
-import { filesApi } from '@/api/files';
 import useAuthStore from '@/stores/auth';
+import { useFileUpload } from '../hooks/use-file-upload';
+import { useAudioRecording } from '../hooks/use-audio-recording';
+import { useMediaSelection } from '../hooks/use-media-selection';
+import { buildLocalMessage, determineMessageType } from '../utils/message-builder';
 
 export interface ComposerProps {
   onSend: (data: Omit<SendMessageData, 'roomId'> & { localMessage?: ChatMessage }) => Promise<void>;
@@ -40,21 +39,26 @@ export function Composer({
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [attachments, setAttachments] = useState<MediaFile[]>([]);
-  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
-  const [uploadingFiles, setUploadingFiles] = useState<Set<string>>(new Set());
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Audio recording state
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
-  const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const audioRecorderRef = useRef<AudioRecorder | null>(null);
+  const { uploadFiles, uploadProgress, isUploading, resetProgress } = useFileUpload();
 
-  // Permission hooks
-  const verifyCameraPermission = useCameraPermission();
-  const verifyMediaLibraryPermission = useMediaLibraryPermission();
+  const handleRecordingComplete = useCallback((audioFile: MediaFile) => {
+    setAttachments((prev) => [...prev, audioFile]);
+  }, []);
 
-  const handleSend = async () => {
+  const {
+    isRecording,
+    recordingTime,
+    startRecording,
+    stopRecording,
+    cancelRecording,
+    formatTime,
+  } = useAudioRecording(handleRecordingComplete);
+
+  const { takePhoto, pickFromGallery } = useMediaSelection();
+
+  const handleSend = useCallback(async () => {
     if ((!message.trim() && attachments.length === 0) || isSending || disabled) {
       return;
     }
@@ -65,394 +69,110 @@ export function Composer({
     setMessage('');
     setAttachments([]);
     setIsSending(true);
-    setUploadProgress({});
-    setUploadingFiles(new Set(attachmentsToSend.map((a, i) => `file-${i}`)));
+    resetProgress();
 
     if (onTyping) {
       onTyping(false);
     }
 
     try {
-      // Determine message type based on attachments
-      let messageType: 'text' | 'file' | 'image' = 'text';
-      if (attachmentsToSend.length > 0) {
-        const firstAttachmentType = getMediaType(attachmentsToSend[0].name);
-        messageType = firstAttachmentType === 'image' || firstAttachmentType === 'video'
-          ? 'image'
-          : 'file';
-      }
+      const messageType = determineMessageType(attachmentsToSend);
+      const { fileIds, localAttachments } = await uploadFiles(attachmentsToSend);
 
-      // Upload files first and get fileIds
-      const fileIds: string[] = [];
-      const localAttachments: ChatAttachment[] = [];
-
-      if (attachmentsToSend.length > 0) {
-        for (let i = 0; i < attachmentsToSend.length; i++) {
-          const attachment = attachmentsToSend[i];
-          const fileKey = `file-${i}`;
-
-          try {
-            setUploadProgress((prev) => ({ ...prev, [fileKey]: 0 }));
-
-            const uploadResult = await filesApi.uploadChatFile({
-              fileUri: attachment.uri,
-              fileName: attachment.name,
-              mimeType: attachment.mimeType || getMimeType(attachment.name),
-              onProgress: (progress) => {
-                setUploadProgress((prev) => ({ ...prev, [fileKey]: progress }));
-              },
-            });
-
-            fileIds.push(uploadResult.fileId);
-
-            // Create local attachment with local path
-            localAttachments.push({
-              id: uploadResult.fileId,
-              filename: attachment.name,
-              url: '', // Will be updated from server
-              size: attachment.size,
-              mimeType: attachment.mimeType || getMimeType(attachment.name),
-              uploadedAt: new Date(),
-            });
-
-            setUploadProgress((prev) => ({ ...prev, [fileKey]: 100 }));
-          } catch (error) {
-            console.error(`❌ Failed to upload file ${attachment.name}:`, error);
-            throw error;
-          }
-        }
-      }
-
-      // Generate client message ID for status tracking
-      const clientId = `client-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      
-      // Create local message with local paths (for immediate display)
       let localMessage: ChatMessage | undefined;
       if (roomId && currentUser) {
-        const tempMessageId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        localMessage = {
-          id: tempMessageId,
+        localMessage = buildLocalMessage({
           roomId,
-          senderId: currentUser.id || '',
-          sender: {
+          content: messageToSend || (attachmentsToSend.length > 0 ? '' : ''),
+          type: messageType,
+          replyTo: replyTo?.messageId,
+          localAttachments,
+          attachmentsToSend,
+          currentUser: {
             id: currentUser.id || '',
             username: currentUser.username,
             displayName: (currentUser as any).displayName,
             avatarUrl: (currentUser as any).avatarUrl,
           },
-          content: messageToSend || '',
-          type: messageType,
-          attachments: localAttachments.length > 0
-            ? localAttachments.map((att, idx) => ({
-                ...att,
-                url: attachmentsToSend[idx].uri, // Use local URI temporarily
-              }))
-            : undefined,
-          timestamp: new Date(),
-          replyTo: replyTo?.messageId,
-          status: 'sending', // Set initial status to 'sending'
-          clientId, // Store clientId for status tracking
-        };
+        });
       }
 
-      // Send message with fileIds and clientId
       await onSend({
         content: messageToSend || (attachmentsToSend.length > 0 ? '' : ''),
         type: messageType,
         replyTo: replyTo?.messageId,
         fileIds: fileIds.length > 0 ? fileIds : undefined,
-        clientId, // Pass clientId for socket emission
-        localMessage, // Pass local message for immediate DB save
+        clientId: localMessage?.clientId,
+        localMessage,
       });
     } catch (error) {
       console.error('❌ Failed to send message:', error);
-      // Restore message and attachments on error
       setMessage(messageToSend);
       setAttachments(attachmentsToSend);
       Alert.alert('Error', 'Failed to send message. Please try again.');
     } finally {
       setIsSending(false);
-      setUploadProgress({});
-      setUploadingFiles(new Set());
+      resetProgress();
       Keyboard.dismiss();
     }
-  };
+  }, [
+    message,
+    attachments,
+    isSending,
+    disabled,
+    roomId,
+    currentUser,
+    replyTo,
+    onSend,
+    onTyping,
+    uploadFiles,
+    resetProgress,
+  ]);
 
-  const handleTextChange = (text: string) => {
-    setMessage(text);
+  const handleTextChange = useCallback(
+    (text: string) => {
+      setMessage(text);
 
-    if (onTyping) {
-      // Clear existing timeout
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
+      if (onTyping) {
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
+
+        onTyping(true);
+
+        typingTimeoutRef.current = setTimeout(() => {
+          onTyping(false);
+        }, 3000);
       }
+    },
+    [onTyping]
+  );
 
-      // Set typing to true
-      onTyping(true);
-
-      // Set timeout to stop typing after 3 seconds of inactivity
-      typingTimeoutRef.current = setTimeout(() => {
-        onTyping(false);
-      }, 3000);
-    }
-  };
-
-  const handleCancelReply = () => {
+  const handleCancelReply = useCallback(() => {
     if (onCancelReply) {
       onCancelReply();
     }
-  };
+  }, [onCancelReply]);
 
-  // Format time as MM:SS
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  // Reset recording state
-  const resetRecordingState = () => {
-    setIsRecording(false);
-    setRecordingTime(0);
-    if (recordingIntervalRef.current) {
-      clearInterval(recordingIntervalRef.current);
-      recordingIntervalRef.current = null;
+  const handleTakePhoto = useCallback(async () => {
+    const photo = await takePhoto();
+    if (photo) {
+      setAttachments((prev) => [...prev, photo]);
     }
-    if (audioRecorderRef.current) {
-      audioRecorderRef.current.destroy();
-      audioRecorderRef.current = null;
-    }
-  };
+  }, [takePhoto]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      resetRecordingState();
-    };
+  const handlePickImage = useCallback(async () => {
+    const image = await pickFromGallery();
+    if (image) {
+      setAttachments((prev) => [...prev, image]);
+    }
+  }, [pickFromGallery]);
+
+  const handleRemoveAttachment = useCallback((index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
-  // Handle camera capture
-  const handleTakePhoto = async () => {
-    try {
-      const hasPermission = await verifyCameraPermission();
-      if (!hasPermission) {
-        Alert.alert('Permission required', 'Please grant permission to access your camera');
-        return;
-      }
-
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ['images', 'videos'] as any, // Using string literals for new API
-        allowsEditing: true,
-        quality: 0.8,
-        videoQuality: 1, // 1 = highest quality, 0 = lowest quality
-      });
-
-      if (!result.canceled && result.assets && result.assets[0]) {
-        const asset = result.assets[0];
-        const mimeType = asset.mimeType || (asset.type === 'video' ? 'video/mp4' : 'image/jpeg');
-        const baseName = asset.fileName || `camera_${Date.now()}`;
-        const fileName = ensureFileExtension(baseName, mimeType);
-
-        const newAttachment: MediaFile = {
-          uri: asset.uri,
-          name: fileName,
-          type: asset.type || 'image',
-          size: asset.fileSize || 0,
-          mimeType,
-        };
-
-        const validation = validateMediaFile(newAttachment);
-        if (validation.valid) {
-          setAttachments((prev) => [...prev, newAttachment]);
-          console.log('📷 Added camera photo/video');
-        } else {
-          Alert.alert('Invalid file', validation.error || 'File validation failed');
-        }
-      }
-    } catch (error) {
-      console.error('Error taking photo:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to take photo';
-
-      // Handle specific error cases
-      if (errorMessage.includes('simulator') || errorMessage.includes('not available')) {
-        Alert.alert(
-          'Camera Not Available',
-          'Camera is not available on this device or simulator. Please use a physical device or select from gallery instead.',
-          [{ text: 'OK' }]
-        );
-      } else {
-        Alert.alert('Error', errorMessage);
-      }
-    }
-  };
-
-  // Handle image/video pick from gallery (single selection only)
-  const handlePickImage = async () => {
-    try {
-      const hasPermission = await verifyMediaLibraryPermission();
-      if (!hasPermission) {
-        Alert.alert('Permission required', 'Please grant permission to access your photos');
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images', 'videos'] as any, // Using string literals for new API
-        allowsMultipleSelection: false, // Only allow 1 photo/video
-        quality: 0.8,
-        selectionLimit: 1,
-      });
-
-      if (!result.canceled && result.assets && result.assets[0]) {
-        const asset = result.assets[0];
-        const mimeType = asset.mimeType || (asset.type === 'video' ? 'video/mp4' : 'image/jpeg');
-        const baseName = asset.fileName || `media_${Date.now()}`;
-        const fileName = ensureFileExtension(baseName, mimeType);
-
-        const newAttachment: MediaFile = {
-          uri: asset.uri,
-          name: fileName,
-          type: asset.type || 'image',
-          size: asset.fileSize || 0,
-          mimeType,
-        };
-
-        // Validate the file
-        const validation = validateMediaFile(newAttachment);
-        if (validation.valid) {
-          setAttachments((prev) => [...prev, newAttachment]);
-        } else {
-          Alert.alert('Invalid file', validation.error || 'File validation failed');
-        }
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick media');
-    }
-  };
-
-  // Handle document/file picker (not used in Messenger-style UI)
-  // const handlePickDocument = async () => {
-  //   try {
-  //     const result = await DocumentPicker.getDocumentAsync({
-  //       type: ['audio/*', 'video/*', 'image/*'],
-  //       multiple: true,
-  //       copyToCacheDirectory: true,
-  //     });
-  //
-  //     if (!result.canceled && result.assets) {
-  //       const newAttachments: MediaFile[] = result.assets.map((asset) => ({
-  //         uri: asset.uri,
-  //         name: asset.name,
-  //         type: 'file',
-  //         size: asset.size || 0,
-  //         mimeType: asset.mimeType,
-  //       }));
-  //
-  //       // Validate each file
-  //       const validAttachments: MediaFile[] = [];
-  //       for (const attachment of newAttachments) {
-  //         const validation = validateMediaFile(attachment);
-  //         if (validation.valid) {
-  //           validAttachments.push(attachment);
-  //         } else {
-  //           Alert.alert('Invalid file', validation.error || 'File validation failed');
-  //         }
-  //       }
-  //
-  //       if (validAttachments.length > 0) {
-  //         setAttachments((prev) => [...prev, ...validAttachments]);
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error('Error picking document:', error);
-  //     Alert.alert('Error', 'Failed to pick file');
-  //   }
-  // };
-
-  // Start audio recording
-  const startRecording = async () => {
-    try {
-      // Check if app is in foreground
-      const appState = AppState.currentState;
-      if (appState !== 'active') {
-        Alert.alert(
-          'App must be active',
-          'Please ensure the app is in the foreground to start recording.'
-        );
-        return;
-      }
-
-      // Check if audio recording is supported
-      const isSupported = await AudioRecorder.isSupported();
-      if (!isSupported) {
-        Alert.alert('Permission required', 'Please grant permission to access your microphone');
-        return;
-      }
-
-      // Create new audio recorder
-      const audioRecorder = new AudioRecorder({
-        onStop: (audioFile) => {
-          // Check if recording is too short (less than 1 second)
-          if (recordingTime < 1) {
-            resetRecordingState();
-            return;
-          }
-
-          // Add audio file to attachments
-          setAttachments((prev) => [...prev, audioFile]);
-
-          // Reset state
-          resetRecordingState();
-        },
-        onError: (error: Error) => {
-          console.error('Recording error:', error);
-          Alert.alert('Recording Error', error.message);
-          resetRecordingState();
-        },
-      });
-
-      audioRecorderRef.current = audioRecorder;
-
-      // Start recording
-      await audioRecorder.start();
-      setIsRecording(true);
-      setRecordingTime(0);
-
-      // Start timer
-      recordingIntervalRef.current = setInterval(() => {
-        setRecordingTime((prev) => prev + 1);
-      }, 1000);
-    } catch (error) {
-      console.error('Error starting recording:', error);
-      if (error instanceof Error) {
-        Alert.alert('Recording Error', error.message);
-      }
-      resetRecordingState();
-    }
-  };
-
-  // Stop recording and save
-  const stopRecording = async () => {
-    if (audioRecorderRef.current) {
-      await audioRecorderRef.current.stop();
-    }
-  };
-
-  // Cancel recording without saving
-  const cancelRecording = async () => {
-    if (audioRecorderRef.current) {
-      await audioRecorderRef.current.cancel();
-    }
-    resetRecordingState();
-  };
-
-
-  const handleRemoveAttachment = (index: number) => {
-    setAttachments((prev) => prev.filter((_, i) => i !== index));
-  };
-
   const canSend = (message.trim() || attachments.length > 0) && !isSending && !disabled && !isRecording;
-
   const styles = createStyles(theme, !!message.trim(), isSending, disabled);
 
   return (
@@ -476,20 +196,16 @@ export function Composer({
             <Text style={{ color: theme.colors.text.secondary, fontSize: 20 }}>✕</Text>
           </TouchableOpacity>
         </View>
-      )
-      }
+      )}
 
-      {/* Attachment Preview */}
-      {
-        attachments.length > 0 && (
-          <AttachmentPreview
-            attachments={attachments}
-            onRemove={handleRemoveAttachment}
-            uploadProgress={uploadProgress}
-            isUploading={isSending && uploadingFiles.size > 0}
-          />
-        )
-      }
+      {attachments.length > 0 && (
+        <AttachmentPreview
+          attachments={attachments}
+          onRemove={handleRemoveAttachment}
+          uploadProgress={uploadProgress}
+          isUploading={isSending && isUploading}
+        />
+      )}
 
       <View
         style={{
@@ -500,7 +216,6 @@ export function Composer({
           gap: theme.spacing.gap.sm,
         }}
       >
-        {/* Attachment buttons - Camera, Photo, Microphone (like Messenger) */}
         {!isRecording && !message.trim() && (
           <View
             style={{
@@ -509,7 +224,6 @@ export function Composer({
               gap: theme.spacing.gap.sm,
             }}
           >
-            {/* Camera button */}
             <TouchableOpacity
               onPress={handleTakePhoto}
               disabled={disabled || isSending}
@@ -529,7 +243,6 @@ export function Composer({
               />
             </TouchableOpacity>
 
-            {/* Photo/Gallery button */}
             <TouchableOpacity
               onPress={handlePickImage}
               disabled={disabled || isSending}
@@ -549,7 +262,6 @@ export function Composer({
               />
             </TouchableOpacity>
 
-            {/* Microphone/Audio recording button */}
             <TouchableOpacity
               onPress={startRecording}
               disabled={disabled || isSending}
@@ -571,7 +283,6 @@ export function Composer({
           </View>
         )}
 
-        {/* Message input */}
         <View style={{ flex: 1 }}>
           <Input
             value={message}
@@ -592,112 +303,106 @@ export function Composer({
           />
         </View>
 
-        {/* Send button or Recording controls */}
-        {
-          isRecording ? (
+        {isRecording ? (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: theme.spacing.gap.sm,
+            }}
+          >
+            <TouchableOpacity
+              onPress={cancelRecording}
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: '#ef4444',
+              }}
+            >
+              <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>×</Text>
+            </TouchableOpacity>
+
             <View
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                gap: theme.spacing.gap.sm,
+                gap: theme.spacing.gap.xs,
+                paddingHorizontal: theme.spacing.gap.sm,
+                paddingVertical: theme.spacing.gap.xs,
+                backgroundColor: theme.colors.background.secondary,
+                borderRadius: 18,
               }}
             >
-              {/* Cancel button */}
-              <TouchableOpacity
-                onPress={cancelRecording}
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 18,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  backgroundColor: '#ef4444',
-                }}
-              >
-                <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>×</Text>
-              </TouchableOpacity>
-
-              {/* Recording indicator and timer */}
               <View
                 style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: theme.spacing.gap.xs,
-                  paddingHorizontal: theme.spacing.gap.sm,
-                  paddingVertical: theme.spacing.gap.xs,
-                  backgroundColor: theme.colors.background.secondary,
-                  borderRadius: 18,
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: '#ef4444',
                 }}
-              >
-                <View
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: 4,
-                    backgroundColor: '#ef4444',
-                  }}
-                />
-                <Text
-                  variant="caption"
-                  style={{
-                    color: theme.colors.text.primary,
-                    fontFamily: 'monospace',
-                    fontSize: 12,
-                  }}
-                >
-                  {formatTime(recordingTime)}
-                </Text>
-              </View>
-
-              {/* Stop/Send button */}
-              <TouchableOpacity
-                onPress={stopRecording}
+              />
+              <Text
+                variant="caption"
                 style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 18,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  backgroundColor: theme.colors.primary || '#007AFF',
+                  color: theme.colors.text.primary,
+                  fontFamily: 'monospace',
+                  fontSize: 12,
                 }}
               >
-                <Text
-                  style={{
-                    fontSize: 20,
-                    color: 'white',
-                  }}
-                >
-                  →
-                </Text>
-              </TouchableOpacity>
+                {formatTime(recordingTime)}
+              </Text>
             </View>
-          ) : (
+
             <TouchableOpacity
-              onPress={handleSend}
-              disabled={!canSend}
+              onPress={stopRecording}
               style={{
-                width: 44,
-                height: 44,
-                borderRadius: 22,
+                width: 36,
+                height: 36,
+                borderRadius: 18,
                 justifyContent: 'center',
                 alignItems: 'center',
-                marginBottom: theme.spacing.gap.xs,
-                backgroundColor: canSend ? theme.colors.primary : theme.colors.background.secondary,
+                backgroundColor: theme.colors.primary || '#007AFF',
               }}
             >
               <Text
                 style={{
                   fontSize: 20,
-                  color: canSend ? 'white' : theme.colors.text.secondary,
+                  color: 'white',
                 }}
               >
                 →
               </Text>
             </TouchableOpacity>
-          )
-        }
-      </View >
-    </View >
+          </View>
+        ) : (
+          <TouchableOpacity
+            onPress={handleSend}
+            disabled={!canSend}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 22,
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginBottom: theme.spacing.gap.xs,
+              backgroundColor: canSend ? theme.colors.primary : theme.colors.background.secondary,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 20,
+                color: canSend ? 'white' : theme.colors.text.secondary,
+              }}
+            >
+              →
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
   );
 }
 
@@ -729,38 +434,5 @@ const createStyles = (theme: Theme, hasMessage: boolean, isSending: boolean, dis
     replyText: {
       color: theme.colors.text.primary,
       fontSize: 12,
-    },
-    cancelButton: {
-      padding: theme.spacing.gap.xs,
-    },
-    inputContainer: {
-      flexDirection: 'row',
-      alignItems: 'flex-end',
-      paddingHorizontal: theme.spacing.gap.md,
-      paddingTop: theme.spacing.gap.md,
-    },
-    inputWrapper: {
-      flex: 1,
-      marginRight: theme.spacing.gap.sm,
-    },
-    inputContainerStyle: {
-      marginBottom: 0,
-    },
-    inputStyle: {
-      maxHeight: 100,
-      paddingTop: theme.spacing.gap.sm,
-      paddingBottom: theme.spacing.gap.sm,
-    },
-    sendButton: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginBottom: theme.spacing.gap.xs,
-    },
-    sendButtonText: {
-      fontSize: 20,
-      color: hasMessage && !isSending && !disabled ? 'white' : theme.colors.text.secondary,
     },
   });

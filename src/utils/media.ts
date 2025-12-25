@@ -33,6 +33,8 @@ export function getExtensionFromMimeType(mimeType: string): string {
     'image/png': 'png',
     'image/gif': 'gif',
     'image/webp': 'webp',
+    'image/heic': 'jpg', // Convert HEIC to JPG
+    'image/heif': 'jpg', // Convert HEIF to JPG
     // Videos
     'video/mp4': 'mp4',
     'video/quicktime': 'mov',
@@ -52,8 +54,19 @@ export function getExtensionFromMimeType(mimeType: string): string {
 
 /**
  * Ensure filename has proper extension based on mimeType
+ * Also converts HEIC/HEIF extensions to JPG
  */
 export function ensureFileExtension(filename: string, mimeType?: string): string {
+  // Convert HEIC/HEIF extensions to JPG
+  const heicExtensions = ['.heic', '.heif'];
+  const lowerFilename = filename.toLowerCase();
+  for (const ext of heicExtensions) {
+    if (lowerFilename.endsWith(ext)) {
+      const baseName = filename.slice(0, -ext.length);
+      return `${baseName}.jpg`;
+    }
+  }
+  
   // If filename already has extension, return as is
   if (filename.includes('.')) {
     return filename;

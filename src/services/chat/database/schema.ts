@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const chatSchema = appSchema({
-  version: 3,
+  version: 4,
   tables: [
     tableSchema({
       name: 'rooms',
@@ -52,6 +52,8 @@ export const chatSchema = appSchema({
         { name: 'mime_type', type: 'string' },
         { name: 'uploaded_at', type: 'number' },
         { name: 'local_path', type: 'string', isOptional: true },
+        { name: 'thumbnail', type: 'string', isOptional: true },
+        { name: 'duration', type: 'string', isOptional: true },
       ],
     }),
     tableSchema({

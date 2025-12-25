@@ -77,6 +77,12 @@ export async function upsertAttachments(messageId: string, attachments: ChatAtta
         if (preservedLocalPath) {
           attachment.localPath = preservedLocalPath;
         }
+        if (attachmentDataTransformed.thumbnail) {
+          attachment.thumbnail = attachmentDataTransformed.thumbnail;
+        }
+        if (attachmentDataTransformed.duration) {
+          attachment.duration = attachmentDataTransformed.duration;
+        }
       });
     }
   });

@@ -4,7 +4,7 @@
  * Refactored following SOLID principles
  */
 
-import React, { useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { KeyboardAvoidingView, Platform } from 'react-native';
 import { LegendList } from '@legendapp/list';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -21,6 +21,7 @@ import { useMessageActions } from './hooks/use-message-actions';
 import { useMessageRenderer } from './hooks/use-message-renderer';
 import { getRoomDisplayName } from './utils/room-name';
 import type { ChatMessage, ChatAttachment } from '@/services/chat';
+import { useAudioPlayerStore } from '@/stores/audio-player';
 
 export default function ChatRoomScreen() {
   const theme = useTheme();
@@ -46,7 +47,7 @@ export default function ChatRoomScreen() {
     messagesLength,
     isLoading,
   });
-  const { hasScrolledFarUp, handleScroll } = useScrollHandler({
+  const { handleScroll } = useScrollHandler({
     isLoading,
     messagesLength,
     flatListRef,
@@ -64,6 +65,7 @@ export default function ChatRoomScreen() {
     handleTyping,
     handleCancelReply,
   } = useMessageActions({ roomId });
+  const stopAudio = useAudioPlayerStore((state) => state.actions.stop);
 
   // Wrap attachment press to include message context
   const handleAttachmentPress = (message: ChatMessage, attachment: ChatAttachment, index: number) => {
@@ -95,6 +97,12 @@ export default function ChatRoomScreen() {
     // LegendList handles content size changes internally
     // This callback is kept for potential future debugging if needed
   };
+
+  useEffect(() => {
+    return () => {
+      stopAudio();
+    };
+  }, [stopAudio]);
 
   if (!roomId || (!room && !isLoading)) {
     return null;

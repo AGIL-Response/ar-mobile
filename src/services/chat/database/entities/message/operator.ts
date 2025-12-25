@@ -94,7 +94,7 @@ export async function upsertMessage(messageData: ChatMessage, roomId: string): P
         message.isSynced = messageDataTransformed.isSynced;
         message.serverCreatedAt = messageDataTransformed.serverCreatedAt;
         message.serverUpdatedAt = messageDataTransformed.serverUpdatedAt;
-        
+
         // Set optional fields
         if (messageDataTransformed.replyToId !== undefined) {
           message.replyToId = messageDataTransformed.replyToId;
@@ -128,58 +128,75 @@ export async function upsertMessage(messageData: ChatMessage, roomId: string): P
 }
 
 /**
+ * Validate and normalize roomId
+ */
+function validateRoomId(roomId: string | undefined | null): string | null {
+  if (roomId === undefined || roomId === null || typeof roomId !== 'string') {
+    return null;
+  }
+
+  const validRoomId = String(roomId).trim();
+  if (validRoomId === '' || validRoomId === 'undefined' || validRoomId === 'null' || validRoomId === '[object Object]') {
+    return null;
+  }
+
+  return validRoomId.length > 0 ? validRoomId : null;
+}
+
+/**
+ * Sort messages by serverCreatedAt (message timestamp) descending (newest first, oldest last)
+ * Use serverCreatedAt first since it's the actual message timestamp, fallback to createdAt if not available
+ * Note: This will be reversed in processMessagesForDisplay, so final order is [oldest, ..., newest]
+ */
+function sortMessagesByTimestamp(messages: Message[]): Message[] {
+  return [...messages].sort((a, b) => {
+    const timeA = a.serverCreatedAt ? new Date(a.serverCreatedAt).getTime() : (a.createdAt?.getTime() || 0);
+    const timeB = b.serverCreatedAt ? new Date(b.serverCreatedAt).getTime() : (b.createdAt?.getTime() || 0);
+    // Descending: larger time (newer) comes first - will be reversed later for display
+    return timeB - timeA;
+  });
+}
+
+/**
+ * Process and transform messages: sort and convert to ChatMessage
+ */
+async function processAndTransformMessages(
+  messages: Message[],
+  messageToChatMessageFn: (message: Message) => Promise<ChatMessage>
+): Promise<ChatMessage[]> {
+  if (!messages || messages.length === 0) {
+    return [];
+  }
+
+  const sortedMessages = sortMessagesByTimestamp(messages);
+  return Promise.all(sortedMessages.map((message) => messageToChatMessageFn(message)));
+}
+
+/**
  * Get observable for messages in a room (observes ALL messages, sorted by created_at)
  */
 export function observeMessages(
   roomId: string,
   messageToChatMessageFn: (message: Message) => Promise<ChatMessage>
 ) {
-  // Validate roomId
-  if (roomId === undefined || roomId === null || typeof roomId !== 'string') {
-    return of([]);
-  }
-
-  const validRoomId = String(roomId).trim();
-  if (validRoomId === '' || validRoomId === 'undefined' || validRoomId === 'null' || validRoomId === '[object Object]') {
-    return of([]);
-  }
-
-  if (!validRoomId || validRoomId.length === 0) {
+  const validRoomId = validateRoomId(roomId);
+  if (!validRoomId) {
     return of([]);
   }
 
   try {
-    // Observe ALL messages for the room, sorted by created_at ascending (oldest first)
+    // Observe ALL messages for the room, sorted by created_at descending
+    // Note: Will be re-sorted by serverCreatedAt in processAndTransformMessages
     const query = db
       .get<Message>('messages')
       .query(
         Q.where('room_id', validRoomId),
         Q.where('deleted_at', null),
-        Q.sortBy('created_at', Q.asc)
+        Q.sortBy('created_at', Q.desc)
       );
 
     return query.observe().pipe(
-      switchMap(async (messages) => {
-        if (!messages || messages.length === 0) {
-          return [];
-        }
-
-        // Sort messages by created_at ascending (oldest first, newest last)
-        // This ensures new messages appear at the bottom of the chat
-        const sortedMessages = [...messages].sort((a, b) => {
-          const timeA = a.createdAt?.getTime() || (a.serverCreatedAt ? new Date(a.serverCreatedAt).getTime() : 0);
-          const timeB = b.createdAt?.getTime() || (b.serverCreatedAt ? new Date(b.serverCreatedAt).getTime() : 0);
-          // Ascending: smaller time (older) comes first
-          return timeA - timeB;
-        });
-
-        // Transform all messages (attachments will be fetched in messageToChatMessageFn)
-        const transformed = await Promise.all(
-          sortedMessages.map((message) => messageToChatMessageFn(message))
-        );
-        
-        return transformed;
-      })
+      switchMap((messages) => processAndTransformMessages(messages, messageToChatMessageFn))
     );
   } catch (error) {
     console.error('Error creating messages observable:', error, { roomId, validRoomId });
@@ -195,33 +212,29 @@ export async function getMessages(
   limit: number,
   messageToChatMessageFn: (message: Message) => Promise<ChatMessage>
 ): Promise<ChatMessage[]> {
-  // Validate roomId
-  const validRoomId = typeof roomId === 'string' && roomId.trim() !== '' ? roomId.trim() : null;
-  if (!validRoomId || validRoomId === 'undefined' || validRoomId === 'null') {
+  const validRoomId = validateRoomId(roomId);
+  if (!validRoomId) {
     return [];
   }
 
-  // Query for messages where deleted_at is null (not deleted)
-  const messages = await db
-    .get<Message>('messages')
-    .query(
-      Q.where('room_id', validRoomId),
-      Q.where('deleted_at', null),
-      Q.sortBy('created_at', Q.asc),
-      Q.take(limit)
-    )
-    .fetch();
+  try {
+    // Query for messages where deleted_at is null (not deleted)
+    // Note: Will be re-sorted by serverCreatedAt in processAndTransformMessages
+    const messages = await db
+      .get<Message>('messages')
+      .query(
+        Q.where('room_id', validRoomId),
+        Q.where('deleted_at', null),
+        Q.sortBy('created_at', Q.desc),
+        Q.take(limit)
+      )
+      .fetch();
 
-  // Sort messages by created_at ascending (oldest first, newest last)
-  // This ensures new messages appear at the bottom of the chat
-  const sortedMessages = [...messages].sort((a, b) => {
-    const timeA = a.createdAt?.getTime() || (a.serverCreatedAt ? new Date(a.serverCreatedAt).getTime() : 0);
-    const timeB = b.createdAt?.getTime() || (b.serverCreatedAt ? new Date(b.serverCreatedAt).getTime() : 0);
-    // Ascending: smaller time (older) comes first
-    return timeA - timeB;
-  });
-
-  return Promise.all(sortedMessages.map((message) => messageToChatMessageFn(message)));
+    return processAndTransformMessages(messages, messageToChatMessageFn);
+  } catch (error) {
+    console.error('Error fetching messages:', error, { roomId, validRoomId });
+    return [];
+  }
 }
 
 /**

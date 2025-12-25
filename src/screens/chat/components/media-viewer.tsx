@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { Icon, Text } from '@/components';
 import { useTheme } from '@/theme';
-import { Video, ResizeMode } from 'expo-video';
+import { Video, ResizeMode } from 'expo-av';
 import { getMediaType } from '@/utils/media';
 import type { ChatAttachment } from '@/services/chat';
 
@@ -93,31 +93,51 @@ export function MediaViewer({
         {/* Media Content */}
         <View style={styles.mediaContainer}>
           {mediaType === 'image' ? (
-            <Image
-              source={{ uri: currentAttachment.url }}
-              style={styles.image}
-              resizeMode="contain"
-            />
+            currentAttachment.url ? (
+              <Image
+                source={{ uri: currentAttachment.url }}
+                style={styles.image}
+                resizeMode="contain"
+              />
+            ) : (
+              <View style={styles.unsupportedContainer}>
+                <Text style={{ fontSize: 80 }}>🖼️</Text>
+                <Text variant="body" style={styles.unsupportedText}>
+                  Image not available
+                </Text>
+              </View>
+            )
           ) : mediaType === 'video' ? (
-            <Video
-              source={{ uri: currentAttachment.url }}
-              style={styles.video}
-              useNativeControls
-              resizeMode={ResizeMode.CONTAIN}
-              shouldPlay={false}
-            />
+            currentAttachment.url ? (
+              <Video
+                source={{ uri: currentAttachment.url }}
+                style={styles.video}
+                useNativeControls
+                resizeMode={ResizeMode.CONTAIN}
+                shouldPlay={false}
+              />
+            ) : (
+              <View style={styles.unsupportedContainer}>
+                <Text style={{ fontSize: 80 }}>🎬</Text>
+                <Text variant="body" style={styles.unsupportedText}>
+                  Video not available
+                </Text>
+              </View>
+            )
           ) : mediaType === 'audio' ? (
               <View style={styles.audioContainer}>
               <Text style={{ fontSize: 80 }}>🎵</Text>
               <Text variant="body" style={styles.audioText}>
                 {currentAttachment.filename}
               </Text>
-              <Video
-                source={{ uri: currentAttachment.url }}
-                style={{ height: 100 }}
-                useNativeControls
-                shouldPlay={false}
-              />
+              {currentAttachment.url ? (
+                <Video
+                  source={{ uri: currentAttachment.url }}
+                  style={{ height: 100 }}
+                  useNativeControls
+                  shouldPlay={false}
+                />
+              ) : null}
             </View>
           ) : (
             <View style={styles.unsupportedContainer}>

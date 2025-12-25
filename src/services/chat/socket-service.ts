@@ -195,6 +195,7 @@ export class ChatSocketService {
     });
 
     this.socket.on('message:history:loaded', (data: { conversation_id: string; messages: any }) => {
+
       // Handle nested structure: data.messages.messages (server returns { messages: { messages: [...] } })
       let messagesArray: any[] = [];
       if (Array.isArray(data.messages)) {
@@ -207,6 +208,8 @@ export class ChatSocketService {
         // Fallback: try to extract from any structure
         messagesArray = [];
       }
+
+      console.log('[Chat] - message:history:loaded - loaded history', messagesArray);
 
       // Transform messages to ChatMessage format using transformMessageToChatMessage utility
       const messages: ChatMessage[] = messagesArray
@@ -224,7 +227,7 @@ export class ChatSocketService {
         })
         .filter((msg): msg is ChatMessage => msg !== null);
 
-
+      console.log('[Chat] - message:history:loaded - loaded history', messages.length);
       this.eventHandlers.onMessageHistoryLoaded?.({
         conversation_id: data.conversation_id,
         messages,
@@ -287,7 +290,7 @@ export class ChatSocketService {
   /**
    * Send a message
    */
-  sendMessage(roomId: string, content: string, type: 'text' | 'file' | 'image' = 'text', replyTo?: string, fileIds?: string[], clientId?: string): void {
+  sendMessage(roomId: string, content: string, type: 'text' | 'file' | 'image' = 'text', replyTo?: string, fileIds?: string[], clientId?: string, id?: string): void {
     if (!this.socket?.connected) {
       console.warn('Socket not connected, cannot send message');
       return;
@@ -299,6 +302,11 @@ export class ChatSocketService {
       type,
       reply_to: replyTo,
     };
+
+    // Add id if provided (use id instead of messageId)
+    if (id) {
+      payload.id = id;
+    }
 
     // Add fileIds if provided
     if (fileIds && fileIds.length > 0) {
@@ -351,11 +359,13 @@ export class ChatSocketService {
       return;
     }
 
+    console.log('[Chat] - loadHistory - loading history', roomId, limit, before);
     this.socket.emit('message:history:load', {
       conversationId: roomId,
       limit,
       before,
     });
+    console.log('[Chat] - loadHistory - loaded history', roomId, limit, before);
   }
 
   /**

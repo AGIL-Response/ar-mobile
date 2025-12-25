@@ -50,6 +50,7 @@ export function usePagination({
     // - No messages available
     // - Called too recently (debounce - within 2000ms to prevent rapid firing)
     const now = Date.now();
+    console.log('[Chat] - usePagination - start loading more');
     if (
       !roomId ||
       isLoadingMore ||
@@ -60,18 +61,26 @@ export function usePagination({
       return;
     }
 
-    // Get the oldest message (last in reversed array)
-    const oldestMessageId = messages[messages.length - 1]?.id;
+    console.log('[Chat] - usePagination - loading more');
+    console.log('[Chat] - usePagination - messages length:', messagesLength);
+    console.log('[Chat] - usePagination - first message (index 0):', messages[0]?.id, messages[0]?.content);
+    console.log('[Chat] - usePagination - last message (index -1):', messages[messagesLength - 1]?.id, messages[messagesLength - 1]?.content);
+
+    // Get the oldest message for pagination
+    // After processMessagesForDisplay, the array is [oldest (index 0), ..., newest (last index)]
+    // So the oldest message is at index 0
+    const oldestMessageId = messages[0]?.id;
     if (!oldestMessageId) {
       // No oldest message means we can't load more
       return;
     }
 
+    console.log('[Chat] - usePagination - oldestMessageId', oldestMessageId);
     // If we're trying to load the same message again, skip (already loading that page)
     if (oldestMessageId === lastLoadedMessageIdRef.current) {
       return;
     }
-
+    console.log('[Chat] - usePagination - lastLoadedMessageIdRef', lastLoadedMessageIdRef.current);
     lastLoadMoreTimeRef.current = now;
     lastLoadedMessageIdRef.current = oldestMessageId;
     setIsLoadingMore(true);

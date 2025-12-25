@@ -13,6 +13,8 @@ export function chatAttachmentToAttachmentData(attachmentData: ChatAttachment, m
   mimeType: string;
   uploadedAt: Date;
   localPath?: string;
+  thumbnail?: string;
+  duration?: string;
 } {
   const attachmentId = typeof attachmentData.id === 'string' ? attachmentData.id : String(attachmentData.id);
   const validMessageId = typeof messageId === 'string' ? messageId : String(messageId);
@@ -29,6 +31,8 @@ export function chatAttachmentToAttachmentData(attachmentData: ChatAttachment, m
     mimeType: attachmentData.mimeType,
     uploadedAt: attachmentData.uploadedAt,
     localPath: isLocalPath ? attachmentData.url : undefined, // Store local path if it's a local file
+    thumbnail: attachmentData.thumbnail,
+    duration: attachmentData.duration,
   };
 }
 
@@ -46,6 +50,8 @@ export function attachmentToChatAttachment(attachment: Attachment): ChatAttachme
     size: attachment.size,
     mimeType: attachment.mimeType,
     uploadedAt: attachment.uploadedAt,
+    thumbnail: attachment.thumbnail,
+    duration: attachment.duration,
   };
 }
 

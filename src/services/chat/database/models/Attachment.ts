@@ -18,6 +18,8 @@ export default class Attachment extends Model {
   @field('mime_type') mimeType!: string;
   @date('uploaded_at') uploadedAt!: Date;
   @field('local_path') localPath?: string;
+  @field('thumbnail') thumbnail?: string;
+  @field('duration') duration?: string;
 
   @relation('messages', 'message_id') message!: Message;
 }

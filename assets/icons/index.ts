@@ -25,6 +25,7 @@ import CheckCircleBrokenIcon from './check-circle-broken.svg';
 import HourglassIcon from './hourglass.svg';
 import ClockFastForwardIcon from './clock-fast-forward.svg';
 import PlayIcon from './play.svg';
+import PauseIcon from './pause.svg';
 import UploadIcon from './upload.svg';
 import LockIcon from './lock.svg';
 import LogOutIcon from './log-out.svg';
@@ -64,6 +65,7 @@ export const iconNames = {
   hourglass: 'hourglass',
   clock_fast_forward: 'clockFastForward',
   play: 'play',
+  pause: 'pause',
   upload: 'upload',
   lock: 'lock',
   log_out: 'logOut',
@@ -105,6 +107,7 @@ const icons: Record<string, IconComponent> = {
   [iconNames.hourglass]: HourglassIcon,
   [iconNames.clock_fast_forward]: ClockFastForwardIcon,
   [iconNames.play]: PlayIcon,
+  [iconNames.pause]: PauseIcon,
   [iconNames.upload]: UploadIcon,
   [iconNames.lock]: LockIcon,
   [iconNames.log_out]: LogOutIcon,

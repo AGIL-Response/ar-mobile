@@ -9,6 +9,7 @@ import { Icon, Text } from '@/components';
 import { useTheme } from '@/theme';
 import { formatFileSize, getMediaType } from '@/utils/media';
 import type { ChatAttachment } from '@/services/chat';
+import { AudioAttachment } from './audio-attachment';
 
 export interface MessageAttachmentProps {
   attachments: ChatAttachment[];
@@ -35,6 +36,17 @@ export function MessageAttachment({
       {attachments.map((attachment, index) => {
         const mediaType = getMediaType(attachment.filename);
 
+        if (mediaType === 'audio') {
+          return (
+            <AudioAttachment
+              key={`${attachment.id}-${index}`}
+              attachment={attachment}
+              isOwnMessage={isOwnMessage}
+              onPress={onPress ? () => onPress(attachment, index) : undefined}
+            />
+          );
+        }
+
         return (
           <TouchableOpacity
             key={`${attachment.id}-${index}`}
@@ -50,15 +62,26 @@ export function MessageAttachment({
           >
             {mediaType === 'image' ? (
               <View>
-                <Image
-                  source={{ uri: attachment.url }}
-                  style={{
-                    width: MAX_ATTACHMENT_WIDTH,
-                    height: MAX_ATTACHMENT_WIDTH * 0.75,
-                    borderRadius: 12,
-                  }}
-                  resizeMode="cover"
-                />
+                {(() => {
+                  // Use thumbnail if available, otherwise fall back to full URL
+                  const imageUri = (attachment.thumbnail && attachment.thumbnail.trim()) 
+                    ? attachment.thumbnail.trim() 
+                    : (attachment.url && attachment.url.trim() ? attachment.url.trim() : null);
+                  
+                  if (!imageUri) return null;
+                  
+                  return (
+                    <Image
+                      source={{ uri: imageUri }}
+                      style={{
+                        width: MAX_ATTACHMENT_WIDTH,
+                        height: MAX_ATTACHMENT_WIDTH * 0.75,
+                        borderRadius: 12,
+                      }}
+                      resizeMode="cover"
+                    />
+                  );
+                })()}
                 {/* Overlay for better visibility */}
                 <View
                   style={{
@@ -94,15 +117,26 @@ export function MessageAttachment({
                   position: 'relative',
                 }}
               >
-                <Image
-                  source={{ uri: attachment.url }}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    position: 'absolute',
-                  }}
-                  resizeMode="cover"
-                />
+                {(() => {
+                  // Use thumbnail if available, otherwise fall back to full URL
+                  const thumbnailUri = (attachment.thumbnail && attachment.thumbnail.trim()) 
+                    ? attachment.thumbnail.trim() 
+                    : (attachment.url && attachment.url.trim() ? attachment.url.trim() : null);
+                  
+                  if (!thumbnailUri) return null;
+                  
+                  return (
+                    <Image
+                      source={{ uri: thumbnailUri }}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        position: 'absolute',
+                      }}
+                      resizeMode="cover"
+                    />
+                  );
+                })()}
                 {/* Play icon overlay */}
                 <View
                   style={{
@@ -139,60 +173,6 @@ export function MessageAttachment({
                     {attachment.filename}
                   </Text>
                 </View>
-              </View>
-            ) : mediaType === 'audio' ? (
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 12,
-                  gap: 12,
-                }}
-              >
-                <View
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 22,
-                    backgroundColor: isOwnMessage
-                      ? 'rgba(255, 255, 255, 0.2)'
-                      : theme.colors.background.secondary,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text style={{ fontSize: 24 }}>🎵</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    variant="body"
-                    style={{
-                      color: isOwnMessage ? '#FFFFFF' : theme.colors.text.primary,
-                      fontSize: 14,
-                      fontWeight: '500',
-                    }}
-                    numberOfLines={1}
-                  >
-                    {attachment.filename}
-                  </Text>
-                  <Text
-                    variant="caption"
-                    style={{
-                      color: isOwnMessage
-                        ? 'rgba(255, 255, 255, 0.7)'
-                        : theme.colors.text.secondary,
-                      fontSize: 12,
-                      marginTop: 2,
-                    }}
-                  >
-                    {formatFileSize(attachment.size)}
-                  </Text>
-                </View>
-                <Icon
-                  name="play"
-                  size={20}
-                  color={isOwnMessage ? '#FFFFFF' : theme.colors.text.secondary}
-                />
               </View>
             ) : (
               <View
