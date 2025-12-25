@@ -71,7 +71,7 @@ export function transformConversationToRoom(conversation: any): ChatRoom & { _la
     id,
     name: conversation.name || '',
     description: conversation.description,
-    type: conversation.type === 'dm' ? 'direct' : 'group',
+    type: conversation.type,
     avatar: conversation.avatarUrl,
     isPrivate: conversation.isPrivate ?? false,
     members: (conversation.members || []).map((m: any) => ({
@@ -137,7 +137,7 @@ export function transformMessageToChatMessage(message: any, roomId: string): Cha
           mimeType: a.mimeType || a.contentType || a.type || 'application/octet-stream',
           uploadedAt: a.uploadedAt ? new Date(a.uploadedAt) : new Date(),
           thumbnail: a.thumbnail || undefined,
-          duration: a.duration || undefined,
+          duration: a.duration ? String(a.duration) : undefined, // Ensure duration is a string
         }));
         return transformed;
       })(),

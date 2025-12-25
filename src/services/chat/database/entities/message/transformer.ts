@@ -233,10 +233,12 @@ export async function messageToChatMessage(message: Message, getUserFn: (userId:
     attachments: attachments.map((a) => ({
       id: a.attachmentId,
       filename: a.filename,
-      url: a.url,
+      url: a.url || a.localPath || '',
       size: a.size,
       mimeType: a.mimeType,
       uploadedAt: a.uploadedAt,
+      thumbnail: a.thumbnail,
+      duration: a.duration,
     })),
     timestamp: message.createdAt,
     editedAt: message.editedAt ? new Date(message.editedAt) : undefined,
