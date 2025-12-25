@@ -16,9 +16,11 @@ import { useRoomData } from './hooks/use-room-data';
 import { useMessages } from './hooks/use-messages';
 import { usePagination } from './hooks/use-pagination';
 import { useScrollHandler } from './hooks/use-scroll-handler';
+import { useScrollPositionPreservation } from './hooks/use-scroll-position-preservation';
 import { useMediaViewer } from './hooks/use-media-viewer';
 import { useMessageActions } from './hooks/use-message-actions';
 import { useMessageRenderer } from './hooks/use-message-renderer';
+import { useInitialMessagesLoading } from './hooks/use-initial-messages-loading';
 import { getRoomDisplayName } from './utils/room-name';
 import type { ChatMessage, ChatAttachment } from '@/services/chat';
 import { useAudioPlayerStore } from '@/stores/audio-player';
@@ -41,16 +43,32 @@ export default function ChatRoomScreen() {
   const { room, isLoading } = useRoomData({ roomId });
   const { messages, messagesRef } = useMessages({ roomId });
   const messagesLength = useMemo(() => messages.length, [messages.length]);
+  const { isInitialLoading } = useInitialMessagesLoading({
+    roomId,
+    messages,
+    isLoading,
+  });
   const { isLoadingMore, handleLoadMore } = usePagination({
     roomId,
     messages,
     messagesLength,
     isLoading,
   });
-  const { handleScroll } = useScrollHandler({
+  const { handleScroll: handleScrollBase } = useScrollHandler({
     isLoading,
     messagesLength,
     flatListRef,
+  });
+
+  const {
+    shouldMaintainScrollAtEnd,
+    handleContentSizeChange: handleContentSizeChangePreserved,
+    handleScroll: handleScrollPreserved,
+  } = useScrollPositionPreservation({
+    flatListRef,
+    isLoadingMore,
+    messagesLength,
+    onScroll: handleScrollBase,
   });
   const {
     mediaViewerVisible,
@@ -92,11 +110,13 @@ export default function ChatRoomScreen() {
     [theme.spacing.gap.md, theme.spacing.gap.xl]
   );
 
-  // Memoize onContentSizeChange callback
-  const handleContentSizeChange = () => {
-    // LegendList handles content size changes internally
-    // This callback is kept for potential future debugging if needed
+  // Use preserved content size change handler
+  const handleContentSizeChange = (contentWidth: number, contentHeight: number) => {
+    handleContentSizeChangePreserved(contentWidth, contentHeight);
   };
+
+  // LegendList handles initial scroll position natively via initialScrollIndex
+  // No need for manual scroll-to-bottom effects
 
   useEffect(() => {
     return () => {
@@ -125,38 +145,64 @@ export default function ChatRoomScreen() {
         />
         {/* Container with explicit flex: 1 - required for LegendList */}
         <View style={{ flex: 1, paddingBottom: insets.bottom }}>
-          <LegendList
-            ref={flatListRef}
-            data={messages}
-            keyExtractor={keyExtractor}
-            renderItem={renderItem}
-            contentContainerStyle={contentContainerStyle}
-            // Chat-specific optimizations
-            // alignItemsAtEnd: aligns items to bottom (messages start at bottom)
-            // maintainScrollAtEnd: keeps scroll at bottom when new messages arrive
-            // maintainScrollAtEndThreshold: 10% of screen height counts as "bottom" (default is 0.1)
-            alignItemsAtEnd={true}
-            maintainScrollAtEnd={true}
-            maintainScrollAtEndThreshold={0.1}
-            recycleItems={true}
-            initialScrollIndex={messages.length - 1}
-            // Performance optimizations to prevent container pool warnings
-            // estimatedItemSize: average height of a chat message (text-only, 1-2 lines)
-            // This helps LegendList pre-allocate containers more accurately
-            estimatedItemSize={75}
-            // initialContainerPoolRatio: create more containers upfront to handle varying message sizes
-            // Default is 2, increased to 4 to accommodate messages with attachments/date separators
-            initialContainerPoolRatio={4}
-            // Event handlers
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            onContentSizeChange={handleContentSizeChange}
-            onStartReached={handleLoadMore}
-            onStartReachedThreshold={0.1}
-            extraData={room?.type}
-            ListHeaderComponent={<MessageListHeader isLoadingMore={isLoadingMore} />}
-            ListEmptyComponent={<EmptyState isLoading={isLoading} />}
-          />
+          {/* Always render LegendList to ensure proper initialization */}
+          {/* Use pointerEvents to disable interaction during loading */}
+          <View style={{ flex: 1 }} pointerEvents={isInitialLoading ? 'none' : 'auto'}>
+            <LegendList
+              ref={flatListRef}
+              data={messages}
+              keyExtractor={keyExtractor}
+              renderItem={renderItem}
+              contentContainerStyle={contentContainerStyle}
+              // Chat-specific optimizations following LegendList best practices
+              // alignItemsAtEnd: aligns items to bottom (messages start at bottom)
+              // maintainScrollAtEnd: keeps scroll at bottom when new messages arrive (but not during pagination)
+              // maintainScrollAtEndThreshold: 10% of screen height counts as "bottom" (default is 0.1)
+              // maintainVisibleContentPosition: maintains scroll position when content changes (important for pagination)
+              // initialScrollIndex: scroll to last message (newest) when list first renders - LegendList handles this natively
+              alignItemsAtEnd={true}
+              maintainScrollAtEnd={shouldMaintainScrollAtEnd}
+              maintainScrollAtEndThreshold={0.1}
+              maintainVisibleContentPosition={true}
+              initialScrollIndex={messages.length > 0 ? messages.length - 1 : undefined}
+              recycleItems={true}
+              // Performance optimizations to prevent container pool warnings
+              // estimatedItemSize: average height of a chat message (text-only, 1-2 lines)
+              // This helps LegendList pre-allocate containers more accurately
+              estimatedItemSize={75}
+              // initialContainerPoolRatio: create more containers upfront to handle varying message sizes
+              // Default is 2, increased to 4 to accommodate messages with attachments/date separators
+              initialContainerPoolRatio={4}
+              // Event handlers
+              onScroll={handleScrollPreserved}
+              scrollEventThrottle={16}
+              onContentSizeChange={handleContentSizeChange}
+              onStartReached={handleLoadMore}
+              onStartReachedThreshold={0.1}
+              extraData={room?.type}
+              ListHeaderComponent={<MessageListHeader isLoadingMore={isLoadingMore} />}
+              ListEmptyComponent={<EmptyState isLoading={isInitialLoading || (messages.length === 0 && isLoading)} />}
+            />
+          </View>
+
+          {/* Loading overlay - shown during initial load */}
+          {isInitialLoading && (
+            <View
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: theme.colors.background.primary,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+              pointerEvents="auto"
+            >
+              <EmptyState isLoading={true} />
+            </View>
+          )}
 
           <Composer
             onSend={handleSend}

@@ -360,10 +360,10 @@ export class ChatSocketService {
     }
 
     console.log('[Chat] - loadHistory - loading history', roomId, limit, before);
-    this.socket.emit('message:history:load', {
+    this.socket.emitWithAck('message:history:load', {
       conversationId: roomId,
       limit,
-      before,
+      beforeId: before,
     });
     console.log('[Chat] - loadHistory - loaded history', roomId, limit, before);
   }

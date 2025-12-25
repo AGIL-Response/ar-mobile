@@ -21,6 +21,8 @@ const INITIAL_SCROLL_DELAY_MS = 300;
 
 /**
  * Hook to manage scroll state and auto-scroll behavior
+ * Note: LegendList handles initial scroll position natively via initialScrollIndex
+ * This hook only handles scroll event tracking
  */
 export function useScrollHandler({
   isLoading,
@@ -29,18 +31,6 @@ export function useScrollHandler({
 }: UseScrollHandlerParams): UseScrollHandlerReturn {
   const [hasScrolledFarUp, setHasScrolledFarUp] = useState(false);
   const isAutoScrollingRef = useRef<boolean>(false);
-
-  // Scroll to bottom on initial load to ensure we start at the bottom
-  // Even with alignItemsAtEnd, we may need to explicitly scroll on first render
-  useEffect(() => {
-    if (!isLoading && messagesLength > 0 && flatListRef.current) {
-      // Small delay to ensure list is fully rendered
-      const timeoutId = setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: false });
-      }, INITIAL_SCROLL_DELAY_MS);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [isLoading, messagesLength, flatListRef]);
 
   // Handle scroll events to detect if user scrolled away from bottom (newest messages)
   const handleScroll = useCallback((event: any) => {
