@@ -15,7 +15,6 @@ import { Composer, MediaViewer, MessageListHeader, EmptyState } from './componen
 import { useRoomData } from './hooks/use-room-data';
 import { useMessages } from './hooks/use-messages';
 import { usePagination } from './hooks/use-pagination';
-import { useScrollHandler } from './hooks/use-scroll-handler';
 import { useScrollPositionPreservation } from './hooks/use-scroll-position-preservation';
 import { useMediaViewer } from './hooks/use-media-viewer';
 import { useMessageActions } from './hooks/use-message-actions';
@@ -54,21 +53,8 @@ export default function ChatRoomScreen() {
     messagesLength,
     isLoading,
   });
-  const { handleScroll: handleScrollBase } = useScrollHandler({
-    isLoading,
-    messagesLength,
-    flatListRef,
-  });
-
-  const {
-    shouldMaintainScrollAtEnd,
-    handleContentSizeChange: handleContentSizeChangePreserved,
-    handleScroll: handleScrollPreserved,
-  } = useScrollPositionPreservation({
-    flatListRef,
+  const { shouldMaintainScrollAtEnd } = useScrollPositionPreservation({
     isLoadingMore,
-    messagesLength,
-    onScroll: handleScrollBase,
   });
   const {
     mediaViewerVisible,
@@ -110,13 +96,6 @@ export default function ChatRoomScreen() {
     [theme.spacing.gap.md, theme.spacing.gap.xl]
   );
 
-  // Use preserved content size change handler
-  const handleContentSizeChange = (contentWidth: number, contentHeight: number) => {
-    handleContentSizeChangePreserved(contentWidth, contentHeight);
-  };
-
-  // LegendList handles initial scroll position natively via initialScrollIndex
-  // No need for manual scroll-to-bottom effects
 
   useEffect(() => {
     return () => {
@@ -174,9 +153,7 @@ export default function ChatRoomScreen() {
               // Default is 2, increased to 4 to accommodate messages with attachments/date separators
               initialContainerPoolRatio={4}
               // Event handlers
-              onScroll={handleScrollPreserved}
               scrollEventThrottle={16}
-              onContentSizeChange={handleContentSizeChange}
               onStartReached={handleLoadMore}
               onStartReachedThreshold={0.1}
               extraData={room?.type}
