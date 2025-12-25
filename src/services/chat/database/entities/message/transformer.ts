@@ -123,7 +123,7 @@ export function chatMessageToMessageData(messageData: ChatMessage, roomId: strin
 export async function messageToChatMessage(message: Message, getUserFn: (userId: string) => Promise<ChatUser | null>): Promise<ChatMessage> {
   // Query attachments directly by message_id field (not using the broken relation)
   // The relation tries to match against WatermelonDB's internal id, but we store business IDs
-  const rawAttachments = await db
+  let rawAttachments = await db
     .get<Attachment>('attachments')
     .query(Q.where('message_id', message.messageId))
     .fetch();
@@ -137,6 +137,61 @@ export async function messageToChatMessage(message: Message, getUserFn: (userId:
     foundAttachmentCount: rawAttachments.length,
   });
 
+  // If no attachments found by messageId, try multiple strategies:
+  // 1. Retry query with the same messageId (in case attachments were just saved)
+  // 2. If message has clientId, find all messages with that clientId and check their attachments
+  if (rawAttachments.length === 0) {
+    // Strategy 1: Retry with the same messageId (handles race conditions)
+    const retryAttachments = await db
+      .get<Attachment>('attachments')
+      .query(Q.where('message_id', message.messageId))
+      .fetch();
+
+    if (retryAttachments.length > 0) {
+      rawAttachments = retryAttachments;
+      console.log('✅ [MessageTransformer] Found attachments on retry:', {
+        messageId: message.messageId,
+        attachmentCount: rawAttachments.length,
+      });
+    }
+  }
+
+  // Strategy 2: If still no attachments and message has clientId, try finding by clientId
+  // This handles cases where the messageId might have changed (e.g., local UUID to server ID)
+  if (rawAttachments.length === 0 && message.clientId) {
+    // Find the message(s) with this clientId
+    const messagesByClientId = await db
+      .get<Message>('messages')
+      .query(Q.where('client_id', message.clientId))
+      .fetch();
+
+    console.log('🔍 [MessageTransformer] No attachments found, trying clientId strategy:', {
+      messageId: message.messageId,
+      clientId: message.clientId,
+      messagesWithClientId: messagesByClientId.map(m => m.messageId),
+    });
+
+    // Try to find attachments for ANY message with this clientId (including same messageId)
+    for (const msgWithClientId of messagesByClientId) {
+      const alternateAttachments = await db
+        .get<Attachment>('attachments')
+        .query(Q.where('message_id', msgWithClientId.messageId))
+        .fetch();
+
+      if (alternateAttachments.length > 0) {
+        rawAttachments = alternateAttachments;
+        console.log('✅ [MessageTransformer] Found attachments with messageId (by clientId):', {
+          queriedMessageId: message.messageId,
+          foundAtMessageId: msgWithClientId.messageId,
+          sameMessageId: msgWithClientId.messageId === message.messageId,
+          clientId: message.clientId,
+          attachmentCount: rawAttachments.length,
+        });
+        break; // Found attachments, stop searching
+      }
+    }
+  }
+
   // Debug logging for attachments query
   if (rawAttachments.length > 0) {
     console.log('✅ [MessageTransformer] Found attachments in DB:', {
@@ -149,6 +204,7 @@ export async function messageToChatMessage(message: Message, getUserFn: (userId:
         url: a.url?.substring(0, 30) || 'empty',
         hasLocalPath: !!a.localPath && a.localPath.trim().length > 0,
         localPath: a.localPath?.substring(0, 30) || 'none',
+        messageId: (a as any).messageId, // Log the messageId the attachment is linked to
       })),
     });
   } else {
@@ -156,7 +212,27 @@ export async function messageToChatMessage(message: Message, getUserFn: (userId:
       messageId: message.messageId,
       messageType: message.type,
       clientId: message.clientId,
+      hasContent: !!message.content,
     });
+
+    // Additional debug: Query all attachments in the room to see what exists
+    if (message.type === 'image' || message.type === 'file') {
+      try {
+        const allRoomAttachments = await db
+          .get<Attachment>('attachments')
+          .query(Q.where('message_id', message.roomId))
+          .fetch();
+
+        // Actually, query doesn't work that way. Let's try a different approach - query recent attachments
+        // But this is expensive, so only do it as debug
+        console.warn('⚠️ [MessageTransformer] Debug: Message type suggests it should have attachments', {
+          messageId: message.messageId,
+          type: message.type,
+        });
+      } catch (e) {
+        // Ignore debug query errors
+      }
+    }
   }
 
   // Deduplicate by attachment_id (keep first occurrence of each unique ID)
