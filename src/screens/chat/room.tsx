@@ -140,6 +140,13 @@ export default function ChatRoomScreen() {
             maintainScrollAtEndThreshold={0.1}
             recycleItems={true}
             initialScrollIndex={messages.length - 1}
+            // Performance optimizations to prevent container pool warnings
+            // estimatedItemSize: average height of a chat message (text-only, 1-2 lines)
+            // This helps LegendList pre-allocate containers more accurately
+            estimatedItemSize={75}
+            // initialContainerPoolRatio: create more containers upfront to handle varying message sizes
+            // Default is 2, increased to 4 to accommodate messages with attachments/date separators
+            initialContainerPoolRatio={4}
             // Event handlers
             onScroll={handleScroll}
             scrollEventThrottle={16}
