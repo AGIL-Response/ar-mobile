@@ -1,11 +1,10 @@
 import { getDatabase } from '../../index';
 import type Room from '../../models/Room';
 import type Message from '../../models/Message';
-import type { ChatRoom } from '../../../types';
+import type { ChatRoom, ChatMessage } from '../../../types';
 import { Q } from '@nozbe/watermelondb';
 import { switchMap, of, distinctUntilChanged } from 'rxjs';
 import { chatRoomToRoomData, type RoomToChatRoomContext } from './transformer';
-import type { ChatMessage } from '../../../types';
 import { messageToChatMessage } from '../message/transformer';
 import { getUser } from '../user/operator';
 
@@ -14,8 +13,8 @@ const db = getDatabase();
 /**
  * Upsert a room (create or update)
  */
-export async function upsertRoom(roomData: ChatRoom): Promise<Room> {
-  const roomDataTransformed = chatRoomToRoomData(roomData);
+export async function upsertRoom(roomData: ChatRoom, lastMessageAtOverride?: number | string | Date): Promise<Room> {
+  const roomDataTransformed = chatRoomToRoomData(roomData, lastMessageAtOverride);
   const roomId = roomDataTransformed.roomId;
 
   // Check if room exists
@@ -78,37 +77,44 @@ export async function roomToChatRoom(
 ): Promise<ChatRoom> {
   let lastMessage: ChatMessage | undefined = undefined;
 
-  // Fetch the actual last message from messages table for this room
-  // Query the most recent non-deleted message instead of relying on last_message_id which might be stale
-  try {
-    const messages = await db
-      .get<Message>('messages')
-      .query(
-        Q.where('room_id', room.roomId),
-        Q.where('deleted_at', null),
-        Q.sortBy('created_at', Q.desc)
-      )
-      .fetch();
-
-    if (messages.length > 0) {
-      // Sort by timestamp to ensure we get the truly most recent message
-      // Use server_created_at as fallback if created_at is not available
-      const sortedMessages = [...messages].sort((a, b) => {
-        const timeA = a.createdAt?.getTime() || (a.serverCreatedAt ? new Date(a.serverCreatedAt).getTime() : 0);
-        const timeB = b.createdAt?.getTime() || (b.serverCreatedAt ? new Date(b.serverCreatedAt).getTime() : 0);
-        // Descending: larger time (newer) comes first
-        return timeB - timeA;
-      });
-
-      lastMessage = await messageToChatMessage(sortedMessages[0], getUser);
-    } else if (room.lastMessageId && getLastMessageFn) {
-      // Fall back to last_message_id if no messages found (shouldn't happen, but just in case)
+  // Use lastMessageId from the room (which comes from socket event conversation:list)
+  // The lastMessage is already saved when the room is saved from the socket event
+  // Only query all messages as a fallback if lastMessageId is not available
+  if (room.lastMessageId && getLastMessageFn) {
+    try {
       lastMessage = await getLastMessageFn(room.lastMessageId);
+    } catch (error) {
+      console.warn('[RoomOperator] Failed to fetch last message by ID:', error, { roomId: room.roomId, lastMessageId: room.lastMessageId });
     }
-  } catch {
-    // If query fails, fall back to last_message_id if available
-    if (room.lastMessageId && getLastMessageFn) {
-      lastMessage = await getLastMessageFn(room.lastMessageId);
+  }
+
+  // Fallback: If lastMessageId is not available or fetch failed, query the most recent message
+  if (!lastMessage) {
+    try {
+      const messages = await db
+        .get<Message>('messages')
+        .query(
+          Q.where('room_id', room.roomId),
+          Q.where('deleted_at', null),
+          Q.sortBy('created_at', Q.desc)
+        )
+        .fetch();
+
+      if (messages.length > 0) {
+        // Sort by timestamp to ensure we get the truly most recent message
+        // Use serverCreatedAt first since it's the actual message timestamp from server
+        // Fallback to createdAt (local database timestamp) if serverCreatedAt is not available
+        const sortedMessages = [...messages].sort((a, b) => {
+          const timeA = a.serverCreatedAt ? new Date(a.serverCreatedAt).getTime() : (a.createdAt?.getTime() || 0);
+          const timeB = b.serverCreatedAt ? new Date(b.serverCreatedAt).getTime() : (b.createdAt?.getTime() || 0);
+          // Descending: larger time (newer) comes first
+          return timeB - timeA;
+        });
+
+        lastMessage = await messageToChatMessage(sortedMessages[0], getUser);
+      }
+    } catch (error) {
+      console.warn('[RoomOperator] Failed to query messages for last message:', error, { roomId: room.roomId });
     }
   }
 
@@ -132,6 +138,7 @@ export async function roomToChatRoom(
     isPrivate: room.isPrivate,
     members: context.members,
     lastMessage,
+    lastMessageAt: room.lastMessageAt ? new Date(room.lastMessageAt) : undefined,
     unreadCount: room.unreadCount,
     createdAt: room.createdAt,
     updatedAt: room.updatedAt,

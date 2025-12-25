@@ -7,18 +7,18 @@ function ensureStringId(value: any, fieldName: string = 'id'): string {
   if (value === null || value === undefined) {
     throw new Error(`${fieldName} is null or undefined`);
   }
-  
+
   if (typeof value === 'string') {
     if (value.trim() === '' || value === '[object Object]' || value === 'undefined' || value === 'null') {
       throw new Error(`Invalid string ID for ${fieldName}: '${value}'`);
     }
     return value;
   }
-  
+
   if (typeof value === 'number') {
     return String(value);
   }
-  
+
   if (typeof value === 'object') {
     // Try to extract an ID field from the object
     const possibleIdFields = ['id', '_id', 'uuid', 'uid'];
@@ -27,7 +27,7 @@ function ensureStringId(value: any, fieldName: string = 'id'): string {
         return value[key];
       }
     }
-    
+
     // If it has a toString method that returns something useful, use it
     if (typeof value.toString === 'function') {
       const stringValue = value.toString();
@@ -35,7 +35,7 @@ function ensureStringId(value: any, fieldName: string = 'id'): string {
         return stringValue;
       }
     }
-    
+
     // Last resort: try JSON.stringify, but this is not ideal for IDs
     try {
       const stringified = JSON.stringify(value);
@@ -46,12 +46,12 @@ function ensureStringId(value: any, fieldName: string = 'id'): string {
     } catch (e) {
       // JSON.stringify failed (circular reference, etc.)
     }
-    
+
     // If we get here, we couldn't convert the object to a valid string ID
     console.error(`Cannot convert object to string ID for ${fieldName}:`, value);
     throw new Error(`${fieldName} is an object that cannot be converted to a string ID: ${JSON.stringify(value)}`);
   }
-  
+
   // For any other type, try String() conversion
   const stringValue = String(value);
   if (stringValue === '[object Object]' || stringValue === 'undefined' || stringValue === 'null') {
@@ -63,12 +63,11 @@ function ensureStringId(value: any, fieldName: string = 'id'): string {
 /**
  * Transform API conversation response to ChatRoom
  */
-export function transformConversationToRoom(conversation: any): ChatRoom {
+export function transformConversationToRoom(conversation: any): ChatRoom & { _lastMessageAt?: string | Date } {
   // Ensure ID is a string - handle all cases
   const id = ensureStringId(conversation.id, 'conversation.id');
-  const lastMessageId = conversation.lastMessage ? ensureStringId(conversation.lastMessage.id, 'transformConversationToRoom.lastMessage.id') : undefined;
 
-  return {
+  const room: ChatRoom & { _lastMessageAt?: string | Date } = {
     id,
     name: conversation.name || '',
     description: conversation.description,
@@ -79,7 +78,8 @@ export function transformConversationToRoom(conversation: any): ChatRoom {
       id: ensureStringId(m.userId || m.id, 'transformConversationToRoom.member.id'),
       username: m.username,
       displayName: m.displayName,
-      avatarUrl: m.avatarUrl,
+      // Use avatar.id (file ID) if available, otherwise fall back to avatarUrl
+      avatarUrl: m.avatar?.id || m.avatarUrl,
       status: m.status,
       lastSeen: m.lastSeen ? new Date(m.lastSeen) : undefined,
     })),
@@ -88,6 +88,13 @@ export function transformConversationToRoom(conversation: any): ChatRoom {
     createdAt: conversation.createdAt ? new Date(conversation.createdAt) : new Date(),
     updatedAt: conversation.updatedAt ? new Date(conversation.updatedAt) : new Date(),
   };
+
+  // Extract lastMessageAt from conversation object if available
+  if (conversation.lastMessageAt) {
+    room._lastMessageAt = conversation.lastMessageAt;
+  }
+
+  return room;
 }
 
 /**
@@ -121,7 +128,7 @@ export function transformMessageToChatMessage(message: any, roomId: string): Cha
           ...(Array.isArray(message.attachments) ? message.attachments : []),
           ...(Array.isArray(message.files) ? message.files : []),
         ].filter((a) => a != null); // Filter out null and undefined values
-        
+
         const transformed = attachmentsArray.map((a: any) => ({
           id: ensureStringId(a.id || a.fileId || a.key || '', 'attachment.id'),
           filename: a.filename || a.name || a.key || 'file',

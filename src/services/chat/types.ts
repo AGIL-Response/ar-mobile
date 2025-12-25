@@ -17,6 +17,7 @@ export interface ChatRoom {
   isPrivate?: boolean;
   members: ChatUser[];
   lastMessage?: ChatMessage;
+  lastMessageAt?: Date; // Timestamp from server (conversation.lastMessageAt)
   unreadCount: number;
   createdAt: Date;
   updatedAt: Date;

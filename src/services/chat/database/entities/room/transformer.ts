@@ -60,11 +60,14 @@ function ensureStringId(value: any, fieldName: string = 'id'): string {
 /**
  * Convert ChatRoom to WatermelonDB Room model data
  */
-export function chatRoomToRoomData(roomData: ChatRoom): {
+export function chatRoomToRoomData(
+  roomData: ChatRoom,
+  lastMessageAtOverride?: number | string | Date
+): {
   roomId: string;
   name: string;
   description?: string;
-  type: 'direct' | 'group';
+  type: 'dm' | 'group';
   avatarUrl?: string;
   isPrivate: boolean;
   unreadCount: number;
@@ -107,7 +110,7 @@ export function chatRoomToRoomData(roomData: ChatRoom): {
     roomId,
     name: roomData.name,
     description: roomData.description,
-    type: roomData.type,
+    type: roomData.type === 'direct' ? 'dm' : roomData.type, // Convert 'direct' to 'dm' for database
     avatarUrl: roomData.avatar,
     isPrivate: roomData.isPrivate ?? false,
     unreadCount: roomData.unreadCount,
@@ -116,9 +119,25 @@ export function chatRoomToRoomData(roomData: ChatRoom): {
           ? roomData.lastMessage.id
           : String(roomData.lastMessage.id))
       : undefined,
-    lastMessageAt: roomData.lastMessage
-      ? roomData.lastMessage.timestamp.getTime()
-      : undefined,
+    lastMessageAt: (() => {
+      // Use override if provided (from conversation.lastMessageAt)
+      if (lastMessageAtOverride !== undefined) {
+        if (typeof lastMessageAtOverride === 'number') {
+          return lastMessageAtOverride;
+        }
+        if (typeof lastMessageAtOverride === 'string') {
+          return new Date(lastMessageAtOverride).getTime();
+        }
+        if (lastMessageAtOverride instanceof Date) {
+          return lastMessageAtOverride.getTime();
+        }
+      }
+      // Fallback to lastMessage.timestamp if available
+      if (roomData.lastMessage) {
+        return roomData.lastMessage.timestamp.getTime();
+      }
+      return undefined;
+    })(),
     serverCreatedAt: createdAt.toISOString(),
     serverUpdatedAt: updatedAt.toISOString(),
   };

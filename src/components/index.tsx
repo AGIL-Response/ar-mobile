@@ -17,6 +17,7 @@ export * from './types';
 // Core components
 export * from './app-bar';
 export * from './avatar';
+export * from './group-avatar';
 export * from './background';
 export * from './badge';
 export * from './button';

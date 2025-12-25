@@ -18,10 +18,14 @@ export class ChatDbService {
   /**
    * Save or update a room
    */
-  async saveRoom(roomData: ChatRoom): Promise<void> {
+  async saveRoom(roomData: ChatRoom & { _lastMessageAt?: string | Date }): Promise<void> {
     const roomId = typeof roomData.id === 'string' ? roomData.id : String(roomData.id);
 
-    await RoomEntity.upsertRoom(roomData);
+    // Extract lastMessageAt from roomData if available (from conversation.lastMessageAt)
+    // This ensures we use the correct lastMessageAt from the server instead of calculating from message timestamp
+    const lastMessageAtOverride = roomData._lastMessageAt;
+
+    await RoomEntity.upsertRoom(roomData, lastMessageAtOverride);
 
     // Save members
     if (roomData.members && roomData.members.length > 0) {

@@ -6,9 +6,10 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { ChatRoom } from '@/services/chat';
-import { Avatar, Text, View } from '@/components';
+import { Avatar, GroupAvatar, Text, View } from '@/components';
 import type { Theme } from '@/theme';
 import { useTheme } from '@/theme';
+import useAuthStore from '@/stores/auth';
 
 export interface RoomCardProps {
   room: ChatRoom;
@@ -18,6 +19,7 @@ export interface RoomCardProps {
 export function RoomCard({ room, onPress }: RoomCardProps) {
   const theme = useTheme();
   const styles = createStyles(theme, room.unreadCount);
+  const currentUsername = useAuthStore((state) => state.user?.username);
 
   const handlePress = () => {
     onPress?.(room);
@@ -39,7 +41,7 @@ export function RoomCard({ room, onPress }: RoomCardProps) {
   };
 
   const getRoomName = () => {
-    if (room.type === 'direct' && room.members.length > 0) {
+    if (room.type === 'dm' && room.members.length > 0) {
       const otherMember = room.members.find(
         (m) => m.id !== room.members[0]?.id
       );
@@ -49,7 +51,15 @@ export function RoomCard({ room, onPress }: RoomCardProps) {
   };
 
   const getRoomAvatar = () => {
-    if (room.type === 'direct' && room.members.length > 0) {
+    if (room.type === 'dm' && room.members.length > 0 && currentUsername) {
+      // Find the member that is NOT the current user
+      const otherMember = room.members.find(
+        (m) => m.username !== currentUsername
+      );
+      return otherMember?.avatarUrl;
+    }
+    // Fallback: if no currentUsername, use the first member that's not the first one
+    if (room.type === 'dm' && room.members.length > 0) {
       const otherMember = room.members.find(
         (m) => m.id !== room.members[0]?.id
       );
@@ -58,28 +68,60 @@ export function RoomCard({ room, onPress }: RoomCardProps) {
     return room.avatar;
   };
 
-  const lastMessagePreview = room.lastMessage
-    ? room.lastMessage.type === 'image'
-      ? '📷 Image'
-      : room.lastMessage.type === 'file'
-      ? '📎 File'
-      : room.lastMessage.content
-    : 'No messages yet';
+  const getLastMessagePreview = () => {
+    if (!room.lastMessage) {
+      return 'No messages yet';
+    }
+
+    const { content, attachments, files } = room.lastMessage;
+
+    // If there's content, show it
+    if (content && content.trim().length > 0) {
+      return content;
+    }
+
+    // If no content but has attachments or files, show "Sent an attachment"
+    const hasAttachments = (attachments && attachments.length > 0) || (files && files.length > 0);
+    if (hasAttachments) {
+      return 'Sent an attachment';
+    }
+
+    // Fallback for system messages or other types
+    if (room.lastMessage.type === 'image') {
+      return '📷 Image';
+    }
+    if (room.lastMessage.type === 'file') {
+      return '📎 File';
+    }
+
+    return 'No messages yet';
+  };
+
+  const lastMessagePreview = getLastMessagePreview();
 
   return (
     <TouchableOpacity onPress={handlePress} activeOpacity={0.7} style={styles.card}>
       {/* Avatar */}
       <View style={styles.avatarContainer}>
-        <Avatar
-          fileId={getRoomAvatar()}
-          size="medium"
-          fallback={getRoomName().charAt(0).toUpperCase()}
-          showStatus={room.type === 'direct'}
-          isOnline={
-            room.type === 'direct' &&
-            room.members.find((m) => m.status === 'online') !== undefined
-          }
-        />
+        {room.type === 'group' ? (
+          <GroupAvatar
+            members={room.members}
+            size="medium"
+            maxAvatars={4}
+            fallback={getRoomName().charAt(0).toUpperCase()}
+          />
+        ) : (
+          <Avatar
+            fileId={getRoomAvatar()}
+            size="medium"
+            fallback={getRoomName().charAt(0).toUpperCase()}
+            showStatus={room.type === 'dm'}
+            isOnline={
+              room.type === 'dm' &&
+              room.members.find((m) => m.status === 'online') !== undefined
+            }
+          />
+        )}
         {room.unreadCount > 0 && (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>
@@ -95,9 +137,9 @@ export function RoomCard({ room, onPress }: RoomCardProps) {
           <Text variant="body" style={styles.roomName} numberOfLines={1}>
             {getRoomName()}
           </Text>
-          {room.lastMessage && (
+          {(room.lastMessageAt || room.lastMessage) && (
             <Text variant="caption" style={styles.timestamp}>
-              {formatTime(room.lastMessage.timestamp)}
+              {formatTime(room.lastMessageAt || room.lastMessage?.timestamp)}
             </Text>
           )}
         </View>
