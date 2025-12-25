@@ -40,6 +40,48 @@ export function buildLocalMessage(options: MessageBuilderOptions): ChatMessage {
   const messageId = generateUUID();
   const clientId = generateClientId();
 
+  // Build attachments with local file paths for immediate preview
+  // Priority: use local file URI from attachmentsToSend, otherwise use localAttachments URL
+  const attachments: ChatAttachment[] | undefined = 
+    attachmentsToSend.length > 0
+      ? attachmentsToSend.map((file, idx) => {
+          const localAtt = localAttachments[idx];
+          const attachment = {
+            id: localAtt?.id || generateUUID(), // Use uploaded fileId if available, otherwise generate UUID
+            filename: file.name || localAtt?.filename || 'file',
+            url: file.uri || localAtt?.url || '', // Use local file URI for immediate preview
+            size: file.size || localAtt?.size || 0,
+            mimeType: file.mimeType || getMimeType(file.name) || localAtt?.mimeType || 'application/octet-stream',
+            uploadedAt: localAtt?.uploadedAt || new Date(),
+            thumbnail: localAtt?.thumbnail,
+            // Priority: use duration from file (for audio recordings), then localAtt, then undefined
+            duration: file.duration || localAtt?.duration,
+          };
+          
+          // Debug logging
+          console.log('[MessageBuilder] Building attachment with local path:', {
+            filename: attachment.filename,
+            url: attachment.url?.substring(0, 50) + '...',
+            hasLocalUri: !!file.uri,
+            hasLocalAttUrl: !!localAtt?.url,
+          });
+          
+          return attachment;
+        })
+      : localAttachments.length > 0
+      ? localAttachments
+      : undefined;
+  
+  // Debug logging
+  if (attachments && attachments.length > 0) {
+    console.log('[MessageBuilder] Built local message with attachments:', {
+      messageId,
+      attachmentCount: attachments.length,
+      type,
+      hasContent: !!content,
+    });
+  }
+
   return {
     id: messageId,
     roomId,
@@ -52,12 +94,7 @@ export function buildLocalMessage(options: MessageBuilderOptions): ChatMessage {
     },
     content,
     type,
-    attachments: localAttachments.length > 0
-      ? localAttachments.map((att, idx) => ({
-          ...att,
-          url: attachmentsToSend[idx]?.uri || att.url, // Use local URI temporarily
-        }))
-      : undefined,
+    attachments,
     timestamp: new Date(),
     replyTo,
     status: 'sending',

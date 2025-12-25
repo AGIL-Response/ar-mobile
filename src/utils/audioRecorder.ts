@@ -79,7 +79,7 @@ export class AudioRecorder {
       console.log('🎙️ Started audio recording');
     } catch (error) {
       console.error('Error starting recording:', error);
-      
+
       // Provide more user-friendly error messages
       let errorMessage = 'Failed to start recording';
       if (error instanceof Error) {
@@ -89,7 +89,7 @@ export class AudioRecorder {
           errorMessage = error.message;
         }
       }
-      
+
       if (this.options.onError) {
         this.options.onError(new Error(errorMessage));
       }
@@ -107,10 +107,34 @@ export class AudioRecorder {
     }
 
     try {
+      // Get recording duration BEFORE unloading (status is available before unload)
+      let duration: string | undefined;
+      try {
+        const status = await this.recording.getStatusAsync();
+        if (status.durationMillis !== undefined && status.durationMillis !== null) {
+          // Convert milliseconds to seconds and format as string
+          const durationSeconds = status.durationMillis / 1000;
+          duration = durationSeconds.toFixed(3); // Store with 3 decimal places for precision
+        } else {
+          // Fallback to calculated duration if status doesn't have it
+          const calculatedDuration = this.getDuration();
+          if (calculatedDuration > 0) {
+            duration = calculatedDuration.toFixed(3);
+          }
+        }
+      } catch (error) {
+        // If getting status fails, use calculated duration as fallback
+        console.warn('Failed to get recording duration from status, using calculated duration:', error);
+        const calculatedDuration = this.getDuration();
+        if (calculatedDuration > 0) {
+          duration = calculatedDuration.toFixed(3);
+        }
+      }
+
       await this.recording.stopAndUnloadAsync();
       this.isUnloaded = true;
       const uri = this.recording.getURI();
-      
+
       if (!uri) {
         throw new Error('Recording URI is null');
       }
@@ -130,6 +154,7 @@ export class AudioRecorder {
         type: 'audio',
         size: fileInfo.size || 0,
         mimeType: 'audio/mp4', // m4a files use audio/mp4 MIME type
+        duration, // Include duration if available
       };
 
       console.log('🎵 Audio file created:', {
@@ -171,12 +196,29 @@ export class AudioRecorder {
    * Cancel recording without saving
    */
   async cancel(): Promise<void> {
-    if (this.recording && !this.isUnloaded) {
-      try {
+    // If no recording exists, nothing to cancel
+    if (!this.recording) {
+      return;
+    }
+
+    // If already unloaded, just clean up references
+    if (this.isUnloaded) {
+      this.recording = null;
+      this.recordingUri = null;
+      this.isUnloaded = false;
+      return;
+    }
+
+    try {
+      // Check if recording status is valid before trying to stop
+      const status = await this.recording.getStatusAsync();
+
+      // Only try to stop if recording is actually recording or can be stopped
+      if (status.isRecording || status.canRecord) {
         await this.recording.stopAndUnloadAsync();
         this.isUnloaded = true;
         const uri = this.recording.getURI();
-        
+
         // Delete the file if it exists
         if (uri) {
           try {
@@ -185,27 +227,39 @@ export class AudioRecorder {
             console.warn('Error deleting canceled recording:', error);
           }
         }
-      } catch (error) {
-        // If already unloaded, just log and continue cleanup
-        if (error instanceof Error && error.message.includes('already been unloaded')) {
-          console.log('Recording already unloaded, skipping unload step');
+      }
+    } catch (error) {
+      // Handle various error cases gracefully
+      if (error instanceof Error) {
+        const errorMessage = error.message.toLowerCase();
+
+        // If already unloaded or doesn't exist, that's fine - just clean up
+        if (
+          errorMessage.includes('already been unloaded') ||
+          errorMessage.includes('does not exist') ||
+          errorMessage.includes('prepare it first')
+        ) {
+          console.log('Recording not in valid state for cancel, cleaning up:', errorMessage);
         } else {
           console.error('Error canceling recording:', error);
         }
-      } finally {
-        this.recording = null;
-        this.recordingUri = null;
-        this.isUnloaded = false;
+      } else {
+        console.error('Error canceling recording:', error);
+      }
+    } finally {
+      // Always clean up references and reset audio mode
+      this.recording = null;
+      this.recordingUri = null;
+      this.isUnloaded = false;
+
+      try {
         await Audio.setAudioModeAsync({
           allowsRecordingIOS: false,
           playsInSilentModeIOS: false,
         });
+      } catch (error) {
+        console.warn('Error resetting audio mode after cancel:', error);
       }
-    } else if (this.recording && this.isUnloaded) {
-      // Recording was already unloaded, just clean up references
-      this.recording = null;
-      this.recordingUri = null;
-      this.isUnloaded = false;
     }
   }
 

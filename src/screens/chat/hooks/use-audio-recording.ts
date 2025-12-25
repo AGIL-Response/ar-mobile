@@ -13,7 +13,7 @@ export interface UseAudioRecordingReturn {
   recordingTime: number;
   startRecording: () => Promise<void>;
   stopRecording: () => Promise<void>;
-  cancelRecording: () => void;
+  cancelRecording: () => Promise<void>;
   formatTime: (seconds: number) => string;
 }
 
@@ -68,7 +68,13 @@ export function useAudioRecording(
             resetRecordingState();
             return;
           }
-          onRecordingComplete(audioFile);
+          // Ensure duration is included in the audio file
+          // If not already set, use the recorded time
+          const audioFileWithDuration = {
+            ...audioFile,
+            duration: audioFile.duration || recordingTimeRef.current.toFixed(3),
+          };
+          onRecordingComplete(audioFileWithDuration);
           resetRecordingState();
         },
         onError: (error: Error) => {
@@ -106,11 +112,21 @@ export function useAudioRecording(
     }
   }, []);
 
-  const cancelRecording = useCallback(() => {
-    if (audioRecorderRef.current) {
-      audioRecorderRef.current.cancel();
+  const cancelRecording = useCallback(async () => {
+    try {
+      if (audioRecorderRef.current) {
+        // Check if recording actually exists and is recording before canceling
+        if (audioRecorderRef.current.isRecording()) {
+          await audioRecorderRef.current.cancel();
+        }
+      }
+    } catch (error) {
+      // If cancel fails, log but continue with cleanup
+      console.warn('Error canceling recording:', error);
+    } finally {
+      // Always reset state even if cancel fails
+      resetRecordingState();
     }
-    resetRecordingState();
   }, [resetRecordingState]);
 
   useEffect(() => {

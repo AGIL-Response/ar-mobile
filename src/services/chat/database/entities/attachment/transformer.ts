@@ -19,8 +19,25 @@ export function chatAttachmentToAttachmentData(attachmentData: ChatAttachment, m
   const attachmentId = typeof attachmentData.id === 'string' ? attachmentData.id : String(attachmentData.id);
   const validMessageId = typeof messageId === 'string' ? messageId : String(messageId);
 
-  // Check if url is a local file URI (file:// or starts with /)
-  const isLocalPath = attachmentData.url.startsWith('file://') || attachmentData.url.startsWith('/');
+  // Check if url is a local file URI (file://, content://, or starts with /)
+  // React Native file URIs can be: file://, content:// (Android), or absolute paths
+  const url = attachmentData.url || '';
+  const isLocalPath = 
+    url.length > 0 && (
+      url.startsWith('file://') || 
+      url.startsWith('content://') || 
+      url.startsWith('/') ||
+      (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('data:'))
+    );
+
+  // Debug logging to help diagnose issues
+  if (isLocalPath) {
+    console.log('[AttachmentTransformer] Detected local path:', {
+      url: url.substring(0, 50) + '...',
+      filename: attachmentData.filename,
+      messageId: validMessageId,
+    });
+  }
 
   return {
     attachmentId,
@@ -41,7 +58,30 @@ export function chatAttachmentToAttachmentData(attachmentData: ChatAttachment, m
  */
 export function attachmentToChatAttachment(attachment: Attachment): ChatAttachment {
   // Use localPath if url is empty (file hasn't been uploaded to server yet)
-  const url = attachment.url || attachment.localPath || '';
+  // Empty string is falsy, so we need to check explicitly
+  const url = (attachment.url && attachment.url.trim() !== '') 
+    ? attachment.url 
+    : (attachment.localPath || '');
+  
+  // Debug logging
+  if (!attachment.url || attachment.url.trim() === '') {
+    if (attachment.localPath) {
+      console.log('[AttachmentTransformer] Using localPath for attachment:', {
+        attachmentId: attachment.attachmentId,
+        filename: attachment.filename,
+        localPath: attachment.localPath.substring(0, 50) + '...',
+        hasUrl: !!attachment.url,
+        hasLocalPath: !!attachment.localPath,
+      });
+    } else {
+      console.warn('[AttachmentTransformer] No URL or localPath for attachment:', {
+        attachmentId: attachment.attachmentId,
+        filename: attachment.filename,
+        url: attachment.url,
+        localPath: attachment.localPath,
+      });
+    }
+  }
   
   return {
     id: attachment.attachmentId,

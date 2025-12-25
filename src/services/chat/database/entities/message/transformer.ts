@@ -128,6 +128,37 @@ export async function messageToChatMessage(message: Message, getUserFn: (userId:
     .query(Q.where('message_id', message.messageId))
     .fetch();
 
+  // Debug logging - always log, even if no attachments found
+  console.log('🔍 [MessageTransformer] Querying attachments for message:', {
+    messageId: message.messageId,
+    messageType: message.type,
+    hasContent: !!message.content,
+    clientId: message.clientId,
+    foundAttachmentCount: rawAttachments.length,
+  });
+
+  // Debug logging for attachments query
+  if (rawAttachments.length > 0) {
+    console.log('✅ [MessageTransformer] Found attachments in DB:', {
+      messageId: message.messageId,
+      attachmentCount: rawAttachments.length,
+      attachments: rawAttachments.map(a => ({
+        id: a.attachmentId,
+        filename: a.filename,
+        hasUrl: !!a.url && a.url.trim().length > 0,
+        url: a.url?.substring(0, 30) || 'empty',
+        hasLocalPath: !!a.localPath && a.localPath.trim().length > 0,
+        localPath: a.localPath?.substring(0, 30) || 'none',
+      })),
+    });
+  } else {
+    console.warn('⚠️ [MessageTransformer] No attachments found in DB for message:', {
+      messageId: message.messageId,
+      messageType: message.type,
+      clientId: message.clientId,
+    });
+  }
+
   // Deduplicate by attachment_id (keep first occurrence of each unique ID)
   const attachments = rawAttachments.reduce((acc, current) => {
     const exists = acc.find(item => item.attachmentId === current.attachmentId);
@@ -223,23 +254,57 @@ export async function messageToChatMessage(message: Message, getUserFn: (userId:
     }
   }
 
-  return {
+  // Transform attachments, prioritizing localPath if url is empty
+  const transformedAttachments = attachments.map((a) => {
+    // Use localPath if url is empty or whitespace (file hasn't been uploaded to server yet)
+    // Empty strings are falsy, so this should work, but be explicit about it
+    const urlValue = (a.url && a.url.trim().length > 0) ? a.url.trim() : '';
+    const localPathValue = (a.localPath && a.localPath.trim().length > 0) ? a.localPath.trim() : '';
+    const url = urlValue || localPathValue || '';
+
+    // Debug logging for attachments
+    console.log('🔍 [MessageTransformer] Transforming attachment:', {
+      messageId: message.messageId,
+      attachmentId: a.attachmentId,
+      filename: a.filename,
+      hasUrl: !!a.url && a.url.trim().length > 0,
+      urlValue: a.url?.substring(0, 30),
+      hasLocalPath: !!a.localPath && a.localPath.trim().length > 0,
+      localPathValue: a.localPath?.substring(0, 30),
+      finalUrl: url.substring(0, 50) + '...',
+      duration: a.duration,
+    });
+
+    return {
+      id: a.attachmentId,
+      filename: a.filename,
+      url,
+      size: a.size,
+      mimeType: a.mimeType,
+      uploadedAt: a.uploadedAt,
+      thumbnail: a.thumbnail,
+      duration: a.duration,
+    };
+  });
+
+  // Debug logging for message
+  if (transformedAttachments.length > 0) {
+    console.log('[MessageTransformer] Message loaded with attachments:', {
+      messageId: message.messageId,
+      attachmentCount: transformedAttachments.length,
+      hasContent: !!message.content,
+      type: message.type,
+    });
+  }
+
+  const result: ChatMessage = {
     id: message.messageId,
     roomId: message.roomId,
     senderId: message.senderId,
     sender,
     content: message.content,
     type: message.type,
-    attachments: attachments.map((a) => ({
-      id: a.attachmentId,
-      filename: a.filename,
-      url: a.url || a.localPath || '',
-      size: a.size,
-      mimeType: a.mimeType,
-      uploadedAt: a.uploadedAt,
-      thumbnail: a.thumbnail,
-      duration: a.duration,
-    })),
+    attachments: transformedAttachments.length > 0 ? transformedAttachments : undefined,
     timestamp: message.createdAt,
     editedAt: message.editedAt ? new Date(message.editedAt) : undefined,
     replyTo: message.replyToId,
@@ -247,5 +312,16 @@ export async function messageToChatMessage(message: Message, getUserFn: (userId:
     status: message.status,
     clientId: message.clientId,
   };
+
+  // Final debug logging
+  console.log('📤 [MessageTransformer] Returning ChatMessage:', {
+    messageId: result.id,
+    hasAttachments: !!result.attachments,
+    attachmentCount: result.attachments?.length || 0,
+    type: result.type,
+    hasContent: !!result.content,
+  });
+
+  return result;
 }
 

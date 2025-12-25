@@ -61,17 +61,92 @@ export class ChatDbService {
    * Save or update a message
    */
   async saveMessage(messageData: ChatMessage, roomId: string): Promise<void> {
+    const messageId = typeof messageData.id === 'string' ? messageData.id : String(messageData.id);
+    
+    // Check if message exists (by messageId or clientId) and has local attachments that should be preserved
+    let shouldPreserveLocalAttachments = false;
+    let existingMessageId = messageId;
+    
+    try {
+      // Get existing message to check for local attachments
+      // First try by messageId, then by clientId if messageId doesn't exist
+      const dbModule = await import('./database/index');
+      const QModule = await import('@nozbe/watermelondb');
+      const db = dbModule.getDatabase();
+      let existingMessages = await db
+        .get('messages')
+        .query(QModule.Q.where('message_id', messageId))
+        .fetch();
+      
+      // If not found by messageId and we have a clientId, try finding by clientId
+      if (existingMessages.length === 0 && messageData.clientId) {
+        existingMessages = await db
+          .get('messages')
+          .query(QModule.Q.where('client_id', messageData.clientId))
+          .fetch();
+        
+        if (existingMessages.length > 0) {
+          existingMessageId = existingMessages[0].messageId;
+          console.log('🔍 [DbService] Found existing message by clientId:', {
+            clientId: messageData.clientId,
+            existingMessageId,
+            newMessageId: messageId,
+          });
+        }
+      }
+      
+      if (existingMessages.length > 0) {
+        // Check if existing message has attachments with local paths
+        const existingAttachments = await AttachmentEntity.getAttachments(existingMessageId);
+        const hasLocalAttachments = existingAttachments.some(a => {
+          const hasEmptyUrl = !a.url || a.url.trim() === '';
+          const hasLocalPath = a.localPath && a.localPath.trim().length > 0;
+          return hasEmptyUrl && hasLocalPath;
+        });
+        
+        // If server message has no attachments but existing message has local attachments, preserve them
+        const serverHasNoAttachments = !messageData.attachments || messageData.attachments.length === 0;
+        if (hasLocalAttachments && serverHasNoAttachments) {
+          shouldPreserveLocalAttachments = true;
+          console.log('🔒 [DbService] Preserving local attachments - server message has no attachments:', {
+            messageId,
+            existingMessageId,
+            existingAttachmentCount: existingAttachments.length,
+            localPaths: existingAttachments.filter(a => a.localPath).map(a => a.localPath?.substring(0, 50) + '...'),
+          });
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ [DbService] Error checking for existing attachments:', error);
+      // Continue with save even if check fails
+    }
+    
     await MessageEntity.upsertMessage(messageData, roomId);
 
-    // Save attachments
+    // Save attachments - only update if server message has attachments, or if this is a new message without local attachments to preserve
     if (messageData.attachments && messageData.attachments.length > 0) {
-
-      const attachments = messageData.files || messageData.attachments;
-      await AttachmentEntity.upsertAttachments(messageData.id, attachments);
+      // Server has attachments - update them (they should include URLs from server)
+      await AttachmentEntity.upsertAttachments(messageData.id, messageData.attachments);
+      console.log('✅ [DbService] Updated attachments from server:', {
+        messageId,
+        attachmentCount: messageData.attachments.length,
+      });
+    } else if (shouldPreserveLocalAttachments) {
+      // Local attachments exist and should be preserved - don't call upsertAttachments
+      // They will remain in the database from the previous save
+      console.log('✅ [DbService] Preserving local attachments, skipping attachment update:', {
+        messageId,
+        existingMessageId,
+      });
+    } else {
+      // No attachments in server message and no local attachments to preserve
+      // This is fine for new messages or messages that never had attachments
+      console.log('ℹ️ [DbService] No attachments in server message, and no local attachments to preserve:', {
+        messageId,
+      });
     }
 
     // Update room's last message
-    const messageId = typeof messageData.id === 'string' ? messageData.id : String(messageData.id);
     await RoomEntity.updateRoomLastMessage(roomId, messageId, messageData.timestamp || new Date());
   }
 

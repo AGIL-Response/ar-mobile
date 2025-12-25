@@ -35,7 +35,49 @@ export function Message({
   const currentUsername = useAuthStore((state) => state.user?.username);
   const isOwnMessage = message.sender.username === currentUsername;
   const messageStatus = message.status || 'sent';
+  
+  // Always log the raw message.attachments value to debug
+  console.log('🔍 [Message Component] Checking attachments:', {
+    messageId: message.id,
+    type: message.type,
+    rawAttachments: message.attachments,
+    attachmentsType: typeof message.attachments,
+    isArray: Array.isArray(message.attachments),
+    attachmentsLength: Array.isArray(message.attachments) ? message.attachments.length : 'not array',
+    hasContent: !!message.content,
+  });
+  
   const hasAttachments = message.attachments && message.attachments.length > 0;
+
+  // Debug logging for messages with attachments
+  if (hasAttachments) {
+    console.log('✅ [Message Component] Rendering message with attachments:', {
+      messageId: message.id,
+      type: message.type,
+      attachmentCount: message.attachments?.length || 0,
+      hasContent: !!message.content,
+      attachments: message.attachments?.map(a => ({
+        id: a.id,
+        filename: a.filename,
+        url: a.url?.substring(0, 50) + '...',
+        hasUrl: !!a.url,
+        urlLength: a.url?.length || 0,
+        mimeType: a.mimeType,
+      })),
+    });
+  } else {
+    // Also log when message doesn't have attachments but should
+    if (!message.content || message.content.trim() === '') {
+      console.warn('⚠️ [Message Component] Message with no content and no attachments:', {
+        messageId: message.id,
+        type: message.type,
+        hasAttachments: hasAttachments,
+        attachmentsArray: message.attachments,
+        attachmentsType: typeof message.attachments,
+        isArray: Array.isArray(message.attachments),
+      });
+    }
+  }
 
   // Handle retry for failed messages
   const handleRetry = async () => {

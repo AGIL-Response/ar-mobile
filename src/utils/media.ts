@@ -15,6 +15,7 @@ export interface MediaFile {
   type: string;
   size: number;
   mimeType?: string;
+  duration?: string; // Duration in seconds as string (e.g., "4.226032")
 }
 
 export function getFileExtension(filename: string): string {

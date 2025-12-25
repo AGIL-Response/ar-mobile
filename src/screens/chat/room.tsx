@@ -156,7 +156,7 @@ export default function ChatRoomScreen() {
               scrollEventThrottle={16}
               onStartReached={handleLoadMore}
               onStartReachedThreshold={0.1}
-              extraData={room?.type}
+              extraData={`${room?.type}-${messages.length}-${messages.filter(m => m.attachments && m.attachments.length > 0).length}`}
               ListHeaderComponent={<MessageListHeader isLoadingMore={isLoadingMore} />}
               ListEmptyComponent={<EmptyState isLoading={isInitialLoading || (messages.length === 0 && isLoading)} />}
             />

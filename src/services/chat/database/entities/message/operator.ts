@@ -51,7 +51,25 @@ export async function upsertMessage(messageData: ChatMessage, roomId: string): P
     return await db.write(async () => {
       await existingMessage.update((message) => {
         message.content = messageDataTransformed.content;
-        message.type = messageDataTransformed.type;
+        // Preserve more specific type ('image' or 'file') when updating
+        // Only update type if:
+        // 1. New type is more specific than current (e.g., 'image'/'file' vs 'text')
+        // 2. Or both are the same type
+        // This prevents overwriting 'image'/'file' with 'text' when server response doesn't include correct type
+        const currentType = message.type;
+        const newType = messageDataTransformed.type || 'text';
+        
+        // Define type hierarchy: 'text' < 'file'/'image'
+        const typeHierarchy: Record<string, number> = { 'text': 0, 'file': 1, 'image': 1, 'system': 0 };
+        const currentTypePriority = typeHierarchy[currentType] || 0;
+        const newTypePriority = typeHierarchy[newType] || 0;
+        
+        // Only update if new type has same or higher priority, or if current type is 'text'
+        if (newTypePriority >= currentTypePriority || currentType === 'text') {
+          message.type = newType;
+        }
+        // Otherwise, preserve existing type (especially if it's 'image' or 'file')
+        
         message.replyToId = messageDataTransformed.replyToId;
         if (messageDataTransformed.editedAt !== undefined) {
           message.editedAt = messageDataTransformed.editedAt;

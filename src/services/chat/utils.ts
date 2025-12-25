@@ -129,6 +129,12 @@ export function transformMessageToChatMessage(message: any, roomId: string): Cha
           ...(Array.isArray(message.files) ? message.files : []),
         ].filter((a) => a != null); // Filter out null and undefined values
 
+        // If no attachments from server, return undefined (not empty array)
+        // This allows local attachments to be preserved in the database
+        if (attachmentsArray.length === 0) {
+          return undefined;
+        }
+
         const transformed = attachmentsArray.map((a: any) => ({
           id: ensureStringId(a.id || a.fileId || a.key || '', 'attachment.id'),
           filename: a.filename || a.name || a.key || 'file',

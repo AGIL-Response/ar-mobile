@@ -27,7 +27,19 @@ export function MessageAttachment({
 }: MessageAttachmentProps) {
   const theme = useTheme();
 
+  console.log('🔍 [MessageAttachment] Component called:', {
+    attachmentCount: attachments?.length || 0,
+    attachments: attachments?.map(a => ({
+      id: a.id,
+      filename: a.filename,
+      hasUrl: !!a.url,
+      url: a.url?.substring(0, 50) + '...',
+      mimeType: a.mimeType,
+    })),
+  });
+
   if (!attachments || attachments.length === 0) {
+    console.warn('⚠️ [MessageAttachment] No attachments provided, returning null');
     return null;
   }
 
@@ -35,6 +47,15 @@ export function MessageAttachment({
     <View style={{ gap: 8 }}>
       {attachments.map((attachment, index) => {
         const mediaType = getMediaType(attachment.filename);
+        
+        console.log('🔍 [MessageAttachment] Rendering attachment:', {
+          index,
+          attachmentId: attachment.id,
+          filename: attachment.filename,
+          mediaType,
+          hasUrl: !!attachment.url,
+          url: attachment.url?.substring(0, 50) + '...',
+        });
 
         if (mediaType === 'audio') {
           return (
@@ -61,24 +82,91 @@ export function MessageAttachment({
             }}
           >
             {mediaType === 'image' ? (
-              <View>
+              <View style={{
+                width: MAX_ATTACHMENT_WIDTH,
+                height: MAX_ATTACHMENT_WIDTH * 0.75,
+                borderRadius: 12,
+                overflow: 'hidden',
+                backgroundColor: theme.colors.background.secondary,
+              }}>
                 {(() => {
-                  // Use thumbnail if available, otherwise fall back to full URL
-                  const imageUri = (attachment.thumbnail && attachment.thumbnail.trim()) 
-                    ? attachment.thumbnail.trim() 
-                    : (attachment.url && attachment.url.trim() ? attachment.url.trim() : null);
+                  // Use thumbnail if available, otherwise fall back to full URL or localPath
+                  // Check if URL is actually non-empty (not just truthy - empty strings are truthy but trim() is falsy)
+                  const trimmedUrl = attachment.url?.trim();
+                  const hasValidUrl = trimmedUrl && trimmedUrl.length > 0;
+                  const trimmedThumbnail = attachment.thumbnail?.trim();
+                  const hasValidThumbnail = trimmedThumbnail && trimmedThumbnail.length > 0;
                   
-                  if (!imageUri) return null;
+                  const imageUri = hasValidThumbnail
+                    ? trimmedThumbnail
+                    : hasValidUrl
+                    ? trimmedUrl
+                    : null;
+                  
+                  // Debug logging for image attachments
+                  if (!imageUri) {
+                    console.warn('⚠️ [MessageAttachment] No image URI found:', {
+                      attachmentId: attachment.id,
+                      filename: attachment.filename,
+                      hasThumbnail: hasValidThumbnail,
+                      thumbnail: attachment.thumbnail?.substring(0, 30),
+                      hasUrl: hasValidUrl,
+                      url: attachment.url?.substring(0, 50),
+                      urlLength: attachment.url?.length || 0,
+                      urlIsEmpty: attachment.url === '' || attachment.url === undefined || attachment.url === null,
+                    });
+                    return (
+                      <View style={{
+                        width: '100%',
+                        height: '100%',
+                        backgroundColor: theme.colors.background.secondary,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }}>
+                        <Text style={{ color: theme.colors.text.secondary, fontSize: 12 }}>
+                          No image URI
+                        </Text>
+                      </View>
+                    );
+                  }
+                  
+                  console.log('✅ [MessageAttachment] Rendering image:', {
+                    attachmentId: attachment.id,
+                    filename: attachment.filename,
+                    uri: imageUri.substring(0, 50) + '...',
+                    isLocalPath: imageUri.startsWith('file://') || imageUri.startsWith('/'),
+                  });
                   
                   return (
                     <Image
                       source={{ uri: imageUri }}
                       style={{
-                        width: MAX_ATTACHMENT_WIDTH,
-                        height: MAX_ATTACHMENT_WIDTH * 0.75,
-                        borderRadius: 12,
+                        width: '100%',
+                        height: '100%',
                       }}
                       resizeMode="cover"
+                      onError={(error) => {
+                        console.error('❌ [MessageAttachment] Image load error:', {
+                          attachmentId: attachment.id,
+                          filename: attachment.filename,
+                          uri: imageUri.substring(0, 50) + '...',
+                          error: error.nativeEvent?.error || error,
+                          nativeEvent: error.nativeEvent,
+                        });
+                      }}
+                      onLoad={() => {
+                        console.log('✅ [MessageAttachment] Image loaded successfully:', {
+                          attachmentId: attachment.id,
+                          filename: attachment.filename,
+                          uri: imageUri.substring(0, 50) + '...',
+                        });
+                      }}
+                      onLoadStart={() => {
+                        console.log('🔄 [MessageAttachment] Image loading started:', {
+                          attachmentId: attachment.id,
+                          filename: attachment.filename,
+                        });
+                      }}
                     />
                   );
                 })()}

@@ -35,15 +35,44 @@ export class ChatService {
 
           if (messages.length > 0) {
             const localMessage = messages[0];
+            const oldMessageId = localMessage.messageId;
+            const newMessageId = typeof message.id === 'string' ? message.id : String(message.id);
+            
             await db.write(async () => {
-              await localMessage.update((msg: any) => {
-                msg.status = 'sent';
-                // Update message ID to server ID if different
-                if (msg.messageId !== message.id) {
-                  // We need to handle ID change - for now, just update status
-                  // The server ID will be used going forward
+              // Update message ID to server ID if different, and migrate attachments
+              if (oldMessageId !== newMessageId) {
+                // Get attachment models to migrate
+                const attachmentModels = await db
+                  .get('attachments')
+                  .query(QModule.Q.where('message_id', oldMessageId))
+                  .fetch();
+                
+                if (attachmentModels.length > 0) {
+                  console.log('🔄 [ChatService] Migrating attachments to new messageId:', {
+                    oldMessageId,
+                    newMessageId,
+                    attachmentCount: attachmentModels.length,
+                  });
+                  
+                  // Update each attachment's message_id
+                  for (const attachment of attachmentModels) {
+                    await attachment.update((att: any) => {
+                      att.messageId = newMessageId;
+                    });
+                  }
                 }
-              });
+                
+                // Update message ID
+                await localMessage.update((msg: any) => {
+                  msg.messageId = newMessageId;
+                  msg.status = 'sent';
+                });
+              } else {
+                // Just update status
+                await localMessage.update((msg: any) => {
+                  msg.status = 'sent';
+                });
+              }
             });
             // Clear timeout if exists
             const timeout = this.sendingMessageTimeouts.get(message.clientId);

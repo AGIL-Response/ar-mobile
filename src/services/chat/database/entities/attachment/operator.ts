@@ -74,8 +74,9 @@ export async function upsertAttachments(messageId: string, attachments: ChatAtta
         attachment.size = attachmentDataTransformed.size;
         attachment.mimeType = attachmentDataTransformed.mimeType;
         attachment.uploadedAt = attachmentDataTransformed.uploadedAt;
-        if (preservedLocalPath) {
-          attachment.localPath = preservedLocalPath;
+        // Always set localPath if it exists (from preserved or from transformed data)
+        if (preservedLocalPath || attachmentDataTransformed.localPath) {
+          attachment.localPath = preservedLocalPath || attachmentDataTransformed.localPath;
         }
         if (attachmentDataTransformed.thumbnail) {
           attachment.thumbnail = attachmentDataTransformed.thumbnail;
