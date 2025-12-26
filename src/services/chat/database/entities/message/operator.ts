@@ -1,17 +1,24 @@
 import { getDatabase } from '../../index';
 import type Message from '../../models/Message';
-import type { ChatMessage } from '../../../types';
+import type { ChatMessage, ChatAttachment } from '../../../types';
 import { Q } from '@nozbe/watermelondb';
 import { switchMap, of } from 'rxjs';
 import { chatMessageToMessageData } from './transformer';
 import { upsertUser } from '../user/operator';
+import { chatAttachmentToAttachmentData } from '../attachment/transformer';
+import type Attachment from '../../models/Attachment';
 
 const db = getDatabase();
 
 /**
  * Upsert a message (create or update)
+ * Optionally saves attachments in the same write transaction to ensure they're available when observable emits
  */
-export async function upsertMessage(messageData: ChatMessage, roomId: string): Promise<Message> {
+export async function upsertMessage(
+  messageData: ChatMessage,
+  roomId: string,
+  attachments?: ChatAttachment[]
+): Promise<Message> {
   const messageDataTransformed = chatMessageToMessageData(messageData, roomId);
   const messageId = messageDataTransformed.messageId;
 
@@ -98,11 +105,86 @@ export async function upsertMessage(messageData: ChatMessage, roomId: string): P
           }
         }
       });
+      
+      // Save attachments in the same transaction if provided
+      // This ensures attachments are available when the observable emits
+      if (attachments && attachments.length > 0) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'message/operator.ts:110',message:'upsertMessage - saving attachments in same transaction (update)',data:{messageId,attachmentCount:attachments.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
+        // #endregion
+        
+        // Get existing attachments to preserve local paths
+        const existingAttachments = await db
+          .get<Attachment>('attachments')
+          .query(Q.where('message_id', messageId))
+          .fetch();
+        
+        const localPathMap = new Map<string, string>();
+        for (const existingAtt of existingAttachments) {
+          if (existingAtt.localPath) {
+            localPathMap.set(existingAtt.attachmentId, existingAtt.localPath);
+          }
+        }
+        
+        // Delete existing attachments that aren't in the new list
+        const newIds = new Set(attachments.map(a => a.id));
+        for (const existingAtt of existingAttachments) {
+          if (!newIds.has(existingAtt.attachmentId)) {
+            await existingAtt.destroyPermanently();
+          }
+        }
+        
+        // Create or update attachments
+        for (const attachment of attachments) {
+          const attachmentData = chatAttachmentToAttachmentData(attachment, messageId);
+          const preservedLocalPath = localPathMap.get(attachmentData.attachmentId);
+          
+          const existingAtt = existingAttachments.find(a => a.attachmentId === attachmentData.attachmentId);
+          if (existingAtt) {
+            await existingAtt.update((att: any) => {
+              att.filename = attachmentData.filename;
+              att.url = attachmentData.url;
+              att.size = attachmentData.size;
+              att.mimeType = attachmentData.mimeType;
+              att.uploadedAt = attachmentData.uploadedAt;
+              if (preservedLocalPath || attachmentData.localPath) {
+                att.localPath = preservedLocalPath || attachmentData.localPath;
+              }
+              if (attachmentData.thumbnail) {
+                att.thumbnail = attachmentData.thumbnail;
+              }
+              if (attachmentData.duration) {
+                att.duration = attachmentData.duration;
+              }
+            });
+          } else {
+            await db.get<Attachment>('attachments').create((att: any) => {
+              att.attachmentId = attachmentData.attachmentId;
+              att.messageId = attachmentData.messageId;
+              att.filename = attachmentData.filename;
+              att.url = attachmentData.url;
+              att.size = attachmentData.size;
+              att.mimeType = attachmentData.mimeType;
+              att.uploadedAt = attachmentData.uploadedAt;
+              if (preservedLocalPath || attachmentData.localPath) {
+                att.localPath = preservedLocalPath || attachmentData.localPath;
+              }
+              if (attachmentData.thumbnail) {
+                att.thumbnail = attachmentData.thumbnail;
+              }
+              if (attachmentData.duration) {
+                att.duration = attachmentData.duration;
+              }
+            });
+          }
+        }
+      }
+      
       return existingMessage;
     });
   } else {
     return await db.write(async () => {
-      return await db.get<Message>('messages').create((message) => {
+      const createdMessage = await db.get<Message>('messages').create((message) => {
         // Set all required fields first
         message.messageId = messageDataTransformed.messageId;
         message.roomId = messageDataTransformed.roomId;
@@ -141,6 +223,38 @@ export async function upsertMessage(messageData: ChatMessage, roomId: string): P
           }
         }
       });
+      
+      // Save attachments in the same transaction if provided
+      // This ensures attachments are available when the observable emits
+      if (attachments && attachments.length > 0) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'message/operator.ts:180',message:'upsertMessage - saving attachments in same transaction (create)',data:{messageId,attachmentCount:attachments.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
+        // #endregion
+        
+        for (const attachment of attachments) {
+          const attachmentData = chatAttachmentToAttachmentData(attachment, messageId);
+          await db.get<Attachment>('attachments').create((att: any) => {
+            att.attachmentId = attachmentData.attachmentId;
+            att.messageId = attachmentData.messageId;
+            att.filename = attachmentData.filename;
+            att.url = attachmentData.url;
+            att.size = attachmentData.size;
+            att.mimeType = attachmentData.mimeType;
+            att.uploadedAt = attachmentData.uploadedAt;
+            if (attachmentData.localPath) {
+              att.localPath = attachmentData.localPath;
+            }
+            if (attachmentData.thumbnail) {
+              att.thumbnail = attachmentData.thumbnail;
+            }
+            if (attachmentData.duration) {
+              att.duration = attachmentData.duration;
+            }
+          });
+        }
+      }
+      
+      return createdMessage;
     });
   }
 }

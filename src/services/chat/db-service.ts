@@ -62,13 +62,13 @@ export class ChatDbService {
    */
   async saveMessage(messageData: ChatMessage, roomId: string): Promise<void> {
     const messageId = typeof messageData.id === 'string' ? messageData.id : String(messageData.id);
-    
+
     // Check if message exists (by messageId or clientId) and has local attachments that should be preserved
     let shouldPreserveLocalAttachments = false;
     let existingMessageId = messageId;
     let existingMessages: any[] = []; // Declare outside try block so it's accessible later
     let messageIdChanged = false; // Track if messageId changed during upsert
-    
+
     try {
       // Get existing message to check for local attachments
       // First try by messageId, then by clientId if messageId doesn't exist
@@ -79,7 +79,7 @@ export class ChatDbService {
         .get('messages')
         .query(QModule.Q.where('message_id', messageId))
         .fetch();
-      
+
       // If not found by messageId and we have a clientId, try finding by clientId
       // This handles the case where onMessage already migrated the messageId
       if (existingMessages.length === 0 && messageData.clientId) {
@@ -87,7 +87,7 @@ export class ChatDbService {
           .get('messages')
           .query(QModule.Q.where('client_id', messageData.clientId))
           .fetch();
-        
+
         if (existingMessages.length > 0) {
           const foundMessageId = existingMessages[0].messageId;
           if (foundMessageId !== messageId) {
@@ -103,7 +103,7 @@ export class ChatDbService {
         // Message found by messageId - no migration needed
         existingMessageId = messageId;
       }
-      
+
       // Always check attachments using the current messageId (which might have been migrated)
       // Use the messageId we'll query after upsert (which will be the finalMessageId)
       // But for now, check using existingMessageId to see if local attachments exist
@@ -116,12 +116,12 @@ export class ChatDbService {
           const hasLocalPath = a.localPath && a.localPath.trim().length > 0;
           return hasEmptyUrl && hasLocalPath;
         });
-        
+
         // Check if server has attachments (from attachments or files array)
         // Server has attachments if messageData.attachments is defined and has items
         const serverHasAttachments = messageData.attachments && messageData.attachments.length > 0;
         const serverHasNoAttachments = !messageData.attachments || messageData.attachments.length === 0;
-        
+
         // Only preserve local attachments if:
         // 1. Local has attachments (with local paths)
         // 2. Server has NO attachments (undefined or empty array)
@@ -133,11 +133,73 @@ export class ChatDbService {
       console.warn('⚠️ [DbService] Error checking for existing attachments:', error);
       // Continue with save even if check fails
     }
-    
-    // Upsert message first to ensure it exists and get the final messageId
-    const savedMessage = await MessageEntity.upsertMessage(messageData, roomId);
+
+    // CRITICAL: Prepare attachments with merged local paths BEFORE saving message
+    // This allows us to save them in the same transaction, ensuring they're available when observable emits
+    let attachmentsToSave: ChatAttachment[] | undefined;
+    if (messageData.attachments && messageData.attachments.length > 0) {
+      // Get existing local attachments to preserve local paths
+      // Use existingMessageId (which might be the migrated ID) to check for attachments
+      const dbModule = await import('./database/index');
+      const QModule = await import('@nozbe/watermelondb');
+      const db = dbModule.getDatabase();
+
+      // Check both existingMessageId and messageId to catch migrated attachments
+      const existingAttachmentsRawAtOld = existingMessageId !== messageId
+        ? await db
+          .get('attachments')
+          .query(QModule.Q.where('message_id', existingMessageId))
+          .fetch()
+        : [];
+      const existingAttachmentsRawAtNew = await db
+        .get('attachments')
+        .query(QModule.Q.where('message_id', messageId))
+        .fetch();
+      const existingAttachmentsRaw = [...existingAttachmentsRawAtOld, ...existingAttachmentsRawAtNew];
+
+      // Create a map of local paths by attachment ID or filename
+      const localPathMap = new Map<string, string>();
+      for (const existingAtt of existingAttachmentsRaw) {
+        const localPath = (existingAtt as any).localPath;
+        if (localPath && localPath.trim().length > 0) {
+          const attId = (existingAtt as any).attachmentId;
+          const filename = (existingAtt as any).filename;
+          if (attId) {
+            localPathMap.set(attId, localPath);
+          }
+          if (filename) {
+            localPathMap.set(`filename:${filename}`, localPath);
+          }
+        }
+      }
+
+      // Merge server attachments with local paths
+      attachmentsToSave = messageData.attachments.map((att: any) => {
+        const url = att.url || '';
+        const isLocalPathInUrl = url.length > 0 && (
+          url.startsWith('file://') ||
+          url.startsWith('content://') ||
+          url.startsWith('/') ||
+          (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('data:'))
+        );
+        const hasServerUrl = url.length > 0 && !isLocalPathInUrl;
+        const localPathFromDb = localPathMap.get(att.id) || localPathMap.get(`filename:${att.filename}`);
+        const finalLocalPath = localPathFromDb || att.localPath || (isLocalPathInUrl ? url : undefined);
+        const finalUrl = hasServerUrl ? url : '';
+
+        return {
+          ...att,
+          url: finalUrl,
+          localPath: hasServerUrl ? undefined : finalLocalPath,
+        };
+      });
+    }
+
+    // Upsert message WITH attachments in the same transaction
+    // This ensures attachments are available when the observable emits
+    const savedMessage = await MessageEntity.upsertMessage(messageData, roomId, attachmentsToSave);
     const finalMessageId = savedMessage.messageId; // Use the final messageId (may have changed if messageId migration occurred)
-    
+
     // After upsert, ALWAYS check for local attachments using finalMessageId
     // This handles cases where onMessage already migrated attachments or where messageId changed
     // Only check if we haven't already determined we should preserve (to avoid redundant checks)
@@ -149,7 +211,7 @@ export class ChatDbService {
           const hasLocalPath = a.localPath && a.localPath.trim().length > 0;
           return hasEmptyUrl && hasLocalPath;
         });
-        
+
         const serverHasNoAttachments = !messageData.attachments || messageData.attachments.length === 0;
         if (hasLocalAttachments && serverHasNoAttachments) {
           shouldPreserveLocalAttachments = true;
@@ -159,66 +221,15 @@ export class ChatDbService {
         console.warn('⚠️ [DbService] Error checking attachments at finalMessageId:', error);
       }
     }
-    
-    // Save attachments based on server response
-    // Rule: If server has attachments/files => override local. If server has none but local has => preserve local.
-    if (messageData.attachments && messageData.attachments.length > 0) {
-      // Server has attachments - merge with local paths if they exist
-      // Get existing local attachments (raw DB models) to preserve local paths
-      // Use finalMessageId because attachments might have been migrated by onMessage
-      const dbModule = await import('./database/index');
-      const QModule = await import('@nozbe/watermelondb');
-      const db = dbModule.getDatabase();
-      // Check both existingMessageId and finalMessageId to catch migrated attachments
-      const existingAttachmentsRawAtOld = existingMessageId !== finalMessageId && existingMessageId !== messageId
-        ? await db
-            .get('attachments')
-            .query(QModule.Q.where('message_id', existingMessageId))
-            .fetch()
-        : [];
-      const existingAttachmentsRawAtNew = await db
-        .get('attachments')
-        .query(QModule.Q.where('message_id', finalMessageId))
-        .fetch();
-      // Combine both (shouldn't have duplicates if migration worked correctly)
-      const existingAttachmentsRaw = [...existingAttachmentsRawAtOld, ...existingAttachmentsRawAtNew];
-      
-      // Create a map of local paths by attachment ID or filename
-      const localPathMap = new Map<string, string>();
-      for (const existingAtt of existingAttachmentsRaw) {
-        const localPath = (existingAtt as any).localPath;
-        if (localPath && localPath.trim().length > 0) {
-          const attId = (existingAtt as any).attachmentId;
-          const filename = (existingAtt as any).filename;
-          // Try to match by ID first, then by filename
-          if (attId) {
-            localPathMap.set(attId, localPath);
-          }
-          if (filename) {
-            localPathMap.set(`filename:${filename}`, localPath);
-          }
-        }
-      }
-      
-      // Merge server attachments with local paths
-      // If server attachment has no URL (or empty URL) and we have a local path, preserve the local path
-      const mergedAttachments = messageData.attachments.map((att: any) => {
-        const hasServerUrl = att.url && att.url.trim().length > 0;
-        const localPath = localPathMap.get(att.id) || localPathMap.get(`filename:${att.filename}`);
-        
-        // If server has URL, use it. Otherwise, if we have local path, use it temporarily
-        const finalUrl = hasServerUrl ? att.url : (localPath || att.url || '');
-        
-        return {
-          ...att,
-          url: finalUrl,
-        };
-      });
-      
-      // Server has attachments - ALWAYS override local attachments (even if local exists)
-      // But we've merged local paths so they're preserved if server doesn't have URLs yet
-      await AttachmentEntity.upsertAttachments(finalMessageId, mergedAttachments);
-    } else if (shouldPreserveLocalAttachments) {
+
+    // Attachments are now saved in the same transaction as the message (via upsertMessage)
+    // This ensures they're available when the observable emits
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'db-service.ts:203', message: 'saveMessage - message and attachments saved in same transaction', data: { messageId: finalMessageId, hasAttachments: !!attachmentsToSave, attachmentCount: attachmentsToSave?.length || 0 }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H' }) }).catch(() => { });
+    // #endregion
+
+    // Handle case where local attachments should be preserved (server has no attachments)
+    if (!attachmentsToSave && shouldPreserveLocalAttachments) {
       // Local attachments exist and server has none - preserve local attachments
       // Don't call upsertAttachments, they remain linked to finalMessageId
       // Check if attachments need to be migrated from old messageId to finalMessageId
@@ -227,19 +238,19 @@ export class ChatDbService {
         const dbModule = await import('./database/index');
         const QModule = await import('@nozbe/watermelondb');
         const db = dbModule.getDatabase();
-        
+
         // Check if attachments exist at old messageId (that haven't been migrated yet)
         const attachmentModelsAtOld = await db
           .get('attachments')
           .query(QModule.Q.where('message_id', existingMessageId))
           .fetch();
-        
+
         // Check if attachments already exist at finalMessageId (maybe onMessage already migrated)
         const attachmentModelsAtNew = await db
           .get('attachments')
           .query(QModule.Q.where('message_id', finalMessageId))
           .fetch();
-        
+
         if (attachmentModelsAtOld.length > 0 && attachmentModelsAtNew.length === 0) {
           // Attachments still at old messageId, migrate them
           await db.write(async () => {
@@ -249,6 +260,29 @@ export class ChatDbService {
               });
             }
           });
+
+          // Update message's serverUpdatedAt to trigger observable update
+          const messagesToUpdate = await db
+            .get('messages')
+            .query(QModule.Q.where('message_id', finalMessageId))
+            .fetch();
+          if (messagesToUpdate.length > 0) {
+            const newTimestamp = new Date().toISOString();
+            // Force observable emission by updating content field
+            const currentContent = messagesToUpdate[0].content || '';
+            await db.write(async () => {
+              await messagesToUpdate[0].update((msg: any) => {
+                msg.serverUpdatedAt = newTimestamp;
+                msg.content = currentContent + '\u200B';
+              });
+            });
+            // Restore original content
+            await db.write(async () => {
+              await messagesToUpdate[0].update((msg: any) => {
+                msg.content = currentContent;
+              });
+            });
+          }
         }
       }
     }

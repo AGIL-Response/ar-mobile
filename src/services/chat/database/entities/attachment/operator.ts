@@ -103,6 +103,10 @@ export async function upsertAttachments(messageId: string, attachments: ChatAtta
         existingAttachmentsMap.delete(attachmentDataTransformed.attachmentId);
       } else {
         // Create new attachment
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'attachment/operator.ts:106',message:'upsertAttachments - creating new attachment',data:{messageId:validMessageId,attachmentId:attachmentDataTransformed.attachmentId,filename:attachmentDataTransformed.filename,url:attachmentDataTransformed.url?.substring(0,50),localPath:attachmentDataTransformed.localPath?.substring(0,50),preservedLocalPath:preservedLocalPath?.substring(0,50),hasUrl:!!attachmentDataTransformed.url,hasLocalPath:!!attachmentDataTransformed.localPath,hasPreservedLocalPath:!!preservedLocalPath},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+
         await db.get<Attachment>('attachments').create((attachment) => {
           attachment.attachmentId = attachmentDataTransformed.attachmentId;
           attachment.messageId = attachmentDataTransformed.messageId;
@@ -114,6 +118,12 @@ export async function upsertAttachments(messageId: string, attachments: ChatAtta
           // Always set localPath if it exists (from preserved or from transformed data)
           if (preservedLocalPath || attachmentDataTransformed.localPath) {
             attachment.localPath = preservedLocalPath || attachmentDataTransformed.localPath;
+            console.log('[AttachmentOperator] Creating attachment with localPath:', {
+              attachmentId: attachmentDataTransformed.attachmentId,
+              filename: attachmentDataTransformed.filename,
+              localPath: (preservedLocalPath || attachmentDataTransformed.localPath)?.substring(0, 50) + '...',
+              url: attachmentDataTransformed.url,
+            });
           }
           if (attachmentDataTransformed.thumbnail) {
             attachment.thumbnail = attachmentDataTransformed.thumbnail;
@@ -121,6 +131,10 @@ export async function upsertAttachments(messageId: string, attachments: ChatAtta
           if (attachmentDataTransformed.duration) {
             attachment.duration = attachmentDataTransformed.duration;
           }
+
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'attachment/operator.ts:129',message:'upsertAttachments - attachment created in DB',data:{messageId:validMessageId,attachmentId:attachment.attachmentId,filename:attachment.filename,dbUrl:attachment.url?.substring(0,50),dbLocalPath:attachment.localPath?.substring(0,50),hasDbUrl:!!attachment.url,hasDbLocalPath:!!attachment.localPath},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+          // #endregion
         });
       }
     }

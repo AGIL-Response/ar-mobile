@@ -90,15 +90,35 @@ export function Composer({
     const photo = await takePhoto();
     if (photo) {
       addAttachment(photo);
+      // Auto-send immediately after selecting photo
+      try {
+        await sendMessage(message, [photo]);
+        clearAll();
+        if (onTyping) {
+          onTyping(false);
+        }
+      } catch {
+        // Error already handled in useComposerSend, state preserved
+      }
     }
-  }, [takePhoto, addAttachment]);
+  }, [takePhoto, addAttachment, sendMessage, message, clearAll, onTyping]);
 
   const handlePickImage = useCallback(async () => {
     const image = await pickFromGallery();
     if (image) {
       addAttachment(image);
+      // Auto-send immediately after selecting image
+      try {
+        await sendMessage(message, [image]);
+        clearAll();
+        if (onTyping) {
+          onTyping(false);
+        }
+      } catch {
+        // Error already handled in useComposerSend, state preserved
+      }
     }
-  }, [pickFromGallery, addAttachment]);
+  }, [pickFromGallery, addAttachment, sendMessage, message, clearAll, onTyping]);
 
   const handleStopRecording = useCallback(async () => {
     await stopRecording();
