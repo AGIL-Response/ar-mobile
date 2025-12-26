@@ -31,6 +31,7 @@ import LockIcon from './lock.svg';
 import LogOutIcon from './log-out.svg';
 import EyeIcon from './eye.svg';
 import EyeOffIcon from './eye-off.svg';
+import SendIcon from './send.svg';
 import { ImageGallery } from '@/components/icons/image-gallery';
 import { Microphone } from '@/components/icons/microphone';
 import { Camera } from '@/components/icons/camera';
@@ -73,6 +74,7 @@ export const iconNames = {
   eye_off: 'eyeOff',
   image: 'image',
   microphone: 'microphone',
+  send: 'send',
 } as const;
 
 // Icons object with proper typing
@@ -115,6 +117,7 @@ const icons: Record<string, IconComponent> = {
   [iconNames.eye_off]: EyeOffIcon,
   [iconNames.image]: ImageGallery,
   [iconNames.microphone]: Microphone,
+  [iconNames.send]: SendIcon,
 } as const;
 
 // Export icon names as type for better TypeScript support

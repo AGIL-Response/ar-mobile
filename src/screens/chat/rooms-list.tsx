@@ -24,7 +24,18 @@ export default function ChatRoomsListScreen() {
 
   // Memoize the observable to prevent recreation on every render
   const observableRooms = useMemo(() => chatService.observeRooms(), []);
-  const rooms = useObservable(observableRooms, []) || [];
+  const roomsObservableResult = useObservable(observableRooms, []) || [];
+  
+  // Deduplicate rooms by id as a safety measure (should already be deduplicated in observeRooms)
+  const rooms = useMemo(() => {
+    const roomMap = new Map<string, ChatRoom>();
+    for (const room of roomsObservableResult) {
+      if (!roomMap.has(room.id)) {
+        roomMap.set(room.id, room);
+      }
+    }
+    return Array.from(roomMap.values());
+  }, [roomsObservableResult]);
 
   useEffect(() => {
     const initializeChat = async () => {

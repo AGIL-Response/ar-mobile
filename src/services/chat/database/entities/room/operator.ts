@@ -118,16 +118,33 @@ export async function roomToChatRoom(
 
 /**
  * Get observable for all rooms
+ * Deduplicates rooms by room_id to ensure only unique rooms are returned
  */
 export function observeRooms(roomToChatRoomFn: (room: Room) => Promise<ChatRoom>) {
   return db.get<Room>('rooms').query(Q.sortBy('last_message_at', Q.desc)).observe().pipe(
+    switchMap((rooms) => {
+      // Deduplicate rooms by room_id (keep the first occurrence of each unique room_id)
+      // This handles cases where duplicate rooms might exist in the database
+      const roomMap = new Map<string, Room>();
+      for (const room of rooms) {
+        if (!roomMap.has(room.roomId)) {
+          roomMap.set(room.roomId, room);
+        }
+      }
+
+      // Convert to array and maintain sort order by last_message_at
+      const uniqueRooms = Array.from(roomMap.values()).sort((a, b) => {
+        const timeA = a.lastMessageAt || 0;
+        const timeB = b.lastMessageAt || 0;
+        return timeB - timeA; // Descending order (newest first)
+      });
+
+      return Promise.all(uniqueRooms.map((room) => roomToChatRoomFn(room)));
+    }),
     distinctUntilChanged((prev, curr) => {
       // Compare room IDs and order to prevent redundant emissions
       if (prev.length !== curr.length) return false;
-      return prev.every((room, index) => room.roomId === curr[index]?.roomId);
-    }),
-    switchMap((rooms) => {
-      return Promise.all(rooms.map((room) => roomToChatRoomFn(room)));
+      return prev.every((room, index) => room.id === curr[index]?.id);
     })
   );
 }

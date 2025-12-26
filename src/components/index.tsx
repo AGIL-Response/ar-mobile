@@ -33,6 +33,7 @@ export * from './use-video-thumbnail';
 export * from './floating-action-button';
 export * from './withFileSource';
 export * from './icon';
+export * from './icon-button';
 export * from './network-signal-icon';
 export * from './battery-icon';
 export * from './input';

@@ -6,7 +6,7 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import { View, TouchableOpacity, Keyboard, Alert, StyleSheet } from 'react-native';
-import { Input, Icon, Text } from '@/components';
+import { Input, Text, IconButton } from '@/components';
 import { useTheme, type Theme } from '@/theme';
 import type { SendMessageData, ChatMessage } from '@/services/chat';
 import type { MediaFile } from '@/utils/media';
@@ -221,65 +221,37 @@ export function Composer({
             style={{
               flexDirection: 'row',
               alignItems: 'center',
-              gap: theme.spacing.gap.sm,
             }}
           >
-            <TouchableOpacity
+            <IconButton
+              icon="camera"
+              size="large"
+              colorVariant="transparent"
+              iconColor={theme.colors.button.secondary}
+              disabled={disabled || isSending}
               onPress={handleTakePhoto}
-              disabled={disabled || isSending}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundColor: theme.colors.background.secondary,
-              }}
-            >
-              <Icon
-                name="camera"
-                size={20}
-                color={disabled || isSending ? theme.colors.text.disabled : theme.colors.text.muted}
-              />
-            </TouchableOpacity>
+              accessibilityLabel="Take photo"
+            />
 
-            <TouchableOpacity
+            <IconButton
+              icon="image"
+              size="large"
+              colorVariant="transparent"
+              iconColor={theme.colors.button.secondary}
+              disabled={disabled || isSending}
               onPress={handlePickImage}
-              disabled={disabled || isSending}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundColor: theme.colors.background.secondary,
-              }}
-            >
-              <Icon
-                name="image"
-                size={20}
-                color={disabled || isSending ? theme.colors.text.disabled : theme.colors.text.muted}
-              />
-            </TouchableOpacity>
+              accessibilityLabel="Pick image"
+            />
 
-            <TouchableOpacity
-              onPress={startRecording}
+            <IconButton
+              icon="microphone"
+              size="large"
+              colorVariant="transparent"
+              iconColor={theme.colors.button.secondary}
               disabled={disabled || isSending}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundColor: theme.colors.background.secondary,
-              }}
-            >
-              <Icon
-                name="microphone"
-                size={20}
-                color={disabled || isSending ? theme.colors.text.disabled : theme.colors.text.muted}
-              />
-            </TouchableOpacity>
+              onPress={startRecording}
+              accessibilityLabel="Start recording"
+            />
           </View>
         )}
 
@@ -311,19 +283,15 @@ export function Composer({
               gap: theme.spacing.gap.sm,
             }}
           >
-            <TouchableOpacity
+            <IconButton
+              icon="x"
+              size="medium"
+              backgroundColor="#ef4444"
+              iconColor="white"
+              iconSize={18}
               onPress={cancelRecording}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundColor: '#ef4444',
-              }}
-            >
-              <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>×</Text>
-            </TouchableOpacity>
+              accessibilityLabel="Cancel recording"
+            />
 
             <View
               style={{
@@ -356,50 +324,27 @@ export function Composer({
               </Text>
             </View>
 
-            <TouchableOpacity
+            <IconButton
+              icon="send"
+              size="medium"
+              colorVariant="transparent"
+              iconColor={theme.colors.button.secondary}
+              iconSize={18}
               onPress={stopRecording}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundColor: theme.colors.primary || '#007AFF',
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 20,
-                  color: 'white',
-                }}
-              >
-                →
-              </Text>
-            </TouchableOpacity>
+              accessibilityLabel="Stop recording and send"
+            />
           </View>
         ) : (
-          <TouchableOpacity
-            onPress={handleSend}
+          <IconButton
+            icon="send"
+            size="large"
+            colorVariant="transparent"
             disabled={!canSend}
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 22,
-              justifyContent: 'center',
-              alignItems: 'center',
-              marginBottom: theme.spacing.gap.xs,
-              backgroundColor: canSend ? theme.colors.primary : theme.colors.background.secondary,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 20,
-                color: canSend ? 'white' : theme.colors.text.secondary,
-              }}
-            >
-              →
-            </Text>
-          </TouchableOpacity>
+            iconColor={canSend ? theme.colors.button.secondary : theme.colors.text.disabled}
+            onPress={handleSend}
+            style={{ marginBottom: theme.spacing.gap.xs }}
+            accessibilityLabel="Send message"
+          />
         )}
       </View>
     </View>
