@@ -290,7 +290,7 @@ export class ChatSocketService {
   /**
    * Send a message
    */
-  sendMessage(roomId: string, content: string, type: 'text' | 'file' | 'image' = 'text', replyTo?: string, fileIds?: string[], clientId?: string, id?: string): void {
+  sendMessage(roomId: string, content: string, type: 'text' | 'file' | 'image' = 'text', replyTo?: string, fileIds?: string[], clientId?: string, id?: string, isVoice?: boolean): void {
     if (!this.socket?.connected) {
       console.warn('Socket not connected, cannot send message');
       return;
@@ -316,6 +316,11 @@ export class ChatSocketService {
     // Add clientId if provided (for message status tracking)
     if (clientId) {
       payload.clientId = clientId;
+    }
+
+    // Add isVoice flag if provided (for voice transcription)
+    if (isVoice) {
+      payload.isVoice = true;
     }
 
     this.socket.emit('message:send', payload);

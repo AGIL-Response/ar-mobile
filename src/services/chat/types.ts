@@ -65,6 +65,7 @@ export interface SendMessageData {
   fileIds?: string[]; // File IDs from uploaded files
   replyTo?: string;
   clientId?: string; // Client-generated ID for tracking message status
+  isVoice?: boolean; // Indicates if message contains voice/audio for transcription
 }
 
 export interface CreateRoomData {
