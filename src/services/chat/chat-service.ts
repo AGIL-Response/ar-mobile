@@ -48,12 +48,6 @@ export class ChatService {
                   .fetch();
                 
                 if (attachmentModels.length > 0) {
-                  console.log('🔄 [ChatService] Migrating attachments to new messageId:', {
-                    oldMessageId,
-                    newMessageId,
-                    attachmentCount: attachmentModels.length,
-                  });
-                  
                   // Update each attachment's message_id
                   for (const attachment of attachmentModels) {
                     await attachment.update((att: any) => {

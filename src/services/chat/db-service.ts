@@ -95,11 +95,6 @@ export class ChatDbService {
             // This means onMessage already migrated it, so use the found messageId
             existingMessageId = foundMessageId;
             messageIdChanged = true;
-            console.log('🔍 [DbService] Found existing message by clientId (messageId already migrated):', {
-              clientId: messageData.clientId,
-              existingMessageId: foundMessageId,
-              incomingMessageId: messageId,
-            });
           } else {
             existingMessageId = foundMessageId;
           }
@@ -132,28 +127,6 @@ export class ChatDbService {
         // 2. Server has NO attachments (undefined or empty array)
         if (hasLocalAttachments && serverHasNoAttachments) {
           shouldPreserveLocalAttachments = true;
-          console.log('🔒 [DbService] Preserving local attachments - server message has no attachments:', {
-            messageId,
-            existingMessageId,
-            messageIdChanged,
-            existingAttachmentCount: existingAttachments.length,
-            serverHasAttachments,
-            localPaths: existingAttachments.filter(a => a.localPath).map(a => a.localPath?.substring(0, 50) + '...'),
-          });
-        } else if (hasLocalAttachments && serverHasAttachments) {
-          console.log('🔄 [DbService] Server has attachments - will override local attachments:', {
-            messageId,
-            existingMessageId,
-            messageIdChanged,
-            localAttachmentCount: existingAttachments.length,
-            serverAttachmentCount: messageData.attachments.length,
-          });
-        } else if (!hasLocalAttachments && serverHasNoAttachments) {
-          // No local attachments and no server attachments - this is fine
-          console.log('ℹ️ [DbService] No local attachments and no server attachments:', {
-            messageId,
-            existingMessageId,
-          });
         }
       }
     } catch (error) {
@@ -181,11 +154,6 @@ export class ChatDbService {
         if (hasLocalAttachments && serverHasNoAttachments) {
           shouldPreserveLocalAttachments = true;
           existingMessageId = finalMessageId; // Update to use finalMessageId
-          console.log('🔒 [DbService] Found local attachments at finalMessageId (preserving):', {
-            finalMessageId,
-            originalMessageId: messageId,
-            existingAttachmentCount: existingAttachmentsAtFinalId.length,
-          });
         }
       } catch (error) {
         console.warn('⚠️ [DbService] Error checking attachments at finalMessageId:', error);
@@ -250,16 +218,6 @@ export class ChatDbService {
       // Server has attachments - ALWAYS override local attachments (even if local exists)
       // But we've merged local paths so they're preserved if server doesn't have URLs yet
       await AttachmentEntity.upsertAttachments(finalMessageId, mergedAttachments);
-      console.log('✅ [DbService] Updated attachments from server (overriding local, merged with local paths):', {
-        messageId: finalMessageId,
-        originalMessageId: messageId,
-        attachmentCount: messageData.attachments.length,
-        mergedWithLocalPaths: mergedAttachments.some((a: any) => {
-          const hasServerUrl = a.url && a.url.startsWith('http');
-          const hasLocalPath = a.url && (a.url.startsWith('file://') || a.url.startsWith('/'));
-          return !hasServerUrl && hasLocalPath;
-        }),
-      });
     } else if (shouldPreserveLocalAttachments) {
       // Local attachments exist and server has none - preserve local attachments
       // Don't call upsertAttachments, they remain linked to finalMessageId
@@ -291,40 +249,8 @@ export class ChatDbService {
               });
             }
           });
-          console.log('🔄 [DbService] Migrated local attachments to new messageId:', {
-            oldMessageId: existingMessageId,
-            newMessageId: finalMessageId,
-            attachmentCount: attachmentModelsAtOld.length,
-          });
-        } else if (attachmentModelsAtNew.length > 0) {
-          // Attachments already at finalMessageId (migrated by onMessage or already there)
-          console.log('✅ [DbService] Attachments already at finalMessageId:', {
-            finalMessageId,
-            attachmentCount: attachmentModelsAtNew.length,
-          });
         }
-      } else {
-        // No migration needed, attachments should already be at finalMessageId
-        const dbModule = await import('./database/index');
-        const QModule = await import('@nozbe/watermelondb');
-        const db = dbModule.getDatabase();
-        const attachmentsAtFinalId = await db
-          .get('attachments')
-          .query(QModule.Q.where('message_id', finalMessageId))
-          .fetch();
-        
-        console.log('✅ [DbService] Preserving local attachments, skipping attachment update:', {
-          messageId: finalMessageId,
-          existingMessageId,
-          attachmentCount: attachmentsAtFinalId.length,
-        });
       }
-    } else {
-      // No attachments in server message and no local attachments to preserve
-      // This is fine for new messages or messages that never had attachments
-      console.log('ℹ️ [DbService] No attachments in server message, and no local attachments to preserve:', {
-        messageId: finalMessageId,
-      });
     }
 
     // Update room's last message using finalMessageId

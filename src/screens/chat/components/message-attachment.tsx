@@ -27,19 +27,7 @@ export function MessageAttachment({
 }: MessageAttachmentProps) {
   const theme = useTheme();
 
-  console.log('🔍 [MessageAttachment] Component called:', {
-    attachmentCount: attachments?.length || 0,
-    attachments: attachments?.map(a => ({
-      id: a.id,
-      filename: a.filename,
-      hasUrl: !!a.url,
-      url: a.url?.substring(0, 50) + '...',
-      mimeType: a.mimeType,
-    })),
-  });
-
   if (!attachments || attachments.length === 0) {
-    console.warn('⚠️ [MessageAttachment] No attachments provided, returning null');
     return null;
   }
 
@@ -47,15 +35,6 @@ export function MessageAttachment({
     <View style={{ gap: 8 }}>
       {attachments.map((attachment, index) => {
         const mediaType = getMediaType(attachment.filename);
-        
-        console.log('🔍 [MessageAttachment] Rendering attachment:', {
-          index,
-          attachmentId: attachment.id,
-          filename: attachment.filename,
-          mediaType,
-          hasUrl: !!attachment.url,
-          url: attachment.url?.substring(0, 50) + '...',
-        });
 
         if (mediaType === 'audio') {
           return (
@@ -103,18 +82,7 @@ export function MessageAttachment({
                     ? trimmedUrl
                     : null;
                   
-                  // Debug logging for image attachments
                   if (!imageUri) {
-                    console.warn('⚠️ [MessageAttachment] No image URI found:', {
-                      attachmentId: attachment.id,
-                      filename: attachment.filename,
-                      hasThumbnail: hasValidThumbnail,
-                      thumbnail: attachment.thumbnail?.substring(0, 30),
-                      hasUrl: hasValidUrl,
-                      url: attachment.url?.substring(0, 50),
-                      urlLength: attachment.url?.length || 0,
-                      urlIsEmpty: attachment.url === '' || attachment.url === undefined || attachment.url === null,
-                    });
                     return (
                       <View style={{
                         width: '100%',
@@ -130,13 +98,6 @@ export function MessageAttachment({
                     );
                   }
                   
-                  console.log('✅ [MessageAttachment] Rendering image:', {
-                    attachmentId: attachment.id,
-                    filename: attachment.filename,
-                    uri: imageUri.substring(0, 50) + '...',
-                    isLocalPath: imageUri.startsWith('file://') || imageUri.startsWith('/'),
-                  });
-                  
                   return (
                     <Image
                       source={{ uri: imageUri }}
@@ -145,28 +106,6 @@ export function MessageAttachment({
                         height: '100%',
                       }}
                       resizeMode="cover"
-                      onError={(error) => {
-                        console.error('❌ [MessageAttachment] Image load error:', {
-                          attachmentId: attachment.id,
-                          filename: attachment.filename,
-                          uri: imageUri.substring(0, 50) + '...',
-                          error: error.nativeEvent?.error || error,
-                          nativeEvent: error.nativeEvent,
-                        });
-                      }}
-                      onLoad={() => {
-                        console.log('✅ [MessageAttachment] Image loaded successfully:', {
-                          attachmentId: attachment.id,
-                          filename: attachment.filename,
-                          uri: imageUri.substring(0, 50) + '...',
-                        });
-                      }}
-                      onLoadStart={() => {
-                        console.log('🔄 [MessageAttachment] Image loading started:', {
-                          attachmentId: attachment.id,
-                          filename: attachment.filename,
-                        });
-                      }}
                     />
                   );
                 })()}

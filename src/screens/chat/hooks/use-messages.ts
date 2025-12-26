@@ -52,28 +52,6 @@ export function useMessages({ roomId }: UseMessagesParams): UseMessagesReturn {
     }
 
     const processed = processMessagesForDisplay(messagesObservableResult);
-    
-    // Debug logging for messages with attachments
-    const messagesWithAttachments = processed.filter(m => m.attachments && m.attachments.length > 0);
-    if (messagesWithAttachments.length > 0) {
-      console.log('🔍 [useMessages] Processed messages with attachments:', {
-        totalMessages: processed.length,
-        messagesWithAttachments: messagesWithAttachments.length,
-        messages: messagesWithAttachments.map(m => ({
-          id: m.id,
-          type: m.type,
-          attachmentCount: m.attachments?.length || 0,
-          hasContent: !!m.content,
-          attachments: m.attachments?.map(a => ({
-            id: a.id,
-            filename: a.filename,
-            hasUrl: !!a.url,
-            url: a.url?.substring(0, 30) + '...',
-          })),
-        })),
-      });
-    }
-    
     messagesRef.current = processed;
     return processed;
   }, [messagesObservableResult]);

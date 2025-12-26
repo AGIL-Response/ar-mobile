@@ -58,29 +58,11 @@ export function buildLocalMessage(options: MessageBuilderOptions): ChatMessage {
             duration: file.duration || localAtt?.duration,
           };
           
-          // Debug logging
-          console.log('[MessageBuilder] Building attachment with local path:', {
-            filename: attachment.filename,
-            url: attachment.url?.substring(0, 50) + '...',
-            hasLocalUri: !!file.uri,
-            hasLocalAttUrl: !!localAtt?.url,
-          });
-          
           return attachment;
         })
       : localAttachments.length > 0
       ? localAttachments
       : undefined;
-  
-  // Debug logging
-  if (attachments && attachments.length > 0) {
-    console.log('[MessageBuilder] Built local message with attachments:', {
-      messageId,
-      attachmentCount: attachments.length,
-      type,
-      hasContent: !!content,
-    });
-  }
 
   return {
     id: messageId,
