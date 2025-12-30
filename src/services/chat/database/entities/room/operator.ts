@@ -142,8 +142,37 @@ export function observeRooms(roomToChatRoomFn: (room: Room) => Promise<ChatRoom>
       return Promise.all(uniqueRooms.map((room) => roomToChatRoomFn(room)));
     }),
     distinctUntilChanged((prev, curr) => {
-      // Compare room IDs and order to prevent redundant emissions
+      // Compare room IDs, order, and members to prevent redundant emissions
+      // But allow emissions when members change (important for DM room avatars)
       if (prev.length !== curr.length) return false;
+      
+      // Check if any room has different members (by comparing member IDs)
+      const hasMemberChanges = prev.some((prevRoom, index) => {
+        const currRoom = curr[index];
+        if (!currRoom || prevRoom.id !== currRoom.id) return true;
+        
+        // Compare members - if members length or member IDs differ, consider it changed
+        const prevMemberIds = prevRoom.members?.map(m => m.id).sort().join(',') || '';
+        const currMemberIds = currRoom.members?.map(m => m.id).sort().join(',') || '';
+        if (prevMemberIds !== currMemberIds) return true;
+        
+        // Also check if any member's avatarUrl changed (important for DM avatars)
+        if (prevRoom.members?.length !== currRoom.members?.length) return true;
+        if (prevRoom.members && currRoom.members) {
+          for (let i = 0; i < prevRoom.members.length; i++) {
+            if (prevRoom.members[i]?.avatarUrl !== currRoom.members[i]?.avatarUrl) {
+              return true;
+            }
+          }
+        }
+        
+        return false;
+      });
+      
+      // If members changed, allow emission
+      if (hasMemberChanges) return false;
+      
+      // Otherwise, only emit if room IDs or order changed
       return prev.every((room, index) => room.id === curr[index]?.id);
     })
   );

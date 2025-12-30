@@ -48,7 +48,10 @@ export async function upsertMessage(
 
   // Perform atomic upsert: check for existence and handle duplicates within a single write transaction
   // This prevents race conditions where multiple concurrent upserts could create duplicates
-  return await db.write(async () => {
+  // Track if attachments were updated (declared outside transaction to use after)
+  let attachmentUpdated = false;
+
+  const result = await db.write(async () => {
     // Check if message exists - do this inside the write transaction to prevent race conditions
     const existingMessages = await db
       .get<Message>('messages')
@@ -94,7 +97,9 @@ export async function upsertMessage(
           message.editedAt = messageDataTransformed.editedAt;
         }
         message.isSynced = messageDataTransformed.isSynced;
-        message.serverUpdatedAt = messageDataTransformed.serverUpdatedAt;
+        // Always update serverUpdatedAt to trigger observable re-emission
+        // This ensures UI updates when attachments (like thumbnails) are updated
+        message.serverUpdatedAt = messageDataTransformed.serverUpdatedAt || new Date().toISOString();
         // Update status and clientId if provided (for status tracking)
         // Only update if the value is explicitly provided (not undefined)
         // Wrap in try-catch to handle case where columns don't exist yet (migration not applied)
@@ -153,6 +158,18 @@ export async function upsertMessage(
 
           const existingAtt = existingAttachments.find(a => a.attachmentId === attachmentData.attachmentId);
           if (existingAtt) {
+            // Check if thumbnail or other fields changed
+            const thumbnailChanged = existingAtt.thumbnail !== attachmentData.thumbnail;
+            const urlChanged = existingAtt.url !== attachmentData.url;
+            const otherFieldsChanged =
+              existingAtt.filename !== attachmentData.filename ||
+              existingAtt.size !== attachmentData.size ||
+              existingAtt.mimeType !== attachmentData.mimeType;
+
+            if (thumbnailChanged || urlChanged || otherFieldsChanged) {
+              attachmentUpdated = true;
+            }
+
             await existingAtt.update((att: any) => {
               att.filename = attachmentData.filename;
               att.url = attachmentData.url;
@@ -170,6 +187,8 @@ export async function upsertMessage(
               }
             });
           } else {
+            // New attachment added
+            attachmentUpdated = true;
             await db.get<Attachment>('attachments').create((att: any) => {
               att.attachmentId = attachmentData.attachmentId;
               att.messageId = attachmentData.messageId;
@@ -268,6 +287,20 @@ export async function upsertMessage(
       return createdMessage;
     }
   });
+
+  // If attachments were updated, force message observable to re-emit by updating serverUpdatedAt
+  // This must be done in a separate transaction since we can't update the message twice in the same transaction
+  // This ensures the UI updates when thumbnails or other attachment data changes
+  if (attachmentUpdated && result) {
+    await db.write(async () => {
+      await result.update((message) => {
+        // Force update with current timestamp to ensure observable triggers
+        message.serverUpdatedAt = new Date().toISOString();
+      });
+    });
+  }
+
+  return result;
 }
 
 /**

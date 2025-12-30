@@ -25,12 +25,15 @@ export class ChatDbService {
     // This ensures we use the correct lastMessageAt from the server instead of calculating from message timestamp
     const lastMessageAtOverride = roomData._lastMessageAt;
 
-    await RoomEntity.upsertRoom(roomData, lastMessageAtOverride);
-
-    // Save members
+    // Save members FIRST before saving the room
+    // This ensures members are available when the observable emits
+    // This is especially important for DM rooms where avatars depend on member data
     if (roomData.members && roomData.members.length > 0) {
       await RoomMemberEntity.upsertRoomMembers(roomId, roomData.members);
     }
+
+    // Then save the room (this will trigger the observable)
+    await RoomEntity.upsertRoom(roomData, lastMessageAtOverride);
 
     // Save last message if exists
     if (roomData.lastMessage) {
