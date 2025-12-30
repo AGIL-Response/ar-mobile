@@ -123,6 +123,9 @@ export default function ChatRoomScreen() {
     return messages.length - 1;
   }, [messages.length, isInitialLoading]);
 
+  // Track if initialScrollIndex has been set at least once (for key-based remount)
+  const hasInitialScrollIndex = initialScrollIndex !== undefined;
+
   useEffect(() => {
     if (!isInitialLoading && messages.length > 0 && !hasScrolledToEnd) {
       const timer = setTimeout(() => {
@@ -140,11 +143,14 @@ export default function ChatRoomScreen() {
 
   // Show loading overlay until initial scroll to end is complete
   // If there are no messages, don't show overlay (empty state will show)
-  const showLoadingOverlay = isInitialLoading || (messages.length > 0 && !hasScrolledToEnd);
-
-  if (!roomId || (!room && !isLoading) || !initialScrollIndex) {
-    return null;
-  }
+  // Also show overlay when roomId is missing, room is not loaded yet, or initialScrollIndex is not ready
+  // Note: initialScrollIndex must be set before list renders, otherwise LegendList won't scroll to it
+  const showLoadingOverlay =
+    isInitialLoading ||
+    (messages.length > 0 && !hasScrolledToEnd) ||
+    !roomId ||
+    (!room && !isLoading) ||
+    (messages.length > 0 && initialScrollIndex === undefined);
 
 
   return (
@@ -166,6 +172,7 @@ export default function ChatRoomScreen() {
           <View style={{ flex: 1 }} pointerEvents={showLoadingOverlay ? 'none' : 'auto'}>
             <LegendList
               // ref={flatListRef}
+              key={hasInitialScrollIndex ? `list-ready-${roomId}` : 'list-loading'}
               data={messages}
               keyExtractor={keyExtractor}
               renderItem={renderItem}
