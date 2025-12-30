@@ -297,13 +297,42 @@ export class ChatDbService {
 
   /**
    * Save or update multiple messages
+   * Uses batch upsert for efficiency - all messages are saved in a single transaction
+   * This prevents the observable from emitting multiple times and improves performance
    */
   async saveMessages(messages: ChatMessage[], roomId: string): Promise<void> {
-    for (const message of messages) {
-      try {
-        await this.saveMessage(message, roomId);
-      } catch (error) {
-        console.error('❌ [DbService] Failed to save message:', error, { messageId: message.id });
+    if (!messages || messages.length === 0) {
+      return;
+    }
+
+    try {
+      // Use batch upsert to save all messages in a single transaction
+      // This is much more efficient and prevents the observable from emitting 50+ times
+      await MessageEntity.batchUpsertMessages(messages, roomId);
+
+      // Update room's last message using the newest message
+      if (messages.length > 0) {
+        const newestMessage = messages[messages.length - 1];
+        await RoomEntity.updateRoomLastMessage(
+          roomId,
+          newestMessage.id,
+          newestMessage.timestamp || new Date()
+        );
+      }
+    } catch (error) {
+      console.error('❌ [DbService] Failed to batch save messages:', error, {
+        roomId,
+        messageCount: messages.length,
+      });
+      // Fallback to individual saves if batch fails
+      for (const message of messages) {
+        try {
+          await this.saveMessage(message, roomId);
+        } catch (individualError) {
+          console.error('❌ [DbService] Failed to save message (fallback):', individualError, {
+            messageId: message.id,
+          });
+        }
       }
     }
   }

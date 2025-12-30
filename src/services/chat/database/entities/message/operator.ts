@@ -2,7 +2,7 @@ import { getDatabase } from '../../index';
 import type Message from '../../models/Message';
 import type { ChatMessage, ChatAttachment } from '../../../types';
 import { Q } from '@nozbe/watermelondb';
-import { switchMap, of } from 'rxjs';
+import { switchMap, of, debounceTime } from 'rxjs';
 import { chatMessageToMessageData } from './transformer';
 import { upsertUser } from '../user/operator';
 import { chatAttachmentToAttachmentData } from '../attachment/transformer';
@@ -271,6 +271,158 @@ export async function upsertMessage(
 }
 
 /**
+ * Batch upsert messages - saves all messages in a single write transaction
+ * This is much more efficient than calling upsertMessage multiple times
+ * and prevents the observable from emitting multiple times during batch loads
+ */
+export async function batchUpsertMessages(
+  messagesData: ChatMessage[],
+  roomId: string
+): Promise<Message[]> {
+  if (!messagesData || messagesData.length === 0) {
+    return [];
+  }
+
+  // First, upsert all users outside the main transaction to avoid nested transactions
+  const uniqueSenders = new Map<string, ChatMessage['sender']>();
+  for (const messageData of messagesData) {
+    if (messageData.sender) {
+      uniqueSenders.set(messageData.senderId, messageData.sender);
+    }
+  }
+
+  // Upsert all users in parallel
+  await Promise.all(
+    Array.from(uniqueSenders.values()).map((sender) =>
+      upsertUser(sender).catch((error) => {
+        console.error('❌ [MessageOperator] Failed to upsert sender user in batch:', error, {
+          senderId: sender.id,
+        });
+      })
+    )
+  );
+
+  // Now batch upsert all messages in a single transaction
+  return await db.write(async () => {
+    const savedMessages: Message[] = [];
+
+    for (const messageData of messagesData) {
+      const messageDataTransformed = chatMessageToMessageData(messageData, roomId);
+      const messageId = messageDataTransformed.messageId;
+
+      // Check if message exists - handle duplicates
+      const existingMessages = await db
+        .get<Message>('messages')
+        .query(Q.where('message_id', messageId))
+        .fetch();
+
+      // If there are duplicates, delete them and keep only the first one
+      if (existingMessages.length > 1) {
+        for (let i = 1; i < existingMessages.length; i++) {
+          await existingMessages[i].markAsDeleted();
+        }
+      }
+
+      const existingMessage = existingMessages.length > 0 ? existingMessages[0] : null;
+
+      if (existingMessage) {
+        // Update existing message
+        await existingMessage.update((message) => {
+          message.content = messageDataTransformed.content;
+          const currentType = message.type;
+          const newType = messageDataTransformed.type || 'text';
+          const typeHierarchy: Record<string, number> = { 'text': 0, 'file': 1, 'image': 1, 'system': 0 };
+          const currentTypePriority = typeHierarchy[currentType] || 0;
+          const newTypePriority = typeHierarchy[newType] || 0;
+          if (newTypePriority >= currentTypePriority || currentType === 'text') {
+            message.type = newType;
+          }
+          message.replyToId = messageDataTransformed.replyToId;
+          if (messageDataTransformed.editedAt !== undefined) {
+            message.editedAt = messageDataTransformed.editedAt;
+          }
+          message.isSynced = messageDataTransformed.isSynced;
+          message.serverUpdatedAt = messageDataTransformed.serverUpdatedAt;
+          try {
+            if (messageDataTransformed.status !== undefined && messageDataTransformed.status !== null) {
+              message.status = messageDataTransformed.status;
+            }
+            if (messageDataTransformed.clientId !== undefined && messageDataTransformed.clientId !== null) {
+              message.clientId = messageDataTransformed.clientId;
+            }
+          } catch (error: any) {
+            if (error?.message?.includes('no column named status') || error?.message?.includes('no column named client_id')) {
+              // Ignore - columns may not exist yet
+            } else {
+              throw error;
+            }
+          }
+        });
+        savedMessages.push(existingMessage);
+      } else {
+        // Create new message
+        const createdMessage = await db.get<Message>('messages').create((message) => {
+          message.messageId = messageDataTransformed.messageId;
+          message.roomId = messageDataTransformed.roomId;
+          message.senderId = messageDataTransformed.senderId;
+          message.content = messageDataTransformed.content || '';
+          message.type = messageDataTransformed.type || 'text';
+          message.isSynced = messageDataTransformed.isSynced;
+          message.serverCreatedAt = messageDataTransformed.serverCreatedAt;
+          message.serverUpdatedAt = messageDataTransformed.serverUpdatedAt;
+          if (messageDataTransformed.replyToId !== undefined) {
+            message.replyToId = messageDataTransformed.replyToId;
+          }
+          if (messageDataTransformed.editedAt !== undefined) {
+            message.editedAt = messageDataTransformed.editedAt;
+          }
+          try {
+            if (messageDataTransformed.status !== undefined && messageDataTransformed.status !== null) {
+              message.status = messageDataTransformed.status;
+            }
+            if (messageDataTransformed.clientId !== undefined && messageDataTransformed.clientId !== null) {
+              message.clientId = messageDataTransformed.clientId;
+            }
+          } catch (error: any) {
+            if (error?.message?.includes('no column named status') || error?.message?.includes('no column named client_id')) {
+              // Ignore - columns may not exist yet
+            }
+          }
+        });
+        savedMessages.push(createdMessage);
+
+        // Save attachments if provided
+        if (messageData.attachments && messageData.attachments.length > 0) {
+          for (const attachment of messageData.attachments) {
+            const attachmentData = chatAttachmentToAttachmentData(attachment, messageId);
+            await db.get<Attachment>('attachments').create((att: any) => {
+              att.attachmentId = attachmentData.attachmentId;
+              att.messageId = attachmentData.messageId;
+              att.filename = attachmentData.filename;
+              att.url = attachmentData.url;
+              att.size = attachmentData.size;
+              att.mimeType = attachmentData.mimeType;
+              att.uploadedAt = attachmentData.uploadedAt;
+              if (attachmentData.localPath) {
+                att.localPath = attachmentData.localPath;
+              }
+              if (attachmentData.thumbnail) {
+                att.thumbnail = attachmentData.thumbnail;
+              }
+              if (attachmentData.duration) {
+                att.duration = attachmentData.duration;
+              }
+            });
+          }
+        }
+      }
+    }
+
+    return savedMessages;
+  });
+}
+
+/**
  * Validate and normalize roomId
  */
 function validateRoomId(roomId: string | undefined | null): string | null {
@@ -356,6 +508,9 @@ export function observeMessages(
       );
 
     return query.observe().pipe(
+      // Debounce to batch rapid updates (e.g., when loading 50 messages at once)
+      // This prevents the list from updating 50 times and instead updates once after all messages are inserted
+      debounceTime(100),
       switchMap((messages) => processAndTransformMessages(messages, messageToChatMessageFn))
     );
   } catch (error) {
