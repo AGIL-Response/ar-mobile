@@ -18,7 +18,17 @@ export interface MessageAttachmentProps {
 }
 
 const { width: screenWidth } = Dimensions.get('window');
-const MAX_ATTACHMENT_WIDTH = screenWidth * 0.65;
+// Calculate available width accounting for message bubble constraints:
+// - Message row padding: 16px on each side = 32px total
+// - Content container maxWidth: 75% of (screenWidth - 32px)
+// - Bubble padding: 8px on each side = 16px total
+// - Bubble border: 1-2px on each side = ~4px total
+// - Timestamp: ~40px minWidth
+// - Additional safety margin: 20px to prevent any overflow
+// Available width = ((screenWidth - 32) * 0.75) - 16 - 4 - 40 - 20
+// Using a very conservative calculation to ensure it fits within the bubble
+const availableWidth = (screenWidth - 32) * 0.75 - 16 - 4 - 40 - 20;
+const MAX_ATTACHMENT_WIDTH = Math.min(screenWidth * 0.48, Math.max(200, availableWidth));
 const IMAGE_ASPECT_RATIO = 0.75;
 
 /**
@@ -132,7 +142,7 @@ function VideoAttachment({ attachment, theme }: { attachment: ChatAttachment; th
       {thumbnailUri ? (
         <Image
           source={{ uri: thumbnailUri }}
-          style={[styles.mediaImage, styles.absoluteFill]}
+          style={styles.mediaImage}
           resizeMode="cover"
         />
       ) : (
@@ -239,6 +249,7 @@ const styles = StyleSheet.create({
   attachmentWrapper: {
     borderRadius: 12,
     overflow: 'hidden',
+    width: MAX_ATTACHMENT_WIDTH,
   },
   mediaContainer: {
     width: MAX_ATTACHMENT_WIDTH,
@@ -252,9 +263,6 @@ const styles = StyleSheet.create({
   mediaImage: {
     width: '100%',
     height: '100%',
-  },
-  absoluteFill: {
-    position: 'absolute',
   },
   emptyMediaContainer: {
     justifyContent: 'center',
