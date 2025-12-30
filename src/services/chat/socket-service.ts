@@ -496,10 +496,19 @@ export class ChatSocketService {
    */
   disconnect(): void {
     if (this.socket) {
-      this.socket.removeAllListeners();
-      this.socket.disconnect();
-      this.socket = null;
-      this.isConnected = false;
+      try {
+        this.socket.removeAllListeners();
+        // Only disconnect if socket is actually connected
+        if (this.socket.connected) {
+          this.socket.disconnect();
+        }
+      } catch (error) {
+        // Ignore errors if socket is already disconnected
+        console.warn('[ChatSocketService] Error during disconnect:', error);
+      } finally {
+        this.socket = null;
+        this.isConnected = false;
+      }
     }
   }
 

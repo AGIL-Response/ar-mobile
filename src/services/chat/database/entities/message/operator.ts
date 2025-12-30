@@ -46,16 +46,28 @@ export async function upsertMessage(
     });
   }
 
-  // Check if message exists
-  const existingMessages = await db
-    .get<Message>('messages')
-    .query(Q.where('message_id', messageId))
-    .fetch();
+  // Perform atomic upsert: check for existence and handle duplicates within a single write transaction
+  // This prevents race conditions where multiple concurrent upserts could create duplicates
+  return await db.write(async () => {
+    // Check if message exists - do this inside the write transaction to prevent race conditions
+    const existingMessages = await db
+      .get<Message>('messages')
+      .query(Q.where('message_id', messageId))
+      .fetch();
 
-  const existingMessage = existingMessages.length > 0 ? existingMessages[0] : null;
+    // If there are duplicates, delete them and keep only the first one
+    if (existingMessages.length > 1) {
+      // Delete all duplicates except the first one
+      for (let i = 1; i < existingMessages.length; i++) {
+        await existingMessages[i].markAsDeleted();
+      }
+      console.warn(`⚠️ [MessageOperator] Found ${existingMessages.length} duplicate messages with message_id ${messageId}. Deleted duplicates, keeping the first one.`);
+    }
 
-  if (existingMessage) {
-    return await db.write(async () => {
+    const existingMessage = existingMessages.length > 0 ? existingMessages[0] : null;
+
+    if (existingMessage) {
+      // Update existing message
       await existingMessage.update((message) => {
         message.content = messageDataTransformed.content;
         // Preserve more specific type ('image' or 'file') when updating
@@ -65,18 +77,18 @@ export async function upsertMessage(
         // This prevents overwriting 'image'/'file' with 'text' when server response doesn't include correct type
         const currentType = message.type;
         const newType = messageDataTransformed.type || 'text';
-        
+
         // Define type hierarchy: 'text' < 'file'/'image'
         const typeHierarchy: Record<string, number> = { 'text': 0, 'file': 1, 'image': 1, 'system': 0 };
         const currentTypePriority = typeHierarchy[currentType] || 0;
         const newTypePriority = typeHierarchy[newType] || 0;
-        
+
         // Only update if new type has same or higher priority, or if current type is 'text'
         if (newTypePriority >= currentTypePriority || currentType === 'text') {
           message.type = newType;
         }
         // Otherwise, preserve existing type (especially if it's 'image' or 'file')
-        
+
         message.replyToId = messageDataTransformed.replyToId;
         if (messageDataTransformed.editedAt !== undefined) {
           message.editedAt = messageDataTransformed.editedAt;
@@ -105,27 +117,27 @@ export async function upsertMessage(
           }
         }
       });
-      
+
       // Save attachments in the same transaction if provided
       // This ensures attachments are available when the observable emits
       if (attachments && attachments.length > 0) {
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'message/operator.ts:110',message:'upsertMessage - saving attachments in same transaction (update)',data:{messageId,attachmentCount:attachments.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
+        fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'message/operator.ts:110', message: 'upsertMessage - saving attachments in same transaction (update)', data: { messageId, attachmentCount: attachments.length }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H' }) }).catch(() => { });
         // #endregion
-        
+
         // Get existing attachments to preserve local paths
         const existingAttachments = await db
           .get<Attachment>('attachments')
           .query(Q.where('message_id', messageId))
           .fetch();
-        
+
         const localPathMap = new Map<string, string>();
         for (const existingAtt of existingAttachments) {
           if (existingAtt.localPath) {
             localPathMap.set(existingAtt.attachmentId, existingAtt.localPath);
           }
         }
-        
+
         // Delete existing attachments that aren't in the new list
         const newIds = new Set(attachments.map(a => a.id));
         for (const existingAtt of existingAttachments) {
@@ -133,12 +145,12 @@ export async function upsertMessage(
             await existingAtt.destroyPermanently();
           }
         }
-        
+
         // Create or update attachments
         for (const attachment of attachments) {
           const attachmentData = chatAttachmentToAttachmentData(attachment, messageId);
           const preservedLocalPath = localPathMap.get(attachmentData.attachmentId);
-          
+
           const existingAtt = existingAttachments.find(a => a.attachmentId === attachmentData.attachmentId);
           if (existingAtt) {
             await existingAtt.update((att: any) => {
@@ -179,11 +191,10 @@ export async function upsertMessage(
           }
         }
       }
-      
+
       return existingMessage;
-    });
-  } else {
-    return await db.write(async () => {
+    } else {
+      // Create new message
       const createdMessage = await db.get<Message>('messages').create((message) => {
         // Set all required fields first
         message.messageId = messageDataTransformed.messageId;
@@ -223,14 +234,14 @@ export async function upsertMessage(
           }
         }
       });
-      
+
       // Save attachments in the same transaction if provided
       // This ensures attachments are available when the observable emits
       if (attachments && attachments.length > 0) {
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'message/operator.ts:180',message:'upsertMessage - saving attachments in same transaction (create)',data:{messageId,attachmentCount:attachments.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
+        fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'message/operator.ts:180', message: 'upsertMessage - saving attachments in same transaction (create)', data: { messageId, attachmentCount: attachments.length }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H' }) }).catch(() => { });
         // #endregion
-        
+
         for (const attachment of attachments) {
           const attachmentData = chatAttachmentToAttachmentData(attachment, messageId);
           await db.get<Attachment>('attachments').create((att: any) => {
@@ -253,10 +264,10 @@ export async function upsertMessage(
           });
         }
       }
-      
+
       return createdMessage;
-    });
-  }
+    }
+  });
 }
 
 /**
@@ -290,7 +301,10 @@ function sortMessagesByTimestamp(messages: Message[]): Message[] {
 }
 
 /**
- * Process and transform messages: sort and convert to ChatMessage
+ * Process and transform messages: deduplicate, sort and convert to ChatMessage
+ * Deduplicates by message_id to ensure no duplicate messages are returned
+ * Note: Duplicates are filtered here to prevent UI issues, but cleanup happens at upsert level
+ * to avoid creating excessive write transactions that block the database queue
  */
 async function processAndTransformMessages(
   messages: Message[],
@@ -300,7 +314,21 @@ async function processAndTransformMessages(
     return [];
   }
 
-  const sortedMessages = sortMessagesByTimestamp(messages);
+  // Deduplicate by message_id - keep the first occurrence of each unique message_id
+  // This handles cases where duplicates might exist in the database
+  // We filter them here to prevent duplicate keys from reaching the UI
+  // Actual cleanup happens at the upsert level to avoid queue buildup
+  const messageMap = new Map<string, Message>();
+  for (const message of messages) {
+    const messageId = message.messageId;
+    if (!messageMap.has(messageId)) {
+      messageMap.set(messageId, message);
+    }
+  }
+
+  // Convert map values to array and sort
+  const uniqueMessages = Array.from(messageMap.values());
+  const sortedMessages = sortMessagesByTimestamp(uniqueMessages);
   return Promise.all(sortedMessages.map((message) => messageToChatMessageFn(message)));
 }
 
