@@ -142,14 +142,14 @@ export function Composer({
         <ComposerReplyBar replyTo={replyTo} onCancel={onCancelReply} />
       )}
 
-      {attachments.length > 0 && (
+      {/* {attachments.length > 0 && (
         <AttachmentPreview
           attachments={attachments}
           onRemove={removeAttachment}
           uploadProgress={uploadProgress}
           isUploading={isSending && isUploading}
         />
-      )}
+      )} */}
 
       <View style={styles.inputArea}>
         {showActionButtons && (

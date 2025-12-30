@@ -38,14 +38,14 @@ export function useMessageRenderer({
   // Memoize render item callback
   const renderItem = useCallback(
     ({ item, index }: { item: ChatMessage; index: number }) => {
-      // Reversed array: [newest, ..., oldest] (newest first, oldest last)
-      // With alignItemsAtEnd: newest messages (index 0) align to bottom
+      // Normal order: [oldest, ..., newest] (oldest first, newest last)
+      // With alignItemsAtEnd: newest messages (last items) align to bottom
       const currentMessages = messagesRef.current;
-      const previousMessage = index > 0 ? currentMessages[index - 1] : null; // Newer message (below)
+      const previousMessage = index > 0 ? currentMessages[index - 1] : null; // Older message (above)
       const nextMessage =
-        index < currentMessages.length - 1 ? currentMessages[index + 1] : null; // Older message (above)
+        index < currentMessages.length - 1 ? currentMessages[index + 1] : null; // Newer message (below)
 
-      // Show avatar when sender changes or it's the newest message
+      // Show avatar when sender changes or it's the first message
       const showAvatar = !previousMessage || previousMessage.senderId !== item.senderId;
 
       // Show sender name for group chats when sender changes
@@ -53,7 +53,7 @@ export function useMessageRenderer({
         room?.type === 'group' && (!previousMessage || previousMessage.senderId !== item.senderId);
 
       // Group messages from same sender (compact mode)
-      // Group with next (older) message if same sender and within 1 minute
+      // Group with next (newer) message if same sender and within 1 minute
       const isGrouped =
         nextMessage?.senderId === item.senderId &&
         Math.abs(

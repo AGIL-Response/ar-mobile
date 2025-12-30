@@ -252,31 +252,35 @@ export class ChatDbService {
           .fetch();
 
         if (attachmentModelsAtOld.length > 0 && attachmentModelsAtNew.length === 0) {
-          // Attachments still at old messageId, migrate them
-          await db.write(async () => {
-            for (const attachment of attachmentModelsAtOld) {
-              await attachment.update((att: any) => {
-                att.messageId = finalMessageId;
-              });
-            }
-          });
-
-          // Update message's serverUpdatedAt to trigger observable update
+          // Attachments still at old messageId, migrate them in a single transaction
           const messagesToUpdate = await db
             .get('messages')
             .query(QModule.Q.where('message_id', finalMessageId))
             .fetch();
+          
           if (messagesToUpdate.length > 0) {
             const newTimestamp = new Date().toISOString();
-            // Force observable emission by updating content field
             const currentContent = messagesToUpdate[0].content || '';
+            
+            // Combine all updates into a single write transaction to avoid queue warnings
             await db.write(async () => {
+              // Migrate attachments
+              for (const attachment of attachmentModelsAtOld) {
+                await attachment.update((att: any) => {
+                  att.messageId = finalMessageId;
+                });
+              }
+              
+              // Update message's serverUpdatedAt to trigger observable update
+              // Temporarily modify content to force observable emission
               await messagesToUpdate[0].update((msg: any) => {
                 msg.serverUpdatedAt = newTimestamp;
                 msg.content = currentContent + '\u200B';
               });
             });
-            // Restore original content
+            
+            // Immediately restore original content in a separate transaction
+            // This is necessary to revert the content change while keeping the serverUpdatedAt update
             await db.write(async () => {
               await messagesToUpdate[0].update((msg: any) => {
                 msg.content = currentContent;

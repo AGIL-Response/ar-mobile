@@ -38,36 +38,13 @@ export class ChatService {
             const oldMessageId = localMessage.messageId;
             const newMessageId = typeof message.id === 'string' ? message.id : String(message.id);
             
-            await db.write(async () => {
-              // Update message ID to server ID if different, and migrate attachments
-              if (oldMessageId !== newMessageId) {
-                // Get attachment models to migrate
-                const attachmentModels = await db
-                  .get('attachments')
-                  .query(QModule.Q.where('message_id', oldMessageId))
-                  .fetch();
-                
-                if (attachmentModels.length > 0) {
-                  // Update each attachment's message_id
-                  for (const attachment of attachmentModels) {
-                    await attachment.update((att: any) => {
-                      att.messageId = newMessageId;
-                    });
-                  }
-                }
-                
-                // Update message ID
-                await localMessage.update((msg: any) => {
-                  msg.messageId = newMessageId;
-                  msg.status = 'sent';
-                });
-              } else {
-                // Just update status
-                await localMessage.update((msg: any) => {
-                  msg.status = 'sent';
-                });
-              }
-            });
+            // Update message ID and status in the message data
+            // saveMessage will handle the actual DB write, avoiding duplicate writes
+            if (oldMessageId !== newMessageId) {
+              message.id = newMessageId;
+            }
+            message.status = 'sent';
+            
             // Clear timeout if exists
             const timeout = this.sendingMessageTimeouts.get(message.clientId);
             if (timeout) {

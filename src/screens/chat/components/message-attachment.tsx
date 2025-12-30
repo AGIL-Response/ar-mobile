@@ -106,21 +106,6 @@ function ImageAttachment({ attachment, theme }: { attachment: ChatAttachment; th
           source={{ uri: imageUri }}
           style={styles.mediaImage}
           resizeMode="cover"
-          onError={(error) => {
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'message-attachment.tsx:110', message: 'ImageAttachment - Image load ERROR', data: { attachmentId: attachment.id, filename: attachment.filename, imageUri: imageUri || null, error: String(error.nativeEvent?.error || error) }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'D' }) }).catch(() => { });
-            // #endregion
-            console.error('[ImageAttachment] Image load error:', {
-              uri: imageUri.substring(0, 50),
-              error: error.nativeEvent?.error || error,
-              attachmentId: attachment.id,
-            });
-          }}
-          onLoad={() => {
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'message-attachment.tsx:122', message: 'ImageAttachment - Image load SUCCESS', data: { attachmentId: attachment.id, filename: attachment.filename, imageUri: imageUri || null }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'D' }) }).catch(() => { });
-            // #endregion
-          }}
         />
       ) : (
         <View style={[styles.mediaImage, styles.emptyMediaContainer]}>
@@ -129,7 +114,6 @@ function ImageAttachment({ attachment, theme }: { attachment: ChatAttachment; th
           </Text>
         </View>
       )}
-      <FilenameOverlay filename={attachment.filename} />
     </View>
   );
 }
@@ -142,7 +126,9 @@ function VideoAttachment({ attachment, theme }: { attachment: ChatAttachment; th
   const thumbnailUri = getValidUri(attachment, true);
 
   return (
-    <View style={[styles.mediaContainer, { backgroundColor: theme.colors.background.tertiary }]}>
+    <View style={[styles.mediaContainer, {
+      backgroundColor: theme.colors.background.tertiary,
+    }]}>
       {thumbnailUri ? (
         <Image
           source={{ uri: thumbnailUri }}
@@ -290,18 +276,15 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   playButtonOverlayContainer: {
+    width: MAX_ATTACHMENT_WIDTH,
+    height: MAX_ATTACHMENT_WIDTH * IMAGE_ASPECT_RATIO,
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
   },
   playButtonOverlay: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: '100%',
+    height: '100%',
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',

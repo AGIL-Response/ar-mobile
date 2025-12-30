@@ -42,8 +42,8 @@ export function useMessages({ roomId }: UseMessagesParams): UseMessagesReturn {
   const messagesObservableResult = useObservable(observableMessages, []);
 
   // Process messages for display: deduplicate and reverse
-  // Messages are already sorted by created_at ascending (oldest first, newest last)
-  // With alignItemsAtEnd, keep normal order - newest messages (last items) will align to bottom
+  // Messages come from DB sorted descending (newest first, oldest last): [newest, ..., oldest]
+  // After reversal: [oldest, ..., newest] - with alignItemsAtEnd, newest (last items) align to bottom
   // Stable reference: only create new array when messagesObservableResult reference changes
   const messages = useMemo(() => {
     if (!messagesObservableResult || messagesObservableResult.length === 0) {

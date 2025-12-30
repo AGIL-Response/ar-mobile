@@ -12,6 +12,7 @@ interface UsePaginationParams {
   messages: ChatMessage[];
   messagesLength: number;
   isLoading: boolean;
+  hasScrolledToEndRef: React.MutableRefObject<boolean>;
 }
 
 interface UsePaginationReturn {
@@ -31,6 +32,7 @@ export function usePagination({
   messages,
   messagesLength,
   isLoading,
+  hasScrolledToEndRef,
 }: UsePaginationParams): UsePaginationReturn {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const lastLoadMoreTimeRef = useRef<number>(0);
@@ -48,6 +50,7 @@ export function usePagination({
     // - Already loading more
     // - Initial loading is in progress
     // - No messages available
+    // - Initial scroll to end hasn't completed yet
     // - Called too recently (debounce - within 2000ms to prevent rapid firing)
     const now = Date.now();
     console.log('[Chat] - usePagination - start loading more');
@@ -56,6 +59,7 @@ export function usePagination({
       isLoadingMore ||
       isLoading ||
       messagesLength === 0 ||
+      !hasScrolledToEndRef.current ||
       now - lastLoadMoreTimeRef.current < LOAD_MORE_DEBOUNCE_MS
     ) {
       return;
@@ -67,7 +71,7 @@ export function usePagination({
     console.log('[Chat] - usePagination - last message (index -1):', messages[messagesLength - 1]?.id, messages[messagesLength - 1]?.content);
 
     // Get the oldest message for pagination
-    // After processMessagesForDisplay, the array is [oldest (index 0), ..., newest (last index)]
+    // Messages are in normal order: [oldest (index 0), ..., newest (last index)]
     // So the oldest message is at index 0
     const oldestMessageId = messages[0]?.id;
     if (!oldestMessageId) {
@@ -94,7 +98,7 @@ export function usePagination({
     setTimeout(() => {
       setIsLoadingMore(false);
     }, LOAD_MORE_TIMEOUT_MS);
-  }, [roomId, isLoadingMore, isLoading, messagesLength, messages]);
+  }, [roomId, isLoadingMore, isLoading, messagesLength, messages, hasScrolledToEndRef]);
 
   return { isLoadingMore, handleLoadMore };
 }
