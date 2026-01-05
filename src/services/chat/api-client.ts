@@ -354,6 +354,14 @@ function transformMessageToChatMessage(message: any, roomId: string): ChatMessag
       username: message.sender.username,
       displayName: message.sender.displayName,
       avatarUrl: message.sender.avatarUrl,
+      avatar: message.sender.avatar ? {
+        id: message.sender.avatar.id,
+        name: message.sender.avatar.name,
+        size: message.sender.avatar.size,
+        type: message.sender.avatar.type,
+        url: message.sender.avatar.url,
+        thumbnail: message.sender.avatar.thumbnail,
+      } : undefined,
     } : {
       id: senderId,
     },

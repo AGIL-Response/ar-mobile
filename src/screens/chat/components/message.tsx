@@ -22,7 +22,7 @@ export interface MessageProps {
   onAttachmentPress?: (attachment: ChatAttachment, index: number) => void;
 }
 
-export function Message({
+function MessageComponent({
   message,
   showAvatar = true,
   showSenderName = false,
@@ -97,6 +97,32 @@ export function Message({
     return name.charAt(0).toUpperCase();
   };
 
+  // Extract avatar URL/ID from sender.avatar object
+  // Priority: thumbnail (for performance) > url > id > avatarUrl (deprecated)
+  const getAvatarSource = () => {
+    if (message.sender.avatar) {
+      // Prefer thumbnail for better performance, fallback to url, then id
+      if (message.sender.avatar.thumbnail) {
+        return { uri: message.sender.avatar.thumbnail };
+      }
+      if (message.sender.avatar.url) {
+        return { uri: message.sender.avatar.url };
+      }
+      if (message.sender.avatar.id) {
+        return message.sender.avatar.id; // Return as fileId
+      }
+    }
+    // Fallback to deprecated avatarUrl
+    if (message.sender.avatarUrl) {
+      return message.sender.avatarUrl; // Could be URL or fileId
+    }
+    return undefined;
+  };
+
+  const avatarSource = getAvatarSource();
+  const avatarFileId = typeof avatarSource === 'string' && !avatarSource.startsWith('http') ? avatarSource : undefined;
+  const avatarUri = typeof avatarSource === 'object' ? avatarSource : undefined;
+
   const styles = createStyles(theme, isOwnMessage, compact, showAvatar, messageStatus);
 
   return (
@@ -116,7 +142,8 @@ export function Message({
         {/* Left side: Avatar for received messages */}
         {!isOwnMessage && (
           <Avatar
-            fileId={message.sender.avatarUrl}
+            fileId={avatarFileId}
+            source={avatarUri}
             size="small"
             fallback={getInitials(message.sender.displayName || message.sender.username)}
             showStatus={false}
@@ -382,3 +409,19 @@ const createStyles = (theme: Theme, isOwnMessage: boolean, compact: boolean, sho
       fontStyle: 'italic',
     },
   });
+
+// Memoize Message component for better scroll performance
+export const Message = React.memo(MessageComponent, (prevProps, nextProps) => {
+  // Custom comparison function for better performance
+  return (
+    prevProps.message.id === nextProps.message.id &&
+    prevProps.message.status === nextProps.message.status &&
+    prevProps.message.text === nextProps.message.text &&
+    prevProps.message.attachments?.length === nextProps.message.attachments?.length &&
+    prevProps.showAvatar === nextProps.showAvatar &&
+    prevProps.showSenderName === nextProps.showSenderName &&
+    prevProps.compact === nextProps.compact &&
+    prevProps.showDateSeparator === nextProps.showDateSeparator &&
+    prevProps.dateSeparatorText === nextProps.dateSeparatorText
+  );
+});

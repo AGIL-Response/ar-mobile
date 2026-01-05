@@ -6,6 +6,19 @@
 import type { ChatRoom } from '@/services/chat';
 
 /**
+ * Get avatar URL for a room member
+ * Priority: avatar.thumbnail > avatar.url > avatar.id > avatarUrl (deprecated)
+ */
+function getMemberAvatarUrl(member: ChatRoom['members'][0]): string | undefined {
+  if (member.avatar) {
+    // Prefer thumbnail for better performance, fallback to url, then id
+    return member.avatar.thumbnail || member.avatar.url || member.avatar.id;
+  }
+  // Fallback to deprecated avatarUrl
+  return member.avatarUrl;
+}
+
+/**
  * Get avatar URL for a room
  */
 export function getRoomAvatarUrl(room: ChatRoom, currentUsername?: string): string | undefined {
@@ -22,7 +35,7 @@ export function getRoomAvatarUrl(room: ChatRoom, currentUsername?: string): stri
       const otherMember = room.members.find(
         (m) => m.username !== currentUsername
       );
-      return otherMember?.avatarUrl;
+      return otherMember ? getMemberAvatarUrl(otherMember) : undefined;
     }
     
     // Fallback: if no currentUsername, use the first member that's not the first one
@@ -31,11 +44,11 @@ export function getRoomAvatarUrl(room: ChatRoom, currentUsername?: string): stri
       const otherMember = room.members.find(
         (m) => m.id !== room.members[0]?.id
       );
-      return otherMember?.avatarUrl;
+      return otherMember ? getMemberAvatarUrl(otherMember) : undefined;
     }
     
     // If only one member (shouldn't happen in DM, but handle gracefully)
-    return room.members[0]?.avatarUrl;
+    return room.members[0] ? getMemberAvatarUrl(room.members[0]) : undefined;
   }
   
   // For group rooms, use the room's avatar

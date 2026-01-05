@@ -1,9 +1,19 @@
+export interface ChatUserAvatar {
+  id: string;
+  name?: string;
+  size?: number;
+  type?: string;
+  url?: string;
+  thumbnail?: string;
+}
+
 export interface ChatUser {
   id: string;
   username?: string;
   email?: string;
   displayName?: string;
-  avatarUrl?: string;
+  avatarUrl?: string; // Deprecated: use avatar.url or avatar.thumbnail instead
+  avatar?: ChatUserAvatar; // Avatar object with id, url, thumbnail
   status?: 'online' | 'away' | 'offline';
   lastSeen?: Date;
 }

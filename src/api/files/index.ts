@@ -16,6 +16,7 @@ export interface ChatFileUploadOptions {
   fileName: string;
   mimeType: string;
   onProgress?: (progress: number) => void;
+  duration?: string | number; // Audio duration in seconds (as string or number)
 }
 
 export interface FileUploadResponse {
@@ -363,10 +364,11 @@ export const filesApi = {
     options: ChatFileUploadOptions
   ): Promise<ChatFileUploadResponse> => {
     try {
-      const { fileUri, fileName, mimeType, onProgress } = options;
+      const { fileUri, fileName, mimeType, onProgress, duration } = options;
       console.log('🚀 Chat File Upload Request:', {
         fileName,
         mimeType,
+        duration,
         fileUri: fileUri.substring(0, 50) + '...',
       });
 
@@ -387,16 +389,26 @@ export const filesApi = {
         type: mimeType,
       });
 
+      // Build headers
+      const headers: Record<string, string> = {
+        'x-file-name': fileName,
+        'x-attached-type': 'chat_message',
+        'Content-Type': mimeType,
+      };
+
+      // Add duration header if provided (for audio messages)
+      if (duration !== undefined) {
+        // Convert duration to string if it's a number
+        const durationValue = typeof duration === 'number' ? duration.toString() : duration;
+        headers['x-duration'] = durationValue;
+      }
+
       // Upload with progress tracking
       const response = await mediaApiClient.post<FileUploadResponse>(
         '/files',
         bytes,
         {
-          headers: {
-            'x-file-name': fileName,
-            'x-attached-type': 'chat_message',
-            'Content-Type': mimeType,
-          },
+          headers,
           onUploadProgress: (progressEvent) => {
             if (onProgress && progressEvent.total) {
               const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);

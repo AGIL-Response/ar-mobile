@@ -79,17 +79,6 @@ function ImageAttachment({ attachment, theme }: { attachment: ChatAttachment; th
   fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'message-attachment.tsx:81', message: 'ImageAttachment - getValidUri result', data: { attachmentId: attachment.id, filename: attachment.filename, imageUri: imageUri || null, imageUriLength: imageUri?.length || 0, hasImageUri: !!imageUri, isFileUri: imageUri?.startsWith('file://') || false, isHttpUri: imageUri?.startsWith('http') || false }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'D' }) }).catch(() => { });
   // #endregion
 
-  // Debug: Log attachment details to help diagnose display issues
-  if (!imageUri) {
-    console.log('[ImageAttachment] No valid URI:', {
-      id: attachment.id,
-      filename: attachment.filename,
-      url: attachment.url?.substring(0, 50),
-      thumbnail: attachment.thumbnail?.substring(0, 50),
-      hasUrl: !!attachment.url,
-      urlLength: attachment.url?.length || 0,
-    });
-  }
 
   return (
     <View style={[styles.mediaContainer, { backgroundColor: theme.colors.background.secondary }]}>
@@ -175,11 +164,13 @@ export function MessageAttachment({
     return null;
   }
 
+
+
   return (
     <View style={styles.container}>
       {attachments.map((attachment, index) => {
         const mediaType = getMediaType(attachment.filename);
-
+        console.log('mediaType', attachment, mediaType);
         if (mediaType === 'audio') {
           return (
             <AudioAttachment

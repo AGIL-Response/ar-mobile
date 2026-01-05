@@ -230,6 +230,13 @@ export default function ChatRoomScreen() {
               onStartReachedThreshold={0.1}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="none"
+              // Performance optimizations for fast scrolling
+              removeClippedSubviews={true}
+              maxToRenderPerBatch={10}
+              windowSize={5}
+              initialNumToRender={15}
+              updateCellsBatchingPeriod={50}
+              getItemLayout={undefined} // Can't use this with dynamic heights
               ListHeaderComponent={<MessageListHeader isLoadingMore={isLoadingMore} />}
               ListEmptyComponent={<EmptyState isLoading={isInitialLoading || (messages.length === 0 && isLoading)} />}
             />

@@ -44,6 +44,7 @@ export function useFileUpload(): UseFileUploadReturn {
             fileUri: file.uri,
             fileName: file.name,
             mimeType: file.mimeType || getMimeType(file.name),
+            duration: file.duration, // Pass duration for audio files
             onProgress: (progress) => {
               setUploadProgress((prev) => ({ ...prev, [fileKey]: progress }));
             },
