@@ -2,8 +2,8 @@
  * Custom hook to manage scroll behavior during pagination
  * Single Responsibility: Control maintainScrollAtEnd behavior
  * 
- * Note: LegendList's maintainVisibleContentPosition handles scroll position preservation,
- * but we still need to disable maintainScrollAtEnd during pagination to prevent jumping to bottom
+ * Note: FlatList with inverted={true} handles scroll position naturally,
+ * but this hook can be used to manage scroll behavior during pagination if needed
  */
 
 interface UseScrollPositionPreservationParams {

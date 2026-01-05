@@ -1,6 +1,6 @@
 /**
  * Message Size Estimator
- * Estimates message item heights for better LegendList performance
+ * Estimates message item heights for better FlatList performance
  * Single Responsibility: Calculate estimated heights for different message types
  */
 
@@ -66,7 +66,7 @@ function estimateAttachmentHeight(attachment: ChatMessage['attachments'][0]): nu
 }
 
 /**
- * Estimate message item height for LegendList
+ * Estimate message item height for FlatList
  * This helps with better scroll performance by providing accurate size estimates
  */
 export function estimateMessageHeight(
@@ -150,7 +150,7 @@ export function estimateMessageHeight(
 
 /**
  * Get estimated item size for a message
- * Used by LegendList's estimatedItemSize prop
+ * Used by FlatList for better scroll performance
  */
 export function getEstimatedItemSize(message: ChatMessage): number {
   // Quick estimation without full context

@@ -5,8 +5,7 @@
  */
 
 import React, { useEffect, useMemo, useRef } from 'react';
-import { KeyboardAvoidingView, Platform } from 'react-native';
-import { LegendList, type LegendListRef } from '@legendapp/list';
+import { KeyboardAvoidingView, Platform, FlatList, type FlatList as FlatListType } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Background, View, AppBar } from '@/components';
 import { useTheme } from '@/theme';
@@ -22,7 +21,6 @@ import { useInitialMessagesLoading } from './hooks/use-initial-messages-loading'
 import { getRoomDisplayName } from './utils/room-name';
 import type { ChatMessage, ChatAttachment } from '@/services/chat';
 import { useAudioPlayerStore } from '@/stores/audio-player';
-import { getAverageEstimatedSize, getEstimatedItemSize } from './utils/message-size-estimator';
 
 export default function ChatRoomScreen() {
   const theme = useTheme();
@@ -50,8 +48,10 @@ export default function ChatRoomScreen() {
   // Use state instead of ref so component re-renders when it changes
   const [hasScrolledToEnd, setHasScrolledToEnd] = React.useState(false);
   const hasScrolledToEndRef = useRef(false);
-  const listRef = useRef<LegendListRef<ChatMessage>>(null);
+  const listRef = useRef<FlatListType<ChatMessage>>(null);
   const previousMessagesLengthRef = useRef(0);
+  const loadMoreTriggeredRef = useRef(false);
+  const isAtBottomRef = useRef(true); // Track if user is at bottom of list
 
   const { isLoadingMore, handleLoadMore } = usePagination({
     roomId,
@@ -93,23 +93,21 @@ export default function ChatRoomScreen() {
   const roomName = useMemo(() => getRoomDisplayName(room), [room]);
 
   // Memoize content container style
-  // Note: alignItemsAtEnd adds padding above items automatically, so we only need bottom padding
+  // With inverted FlatList, padding is applied normally
   const contentContainerStyle = useMemo(
     () => ({
-      paddingTop: theme.spacing.gap.md,
-      paddingBottom: theme.spacing.gap.xl,
+      paddingTop: theme.spacing.gap.xl,
+      paddingBottom: theme.spacing.gap.md,
     }),
     [theme.spacing.gap.md, theme.spacing.gap.xl]
   );
 
-  // Calculate dynamic estimated item size based on message types
-  // This improves scroll performance for variable-sized messages
-  const estimatedItemSize = useMemo(() => {
-    if (messages.length === 0) return 75;
-    // Calculate average size from recent messages (last 20 for performance)
-    const recentMessages = messages.slice(-20);
-    return getAverageEstimatedSize(recentMessages);
-  }, [messages.length]);
+  // Reverse messages for inverted FlatList
+  // FlatList with inverted=true shows array items from bottom to top
+  // So we need [newest, ..., oldest] to show newest at bottom
+  const reversedMessages = useMemo(() => {
+    return [...messages].reverse();
+  }, [messages]);
 
 
 
@@ -124,21 +122,11 @@ export default function ChatRoomScreen() {
     hasScrolledToEndRef.current = false;
     setHasScrolledToEnd(false);
     previousMessagesLengthRef.current = 0;
+    isAtBottomRef.current = true; // Start at bottom for new room
   }, [roomId]);
 
-  // Calculate initialScrollIndex to scroll to the last message (newest) when messages are loaded
-  // Messages are in normal order: [oldest, ..., newest], so last index is newest
-  // Always set to last message index when messages are available (not during initial loading)
-  const initialScrollIndex = useMemo(() => {
-    if (isInitialLoading || messages.length === 0) {
-      return undefined;
-    }
-    // Always return the last message index to ensure list starts at bottom
-    return messages.length - 1;
-  }, [messages.length, isInitialLoading]);
-
-  // Track if initialScrollIndex has been set at least once (for key-based remount)
-  const hasInitialScrollIndex = initialScrollIndex !== undefined;
+  // With inverted FlatList, we don't need initialScrollIndex
+  // The list will automatically show the first item (newest) at the bottom
 
   useEffect(() => {
     if (!isInitialLoading && messages.length > 0 && !hasScrolledToEnd) {
@@ -146,47 +134,49 @@ export default function ChatRoomScreen() {
         console.log('[ChatRoom] Marking scroll to end as complete');
         hasScrolledToEndRef.current = true;
         setHasScrolledToEnd(true);
+        isAtBottomRef.current = true; // User starts at bottom after initial load
       }, 800);
       return () => clearTimeout(timer);
     } else if (!isInitialLoading && messages.length === 0 && !hasScrolledToEnd) {
       // If no messages, mark as complete immediately (empty state will show)
       hasScrolledToEndRef.current = true;
       setHasScrolledToEnd(true);
+      isAtBottomRef.current = true;
     }
   }, [isInitialLoading, messages.length, hasScrolledToEnd]);
 
-  // Show loading overlay until initial scroll to end is complete
+  // Show loading overlay until initial load is complete
   // If there are no messages, don't show overlay (empty state will show)
-  // Also show overlay when roomId is missing, room is not loaded yet, or initialScrollIndex is not ready
-  // Note: initialScrollIndex must be set before list renders, otherwise LegendList won't scroll to it
+  // Also show overlay when roomId is missing or room is not loaded yet
   const showLoadingOverlay =
     isInitialLoading ||
-    (messages.length > 0 && !hasScrolledToEnd) ||
     !roomId ||
-    (!room && !isLoading) ||
-    (messages.length > 0 && initialScrollIndex === undefined);
+    (!room && !isLoading);
 
   // Auto-scroll to bottom when new messages arrive (after initial load)
+  // Only auto-scroll if user is currently at the bottom of the list
+  // With inverted FlatList, scrollToIndex(0) scrolls to the newest message at bottom
   useEffect(() => {
     if (
       !isInitialLoading &&
       hasScrolledToEnd &&
       messages.length > 0 &&
-      messages.length > previousMessagesLengthRef.current
+      messages.length > previousMessagesLengthRef.current &&
+      isAtBottomRef.current // Only auto-scroll if user is at bottom
     ) {
-      // New message(s) arrived - scroll to bottom
+      // New message(s) arrived and user is at bottom - scroll to bottom (index 0 in reversed array)
       const timer = setTimeout(() => {
         if (listRef.current) {
           try {
-            // Scroll to the last message (newest)
-            const lastIndex = messages.length - 1;
-            listRef.current.scrollToIndex({ index: lastIndex, animated: true });
+            // Scroll to index 0 (newest message) in inverted list
+            listRef.current.scrollToIndex({ index: 0, animated: true });
           } catch (error) {
             // If scrollToIndex fails (e.g., item not rendered yet), use scrollToEnd
+            // scrollToEnd with inverted scrolls to the "top" which is visually the bottom
             try {
-              listRef.current.scrollToEnd({ animated: true });
+              listRef.current.scrollToEnd({ animated: false });
             } catch (e) {
-              // Ignore errors - maintainScrollAtEnd should handle it
+              // Ignore errors
             }
           }
         }
@@ -224,35 +214,67 @@ export default function ChatRoomScreen() {
       >
         <View style={{ flex: 1 }}>
           <View style={{ flex: 1 }} pointerEvents={showLoadingOverlay ? 'none' : 'auto'}>
-            <LegendList
+            <FlatList
               ref={listRef}
-              key={hasInitialScrollIndex ? `list-ready-${roomId}` : 'list-loading'}
-              data={messages}
+              key={`list-${roomId}`}
+              data={reversedMessages}
               keyExtractor={keyExtractor}
               renderItem={renderItem}
               // Force re-render when messages array reference changes
-              // This ensures LegendList updates when message content changes
               extraData={messages.length}
               contentContainerStyle={contentContainerStyle}
-              alignItemsAtEnd={true}
-              maintainScrollAtEnd={true}
-              maintainScrollAtEndThreshold={0.1}
-              maintainVisibleContentPosition
-              initialScrollIndex={initialScrollIndex}
-              estimatedItemSize={estimatedItemSize}
-              onStartReached={handleLoadMore}
-              onStartReachedThreshold={0.1}
+              inverted={true}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="none"
               // Performance optimizations for variable-sized items
               removeClippedSubviews={true}
-              maxToRenderPerBatch={8} // Reduced for variable sizes
-              windowSize={7} // Increased slightly for smoother scrolling
-              initialNumToRender={12} // Reduced initial render for faster startup
-              updateCellsBatchingPeriod={100} // Increased batching period for variable sizes
+              maxToRenderPerBatch={10}
+              windowSize={10}
+              initialNumToRender={15}
+              updateCellsBatchingPeriod={50}
+              // Pagination: use onScroll to detect when scrolling near top (where older messages are)
+              // With inverted={true} and reversed array [newest, ..., oldest]:
+              // - Bottom (newest): offsetY is low
+              // - Top (oldest): offsetY is high
+              // We want to load more when user scrolls up towards the top
+              onScroll={(event) => {
+                const offsetY = event.nativeEvent.contentOffset.y;
+                
+                // Track if user is at bottom (for auto-scroll behavior)
+                // With inverted={true}, at bottom means offsetY is low (near 0)
+                // Consider "at bottom" if within 100px of bottom
+                isAtBottomRef.current = offsetY < 100;
+                
+                // Calculate distance from bottom (where newest messages are)
+                // With inverted={true} and reversed array [newest, ..., oldest]:
+                // - Bottom (newest): offsetY is low (near 0)
+                // - Top (oldest): offsetY is high
+                // We want to load more when user scrolls up (offsetY increases)
+                const threshold = 500; // Trigger when scrolled 500px from bottom (towards top)
+                
+                // Only trigger if:
+                // 1. We've scrolled up significantly (away from bottom where newest messages are)
+                // 2. Initial scroll is complete
+                // 3. Not already loading
+                // 4. Haven't triggered recently
+                if (
+                  offsetY > threshold &&
+                  hasScrolledToEndRef.current &&
+                  !isLoadingMore &&
+                  !loadMoreTriggeredRef.current
+                ) {
+                  loadMoreTriggeredRef.current = true;
+                  handleLoadMore();
+                  // Reset trigger flag after a delay to prevent rapid firing
+                  setTimeout(() => {
+                    loadMoreTriggeredRef.current = false;
+                  }, 2000);
+                }
+              }}
+              scrollEventThrottle={200}
               // Note: getItemLayout cannot be used with dynamic/variable heights
-              // LegendList will use estimatedItemSize and measure items as needed
-              ListHeaderComponent={<MessageListHeader isLoadingMore={isLoadingMore} />}
+              // ListFooterComponent appears at top with inverted={true} (where older messages are loaded)
+              ListFooterComponent={<MessageListHeader isLoadingMore={isLoadingMore} />}
               ListEmptyComponent={<EmptyState isLoading={isInitialLoading || (messages.length === 0 && isLoading)} />}
             />
           </View>

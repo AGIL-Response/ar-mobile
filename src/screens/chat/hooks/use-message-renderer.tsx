@@ -31,7 +31,7 @@ export function useMessageRenderer({
 }: UseMessageRendererParams): UseMessageRendererReturn {
   // Memoize keyExtractor - create unique key using id, clientId, and content hash
   // Include content hash to force re-render when content changes (important for transcribed messages)
-  // This ensures LegendList doesn't recycle the view when only content changes
+  // This ensures FlatList doesn't recycle the view when only content changes
   const keyExtractor = useCallback((item: ChatMessage) => {
     if (!item) return '';
     const baseKey = item.clientId ? `${item.id}:${item.clientId}` : item.id;
@@ -52,12 +52,17 @@ export function useMessageRenderer({
   // Memoize render item callback
   const renderItem = useCallback(
     ({ item, index }: { item: ChatMessage; index: number }) => {
-      // Normal order: [oldest, ..., newest] (oldest first, newest last)
-      // With alignItemsAtEnd: newest messages (last items) align to bottom
+      // With inverted FlatList, data is reversed: [newest, ..., oldest]
+      // Index 0 = newest (bottom), higher index = older (top)
+      // To get previous/next in original array [oldest, ..., newest]:
+      // - Convert reversed index to original: originalIndex = messages.length - 1 - index
+      // - Previous (older, visually above) = index + 1 in reversed = originalIndex - 1
+      // - Next (newer, visually below) = index - 1 in reversed = originalIndex + 1
       const currentMessages = messagesRef.current;
-      const previousMessage = index > 0 ? currentMessages[index - 1] : null; // Older message (above)
+      const originalIndex = currentMessages.length - 1 - index;
+      const previousMessage = originalIndex > 0 ? currentMessages[originalIndex - 1] : null; // Older message (above)
       const nextMessage =
-        index < currentMessages.length - 1 ? currentMessages[index + 1] : null; // Newer message (below)
+        originalIndex < currentMessages.length - 1 ? currentMessages[originalIndex + 1] : null; // Newer message (below)
 
       // Show avatar when sender changes or it's the first message
       const showAvatar = !previousMessage || previousMessage.senderId !== item.senderId;
