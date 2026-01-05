@@ -6,7 +6,7 @@
 
 import React, { useEffect, useMemo, useRef } from 'react';
 import { KeyboardAvoidingView, Platform } from 'react-native';
-import { LegendList } from '@legendapp/list';
+import { LegendList, type LegendListRef } from '@legendapp/list';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Background, View, AppBar } from '@/components';
 import { useTheme } from '@/theme';
@@ -49,6 +49,8 @@ export default function ChatRoomScreen() {
   // Use state instead of ref so component re-renders when it changes
   const [hasScrolledToEnd, setHasScrolledToEnd] = React.useState(false);
   const hasScrolledToEndRef = useRef(false);
+  const listRef = useRef<LegendListRef<ChatMessage>>(null);
+  const previousMessagesLengthRef = useRef(0);
 
   const { isLoadingMore, handleLoadMore } = usePagination({
     roomId,
@@ -110,6 +112,7 @@ export default function ChatRoomScreen() {
   useEffect(() => {
     hasScrolledToEndRef.current = false;
     setHasScrolledToEnd(false);
+    previousMessagesLengthRef.current = 0;
   }, [roomId]);
 
   // Calculate initialScrollIndex to scroll to the last message (newest) when messages are loaded
@@ -152,6 +155,40 @@ export default function ChatRoomScreen() {
     (!room && !isLoading) ||
     (messages.length > 0 && initialScrollIndex === undefined);
 
+  // Auto-scroll to bottom when new messages arrive (after initial load)
+  useEffect(() => {
+    if (
+      !isInitialLoading &&
+      hasScrolledToEnd &&
+      messages.length > 0 &&
+      messages.length > previousMessagesLengthRef.current
+    ) {
+      // New message(s) arrived - scroll to bottom
+      const timer = setTimeout(() => {
+        if (listRef.current) {
+          try {
+            // Scroll to the last message (newest)
+            const lastIndex = messages.length - 1;
+            listRef.current.scrollToIndex({ index: lastIndex, animated: true });
+          } catch (error) {
+            // If scrollToIndex fails (e.g., item not rendered yet), use scrollToEnd
+            try {
+              listRef.current.scrollToEnd({ animated: true });
+            } catch (e) {
+              // Ignore errors - maintainScrollAtEnd should handle it
+            }
+          }
+        }
+      }, 100); // Small delay to ensure message is rendered
+
+      previousMessagesLengthRef.current = messages.length;
+      return () => clearTimeout(timer);
+    } else if (messages.length !== previousMessagesLengthRef.current) {
+      // Update ref even if we don't scroll (e.g., during pagination)
+      previousMessagesLengthRef.current = messages.length;
+    }
+  }, [messages.length, isInitialLoading, hasScrolledToEnd]);
+
 
   // Calculate keyboard offset accounting for AppBar and safe area
   // AppBar minHeight is 56, plus safe area top inset
@@ -160,24 +197,24 @@ export default function ChatRoomScreen() {
     : 0;
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={keyboardVerticalOffset}
-    >
-      <Background>
-        <AppBar
-          title={roomName}
-          showBackButton={true}
-          onBackPress={() => router.back()}
-          safeArea={true}
-          titleAlign="left"
-          style={{ borderBottomWidth: 0 }}
-        />
-        <View style={{ flex: 1, paddingBottom: insets.bottom }}>
+    <Background>
+      <AppBar
+        title={roomName}
+        showBackButton={true}
+        onBackPress={() => router.back()}
+        safeArea={true}
+        titleAlign="left"
+        style={{ borderBottomWidth: 0 }}
+      />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={keyboardVerticalOffset}
+      >
+        <View style={{ flex: 1 }}>
           <View style={{ flex: 1 }} pointerEvents={showLoadingOverlay ? 'none' : 'auto'}>
             <LegendList
-              // ref={flatListRef}
+              ref={listRef}
               key={hasInitialScrollIndex ? `list-ready-${roomId}` : 'list-loading'}
               data={messages}
               keyExtractor={keyExtractor}
@@ -188,10 +225,11 @@ export default function ChatRoomScreen() {
               maintainScrollAtEndThreshold={0.1}
               maintainVisibleContentPosition
               initialScrollIndex={initialScrollIndex}
-              // maintainVisibleContentPosition={!isLoadingMore}
               estimatedItemSize={75}
               onStartReached={handleLoadMore}
               onStartReachedThreshold={0.1}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="none"
               ListHeaderComponent={<MessageListHeader isLoadingMore={isLoadingMore} />}
               ListEmptyComponent={<EmptyState isLoading={isInitialLoading || (messages.length === 0 && isLoading)} />}
             />
@@ -215,23 +253,25 @@ export default function ChatRoomScreen() {
             </View>
           )}
 
-          <Composer
-            onSend={handleSend}
-            onTyping={handleTyping}
-            replyTo={replyTo}
-            onCancelReply={handleCancelReply}
-            roomId={roomId}
-          />
+          <View style={{ paddingBottom: insets.bottom }}>
+            <Composer
+              onSend={handleSend}
+              onTyping={handleTyping}
+              replyTo={replyTo}
+              onCancelReply={handleCancelReply}
+              roomId={roomId}
+            />
+          </View>
         </View>
+      </KeyboardAvoidingView>
 
-        {/* Media Viewer */}
-        <MediaViewer
-          visible={mediaViewerVisible}
-          attachments={selectedAttachments}
-          initialIndex={selectedAttachmentIndex}
-          onClose={handleCloseMediaViewer}
-        />
-      </Background>
-    </KeyboardAvoidingView>
+      {/* Media Viewer */}
+      <MediaViewer
+        visible={mediaViewerVisible}
+        attachments={selectedAttachments}
+        initialIndex={selectedAttachmentIndex}
+        onClose={handleCloseMediaViewer}
+      />
+    </Background>
   );
 }

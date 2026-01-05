@@ -4,13 +4,13 @@
  */
 
 import { useState, useCallback } from 'react';
-import { Keyboard, Alert } from 'react-native';
+import { Alert } from 'react-native';
 import type { SendMessageData, ChatMessage } from '@/services/chat';
 import type { MediaFile } from '@/utils/media';
 import { useFileUpload } from './use-file-upload';
 import { buildLocalMessage, determineMessageType } from '../utils/message-builder';
 import { isAudio } from '@/utils/media';
-import useAuthStore from '@/stores/auth';
+import { useAuthStore } from '@/stores/auth';
 
 interface UseComposerSendProps {
   roomId?: string;
@@ -101,7 +101,8 @@ export function useComposerSend({
       } finally {
         setIsSending(false);
         resetProgress();
-        Keyboard.dismiss();
+        // Keep keyboard open after sending
+        // Keyboard.dismiss(); // Commented out to keep keyboard visible
       }
     },
     [isSending, roomId, currentUser, replyTo, onSend, uploadFiles, resetProgress]

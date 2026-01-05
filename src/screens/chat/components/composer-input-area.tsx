@@ -3,8 +3,8 @@
  * Single Responsibility: Renders input field and send button
  */
 
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useRef } from 'react';
+import { View, StyleSheet, TextInput } from 'react-native';
 import { Input, IconButton } from '@/components';
 import { useTheme, type Theme } from '@/theme';
 
@@ -27,20 +27,47 @@ export function ComposerInputArea({
 }: ComposerInputAreaProps) {
   const theme = useTheme();
   const styles = createStyles(theme);
+  const inputRef = useRef<TextInput>(null);
+
+  // Handle submit - prevent default behavior that dismisses keyboard
+  const handleSubmitEditing = () => {
+    if (canSend) {
+      onSend();
+      // Keep focus to prevent keyboard from dismissing
+      // The input will maintain focus because blurOnSubmit={false}
+    }
+  };
+
+  // Handle send button press - ensure input stays focused
+  const handleSendPressIn = () => {
+    // Focus input before press completes to prevent keyboard dismissal
+    inputRef.current?.focus();
+  };
+
+  const handleSendPress = () => {
+    // Call onSend
+    onSend();
+    // Immediately refocus to ensure keyboard stays open
+    // This is a backup in case focus was lost
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.inputContainer}>
         <Input
+          ref={inputRef}
           value={message}
           onChangeText={onTextChange}
-          placeholder={isRecording ? 'Recording audio...' : 'Type a message...'}
+          placeholder={'Aa...'}
           multiline
           maxLength={5000}
           disabled={disabled || isRecording}
           containerStyle={styles.inputWrapper}
           inputStyle={styles.input}
-          onSubmitEditing={onSend}
+          onSubmitEditing={handleSubmitEditing}
           blurOnSubmit={false}
           returnKeyType="default"
         />
@@ -53,7 +80,8 @@ export function ComposerInputArea({
           colorVariant="transparent"
           disabled={!canSend}
           iconColor={canSend ? theme.colors.button.secondary : theme.colors.text.disabled}
-          onPress={onSend}
+          onPressIn={handleSendPressIn}
+          onPress={handleSendPress}
           style={styles.sendButton}
           accessibilityLabel="Send message"
         />
