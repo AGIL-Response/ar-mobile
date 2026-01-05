@@ -535,7 +535,22 @@ async function processAndTransformMessages(
   // Convert map values to array and sort
   const uniqueMessages = Array.from(messageMap.values());
   const sortedMessages = sortMessagesByTimestamp(uniqueMessages);
-  return Promise.all(sortedMessages.map((message) => messageToChatMessageFn(message)));
+
+  // Process messages in batches to prevent WatermelonDB queue buildup
+  // Each message transformation makes multiple DB queries (attachments, users)
+  // Processing in smaller batches reduces concurrent reads
+  const BATCH_SIZE = 10;
+  const results: ChatMessage[] = [];
+
+  for (let i = 0; i < sortedMessages.length; i += BATCH_SIZE) {
+    const batch = sortedMessages.slice(i, i + BATCH_SIZE);
+    const batchResults = await Promise.all(
+      batch.map((message) => messageToChatMessageFn(message))
+    );
+    results.push(...batchResults);
+  }
+
+  return results;
 }
 
 /**

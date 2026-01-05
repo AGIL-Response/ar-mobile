@@ -12,72 +12,78 @@ interface EmptyStateProps {
   isLoading: boolean;
 }
 
-export function EmptyState({ isLoading }: EmptyStateProps) {
+export function EmptyState({ isLoading, }: EmptyStateProps) {
   const theme = useTheme();
+
+  const outerContainerStyle = {
+    flex: 1,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+  };
+
+  const innerContainerStyle = {
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    paddingTop: theme.spacing.gap.xl * 3,
+  };
 
   if (isLoading) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-          paddingTop: theme.spacing.gap.xl * 3,
-        }}
-      >
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Text
-          variant="body"
-          style={{
-            color: theme.colors.text.secondary,
-            marginTop: theme.spacing.gap.md,
-          }}
-        >
-          Loading messages...
-        </Text>
+      <View style={outerContainerStyle}>
+        <View style={innerContainerStyle}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text
+            variant="body"
+            style={{
+              color: theme.colors.text.secondary,
+              marginTop: theme.spacing.gap.md,
+            }}
+          >
+            Loading messages...
+          </Text>
+        </View>
       </View>
     );
   }
 
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingTop: theme.spacing.gap.xl * 3,
-        paddingHorizontal: theme.spacing.gap.xl,
-      }}
-    >
-      <Text
-        variant="h3"
+    <View style={outerContainerStyle}>
+      <View
         style={{
-          color: theme.colors.text.primary,
-          marginBottom: theme.spacing.gap.sm,
-          textAlign: 'center',
+          ...innerContainerStyle,
+          paddingHorizontal: theme.spacing.gap.xl,
         }}
       >
-        💬
-      </Text>
-      <Text
-        variant="h4"
-        style={{
-          color: theme.colors.text.primary,
-          marginBottom: theme.spacing.gap.xs,
-          textAlign: 'center',
-        }}
-      >
-        No messages yet
-      </Text>
-      <Text
-        variant="body"
-        style={{
-          color: theme.colors.text.secondary,
-          textAlign: 'center',
-        }}
-      >
-        Start the conversation by sending a message
-      </Text>
+        <Text
+          variant="h3"
+          style={{
+            color: theme.colors.text.primary,
+            marginBottom: theme.spacing.gap.sm,
+            textAlign: 'center',
+          }}
+        >
+          💬
+        </Text>
+        <Text
+          variant="h4"
+          style={{
+            color: theme.colors.text.primary,
+            marginBottom: theme.spacing.gap.xs,
+            textAlign: 'center',
+          }}
+        >
+          No messages yet
+        </Text>
+        <Text
+          variant="body"
+          style={{
+            color: theme.colors.text.secondary,
+            textAlign: 'center',
+          }}
+        >
+          Start the conversation by sending a message
+        </Text>
+      </View>
     </View>
   );
 }

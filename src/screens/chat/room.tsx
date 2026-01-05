@@ -170,12 +170,12 @@ export default function ChatRoomScreen() {
           try {
             // Scroll to index 0 (newest message) in inverted list
             listRef.current.scrollToIndex({ index: 0, animated: true });
-          } catch (error) {
+          } catch {
             // If scrollToIndex fails (e.g., item not rendered yet), use scrollToEnd
             // scrollToEnd with inverted scrolls to the "top" which is visually the bottom
             try {
               listRef.current.scrollToEnd({ animated: false });
-            } catch (e) {
+            } catch {
               // Ignore errors
             }
           }
@@ -193,8 +193,8 @@ export default function ChatRoomScreen() {
 
   // Calculate keyboard offset accounting for AppBar and safe area
   // AppBar minHeight is 56, plus safe area top inset
-  const keyboardVerticalOffset = Platform.OS === 'ios' 
-    ? (insets.top + 56) 
+  const keyboardVerticalOffset = Platform.OS === 'ios'
+    ? (insets.top + 56)
     : 0;
 
   return (
@@ -239,19 +239,19 @@ export default function ChatRoomScreen() {
               // We want to load more when user scrolls up towards the top
               onScroll={(event) => {
                 const offsetY = event.nativeEvent.contentOffset.y;
-                
+
                 // Track if user is at bottom (for auto-scroll behavior)
                 // With inverted={true}, at bottom means offsetY is low (near 0)
                 // Consider "at bottom" if within 100px of bottom
                 isAtBottomRef.current = offsetY < 100;
-                
+
                 // Calculate distance from bottom (where newest messages are)
                 // With inverted={true} and reversed array [newest, ..., oldest]:
                 // - Bottom (newest): offsetY is low (near 0)
                 // - Top (oldest): offsetY is high
                 // We want to load more when user scrolls up (offsetY increases)
                 const threshold = 500; // Trigger when scrolled 500px from bottom (towards top)
-                
+
                 // Only trigger if:
                 // 1. We've scrolled up significantly (away from bottom where newest messages are)
                 // 2. Initial scroll is complete
@@ -275,7 +275,13 @@ export default function ChatRoomScreen() {
               // Note: getItemLayout cannot be used with dynamic/variable heights
               // ListFooterComponent appears at top with inverted={true} (where older messages are loaded)
               ListFooterComponent={<MessageListHeader isLoadingMore={isLoadingMore} />}
-              ListEmptyComponent={<EmptyState isLoading={isInitialLoading || (messages.length === 0 && isLoading)} />}
+              ListEmptyComponent={
+                // Counter the inversion for empty state
+                // Wrap in View with transform to flip it back to normal (inverted FlatList flips everything)
+                <View style={{ flex: 1, height: 600, }}>
+                  <EmptyState isLoading={isInitialLoading || (messages.length === 0 && isLoading)} />
+                </View>
+              }
             />
           </View>
 
