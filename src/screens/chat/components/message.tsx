@@ -35,16 +35,6 @@ function MessageComponent({
   const currentUsername = useAuthStore((state) => state.user?.username);
   const isOwnMessage = message.sender.username === currentUsername;
   const messageStatus = message.status || 'sent';
-  
-  // Debug: Log when message component renders with content
-  // This helps verify if component is re-rendering when content changes
-  if (message.content && message.content.length > 0) {
-    console.log('📱 [MessageComponent] Rendering message:', {
-      messageId: message.id,
-      content: message.content.substring(0, 50),
-      contentLength: message.content.length,
-    });
-  }
 
   const hasAttachments = message.attachments && message.attachments.length > 0;
   

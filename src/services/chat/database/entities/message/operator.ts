@@ -2,7 +2,7 @@ import { getDatabase } from '../../index';
 import type Message from '../../models/Message';
 import type { ChatMessage, ChatAttachment } from '../../../types';
 import { Q } from '@nozbe/watermelondb';
-import { switchMap, of, debounceTime, tap, Subject, merge } from 'rxjs';
+import { switchMap, of, debounceTime, Subject, merge } from 'rxjs';
 import { chatMessageToMessageData } from './transformer';
 import { upsertUser } from '../user/operator';
 import { chatAttachmentToAttachmentData } from '../attachment/transformer';
@@ -76,7 +76,6 @@ export async function upsertMessage(
     if (existingMessage) {
       // Update existing message
       const contentChanged = existingMessage.content !== messageDataTransformed.content;
-      const currentContent = existingMessage.content;
 
       await existingMessage.update((message) => {
         message.content = messageDataTransformed.content;
@@ -133,22 +132,12 @@ export async function upsertMessage(
         }
       });
 
-      // Log content changes for debugging (especially for transcribed messages)
+      // CRITICAL FIX: Manually trigger observable refresh since WatermelonDB's query.observe()
+      // doesn't emit when only fields are updated on existing records
+      // We use a Subject to manually trigger a re-fetch of messages
       if (contentChanged) {
-        console.log('🔄 [MessageOperator] Message content updated:', {
-          messageId,
-          oldContent: currentContent?.substring(0, 50) || '(empty)',
-          newContent: messageDataTransformed.content?.substring(0, 50) || '(empty)',
-          contentLength: messageDataTransformed.content?.length || 0,
-          serverUpdatedAt: new Date().toISOString(),
-        });
-
-        // CRITICAL FIX: Manually trigger observable refresh since WatermelonDB's query.observe()
-        // doesn't emit when only fields are updated on existing records
-        // We use a Subject to manually trigger a re-fetch of messages
         setTimeout(() => {
           messageRefreshSubject.next({ roomId, messageId });
-          console.log('🔄 [MessageOperator] Manual refresh triggered for message:', messageId);
         }, 100); // Small delay to ensure transaction is committed
       }
 
@@ -389,8 +378,6 @@ export async function batchUpsertMessages(
 
       if (existingMessage) {
         // Update existing message
-        const contentChanged = existingMessage.content !== messageDataTransformed.content;
-
         await existingMessage.update((message) => {
           message.content = messageDataTransformed.content;
           const currentType = message.type;
@@ -424,16 +411,6 @@ export async function batchUpsertMessages(
             }
           }
         });
-
-        // Log content changes for debugging (especially for transcribed messages in batch)
-        if (contentChanged) {
-          console.log('🔄 [MessageOperator] Message content updated (batch):', {
-            messageId,
-            oldContent: existingMessage.content?.substring(0, 50) || '(empty)',
-            newContent: messageDataTransformed.content?.substring(0, 50) || '(empty)',
-            contentLength: messageDataTransformed.content?.length || 0,
-          });
-        }
 
         savedMessages.push(existingMessage);
       } else {
@@ -558,22 +535,7 @@ async function processAndTransformMessages(
   // Convert map values to array and sort
   const uniqueMessages = Array.from(messageMap.values());
   const sortedMessages = sortMessagesByTimestamp(uniqueMessages);
-  const transformed = await Promise.all(sortedMessages.map((message) => messageToChatMessageFn(message)));
-
-  // Debug: Log transformed messages to verify content updates
-  const messagesWithContent = transformed.filter(m => m.content && m.content.trim().length > 0);
-  if (messagesWithContent.length > 0) {
-    console.log('📝 [MessageOperator] Transformed messages (with content):', {
-      count: messagesWithContent.length,
-      sample: messagesWithContent.slice(0, 3).map(m => ({
-        id: m.id,
-        content: m.content.substring(0, 50),
-        contentLength: m.content.length,
-      })),
-    });
-  }
-
-  return transformed;
+  return Promise.all(sortedMessages.map((message) => messageToChatMessageFn(message)));
 }
 
 /**
@@ -601,39 +563,17 @@ export function observeMessages(
 
     // WatermelonDB's query.observe() emits when records are added/removed, but NOT when fields are updated
     // To handle field updates (like transcribed content), we merge with a manual refresh subject
-    const queryObservable = query.observe().pipe(
-      // Debug: Log when observable emits
-      tap((messages: Message[]) => {
-        console.log('📡 [MessageOperator] Observable emitted (query):', {
-          roomId: validRoomId,
-          messageCount: messages.length,
-          messageIds: messages.map(m => m.messageId).slice(0, 5),
-          timestamp: new Date().toISOString(),
-        });
-      })
-    );
+    const queryObservable = query.observe();
 
     // Manual refresh observable - triggers when messageRefreshSubject emits
     const manualRefreshObservable = messageRefreshSubject.pipe(
-      // Filter to only this room
-      tap(({ roomId: refreshRoomId, messageId }) => {
-        if (refreshRoomId === validRoomId) {
-          console.log('🔄 [MessageOperator] Manual refresh triggered:', { roomId: validRoomId, messageId });
-        }
-      }),
       // Only proceed if it's for this room
       switchMap(({ roomId: refreshRoomId }) => {
         if (refreshRoomId !== validRoomId) {
           return of([]);
         }
         // Re-fetch messages from DB
-        return query.fetch().then(messages => {
-          console.log('📡 [MessageOperator] Observable emitted (manual refresh):', {
-            roomId: validRoomId,
-            messageCount: messages.length,
-          });
-          return messages;
-        });
+        return query.fetch();
       })
     );
 
@@ -642,13 +582,7 @@ export function observeMessages(
       // Debounce to batch rapid updates (e.g., when loading 50 messages at once)
       // This prevents the list from updating 50 times and instead updates once after all messages are inserted
       debounceTime(100),
-      switchMap((messages: Message[]) => {
-        console.log('🔄 [MessageOperator] Processing messages for transformation:', {
-          roomId: validRoomId,
-          messageCount: messages.length,
-        });
-        return processAndTransformMessages(messages, messageToChatMessageFn);
-      })
+      switchMap((messages: Message[]) => processAndTransformMessages(messages, messageToChatMessageFn))
     );
   } catch (error) {
     console.error('Error creating messages observable:', error, { roomId, validRoomId });

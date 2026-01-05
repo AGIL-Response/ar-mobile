@@ -84,18 +84,8 @@ export function useObservable<T>(observable: Observable<T> | null | undefined, i
             // Check if value actually changed before updating state
             const hasChanged = !deepEqual(valueRef.current, val);
             if (hasChanged) {
-              // Debug: Log when observable value changes (especially for messages)
-              if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'object' && 'id' in val[0]) {
-                console.log('🔄 [useObservable] Value changed (array of objects):', {
-                  length: val.length,
-                  firstItemId: val[0].id,
-                  firstItemContent: (val[0] as any).content?.substring(0, 50),
-                });
-              }
               valueRef.current = val;
               setValue(val);
-            } else {
-              console.log('⚠️ [useObservable] Value received but deepEqual says unchanged');
             }
           }
         },
