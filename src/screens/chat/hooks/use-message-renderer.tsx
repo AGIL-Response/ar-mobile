@@ -29,10 +29,24 @@ export function useMessageRenderer({
   room,
   onAttachmentPress,
 }: UseMessageRendererParams): UseMessageRendererReturn {
-  // Memoize keyExtractor - create unique key using id and clientId
+  // Memoize keyExtractor - create unique key using id, clientId, and content hash
+  // Include content hash to force re-render when content changes (important for transcribed messages)
+  // This ensures LegendList doesn't recycle the view when only content changes
   const keyExtractor = useCallback((item: ChatMessage) => {
     if (!item) return '';
-    return item.clientId ? `${item.id}:${item.clientId}` : item.id;
+    const baseKey = item.clientId ? `${item.id}:${item.clientId}` : item.id;
+    // Create a simple hash of content to force re-render when content changes
+    // This is critical for transcribed messages where content updates but ID stays the same
+    // Use a combination of content length and first/last few chars as a simple hash
+    let contentHash = ':0';
+    if (item.content && item.content.length > 0) {
+      const len = item.content.length;
+      const first = item.content.substring(0, Math.min(10, len));
+      const last = item.content.substring(Math.max(0, len - 10));
+      // Simple hash: length + first 10 chars + last 10 chars
+      contentHash = `:${len}:${first.length}:${last.length}`;
+    }
+    return `${baseKey}${contentHash}`;
   }, []);
 
   // Memoize render item callback

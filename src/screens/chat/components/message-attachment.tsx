@@ -169,7 +169,7 @@ export function MessageAttachment({
   return (
     <View style={styles.container}>
       {attachments.map((attachment, index) => {
-        const mediaType = getMediaType(attachment.filename);
+        const mediaType = getMediaType(attachment.filename, attachment.mimeType);
         console.log('mediaType', attachment, mediaType);
         if (mediaType === 'audio') {
           return (

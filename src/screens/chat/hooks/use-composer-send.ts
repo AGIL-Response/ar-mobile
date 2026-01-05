@@ -51,11 +51,9 @@ export function useComposerSend({
         const { fileIds, localAttachments } = await uploadFiles(attachmentsToSend);
 
         // Check if any attachment is an audio file (voice message)
-        // Check both filename extension and mimeType for better detection
+        // Uses mimeType primarily, falls back to filename extension
         const isVoice = attachmentsToSend.some(
-          (file) =>
-            (file.name && isAudio(file.name)) ||
-            (file.mimeType && file.mimeType.toLowerCase().startsWith('audio/'))
+          (file) => isAudio(file.name, file.mimeType)
         );
 
         console.log('send message', {

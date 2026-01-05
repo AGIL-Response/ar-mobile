@@ -91,25 +91,58 @@ export function ensureFileExtension(filename: string, mimeType?: string): string
   return `${filename}.jpg`;
 }
 
-export function isImage(filename: string): boolean {
-  const extension = getFileExtension(filename);
-  return ALLOWED_IMAGE_EXTENSIONS.includes(extension);
+export function isImage(filename?: string, mimeType?: string): boolean {
+  // Prioritize mimeType over filename extension
+  if (mimeType) {
+    const mimeLower = mimeType.toLowerCase();
+    return mimeLower.startsWith('image/');
+  }
+  
+  // Fallback to filename extension
+  if (filename) {
+    const extension = getFileExtension(filename);
+    return ALLOWED_IMAGE_EXTENSIONS.includes(extension);
+  }
+  
+  return false;
 }
 
-export function isVideo(filename: string): boolean {
-  const extension = getFileExtension(filename);
-  return ALLOWED_VIDEO_EXTENSIONS.includes(extension);
+export function isVideo(filename?: string, mimeType?: string): boolean {
+  // Prioritize mimeType over filename extension
+  if (mimeType) {
+    const mimeLower = mimeType.toLowerCase();
+    return mimeLower.startsWith('video/');
+  }
+  
+  // Fallback to filename extension
+  if (filename) {
+    const extension = getFileExtension(filename);
+    return ALLOWED_VIDEO_EXTENSIONS.includes(extension);
+  }
+  
+  return false;
 }
 
-export function isAudio(filename: string): boolean {
-  const extension = getFileExtension(filename);
-  return ALLOWED_AUDIO_EXTENSIONS.includes(extension);
+export function isAudio(filename?: string, mimeType?: string): boolean {
+  // Prioritize mimeType over filename extension
+  if (mimeType) {
+    const mimeLower = mimeType.toLowerCase();
+    return mimeLower.startsWith('audio/');
+  }
+  
+  // Fallback to filename extension
+  if (filename) {
+    const extension = getFileExtension(filename);
+    return ALLOWED_AUDIO_EXTENSIONS.includes(extension);
+  }
+  
+  return false;
 }
 
-export function getMediaType(filename: string): 'image' | 'video' | 'audio' | 'file' {
-  if (isImage(filename)) return 'image';
-  if (isVideo(filename)) return 'video';
-  if (isAudio(filename)) return 'audio';
+export function getMediaType(filename?: string, mimeType?: string): 'image' | 'video' | 'audio' | 'file' {
+  if (isImage(filename, mimeType)) return 'image';
+  if (isVideo(filename, mimeType)) return 'video';
+  if (isAudio(filename, mimeType)) return 'audio';
   return 'file';
 }
 

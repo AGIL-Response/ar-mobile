@@ -9,7 +9,7 @@ function deepEqual(a: any, b: any): boolean {
   if (a === b) return true;
   if (a == null || b == null) return false;
   if (typeof a !== typeof b) return false;
-  
+
   if (Array.isArray(a) && Array.isArray(b)) {
     if (a.length !== b.length) return false;
     for (let i = 0; i < a.length; i++) {
@@ -17,7 +17,7 @@ function deepEqual(a: any, b: any): boolean {
     }
     return true;
   }
-  
+
   if (typeof a === 'object' && typeof b === 'object') {
     const keysA = Object.keys(a);
     const keysB = Object.keys(b);
@@ -28,7 +28,7 @@ function deepEqual(a: any, b: any): boolean {
     }
     return true;
   }
-  
+
   return false;
 }
 
@@ -82,9 +82,20 @@ export function useObservable<T>(observable: Observable<T> | null | undefined, i
           // Only update if the observable is still the current one and value actually changed
           if (observableRef.current === observable) {
             // Check if value actually changed before updating state
-            if (!deepEqual(valueRef.current, val)) {
+            const hasChanged = !deepEqual(valueRef.current, val);
+            if (hasChanged) {
+              // Debug: Log when observable value changes (especially for messages)
+              if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'object' && 'id' in val[0]) {
+                console.log('🔄 [useObservable] Value changed (array of objects):', {
+                  length: val.length,
+                  firstItemId: val[0].id,
+                  firstItemContent: (val[0] as any).content?.substring(0, 50),
+                });
+              }
               valueRef.current = val;
               setValue(val);
+            } else {
+              console.log('⚠️ [useObservable] Value received but deepEqual says unchanged');
             }
           }
         },

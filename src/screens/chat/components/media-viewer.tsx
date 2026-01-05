@@ -43,7 +43,7 @@ export function MediaViewer({
   }
 
   const currentAttachment = attachments[currentIndex];
-  const mediaType = getMediaType(currentAttachment.filename);
+  const mediaType = getMediaType(currentAttachment.filename, currentAttachment.mimeType);
   const hasMultiple = attachments.length > 1;
 
   const handlePrevious = () => {

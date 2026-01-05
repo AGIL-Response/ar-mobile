@@ -22,6 +22,7 @@ import { useInitialMessagesLoading } from './hooks/use-initial-messages-loading'
 import { getRoomDisplayName } from './utils/room-name';
 import type { ChatMessage, ChatAttachment } from '@/services/chat';
 import { useAudioPlayerStore } from '@/stores/audio-player';
+import { getAverageEstimatedSize, getEstimatedItemSize } from './utils/message-size-estimator';
 
 export default function ChatRoomScreen() {
   const theme = useTheme();
@@ -100,6 +101,16 @@ export default function ChatRoomScreen() {
     }),
     [theme.spacing.gap.md, theme.spacing.gap.xl]
   );
+
+  // Calculate dynamic estimated item size based on message types
+  // This improves scroll performance for variable-sized messages
+  const estimatedItemSize = useMemo(() => {
+    if (messages.length === 0) return 75;
+    // Calculate average size from recent messages (last 20 for performance)
+    const recentMessages = messages.slice(-20);
+    return getAverageEstimatedSize(recentMessages);
+  }, [messages.length]);
+
 
 
   useEffect(() => {
@@ -219,24 +230,28 @@ export default function ChatRoomScreen() {
               data={messages}
               keyExtractor={keyExtractor}
               renderItem={renderItem}
+              // Force re-render when messages array reference changes
+              // This ensures LegendList updates when message content changes
+              extraData={messages.length}
               contentContainerStyle={contentContainerStyle}
               alignItemsAtEnd={true}
               maintainScrollAtEnd={true}
               maintainScrollAtEndThreshold={0.1}
               maintainVisibleContentPosition
               initialScrollIndex={initialScrollIndex}
-              estimatedItemSize={75}
+              estimatedItemSize={estimatedItemSize}
               onStartReached={handleLoadMore}
               onStartReachedThreshold={0.1}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="none"
-              // Performance optimizations for fast scrolling
+              // Performance optimizations for variable-sized items
               removeClippedSubviews={true}
-              maxToRenderPerBatch={10}
-              windowSize={5}
-              initialNumToRender={15}
-              updateCellsBatchingPeriod={50}
-              getItemLayout={undefined} // Can't use this with dynamic heights
+              maxToRenderPerBatch={8} // Reduced for variable sizes
+              windowSize={7} // Increased slightly for smoother scrolling
+              initialNumToRender={12} // Reduced initial render for faster startup
+              updateCellsBatchingPeriod={100} // Increased batching period for variable sizes
+              // Note: getItemLayout cannot be used with dynamic/variable heights
+              // LegendList will use estimatedItemSize and measure items as needed
               ListHeaderComponent={<MessageListHeader isLoadingMore={isLoadingMore} />}
               ListEmptyComponent={<EmptyState isLoading={isInitialLoading || (messages.length === 0 && isLoading)} />}
             />

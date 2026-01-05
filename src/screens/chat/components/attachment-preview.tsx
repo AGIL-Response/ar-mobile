@@ -41,7 +41,7 @@ export function AttachmentPreview({ attachments, onRemove, uploadProgress = {}, 
         }}
       >
         {attachments.map((attachment, index) => {
-          const mediaType = getMediaType(attachment.name);
+          const mediaType = getMediaType(attachment.name, attachment.mimeType);
 
           return (
             <View
