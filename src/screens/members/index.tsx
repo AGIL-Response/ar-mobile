@@ -143,17 +143,11 @@ export function MembersScreen(): React.JSX.Element {
                 <View style={styles.actionsRow}>
                   <TouchableOpacity
                     style={styles.actionBtn}
+                    hitSlop={10}
                     onPress={() => handleMapFocus(user.id)}
                   >
                     <Icon
                       name={iconNames.location}
-                      size={18}
-                      color={theme.colors.text.icon}
-                    />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.actionBtn}>
-                    <Icon
-                      name={iconNames.message_dots_square}
                       size={18}
                       color={theme.colors.text.icon}
                     />

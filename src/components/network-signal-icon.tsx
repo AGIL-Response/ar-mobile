@@ -6,7 +6,7 @@
 import React from 'react';
 import type { SvgProps } from 'react-native-svg';
 import Svg, { Path } from 'react-native-svg';
-import { X } from './icons';
+import { Icon, iconNames } from './icon';
 
 interface NetworkSignalIconProps extends SvgProps {
   /** Network speed in Mbps */
@@ -76,7 +76,7 @@ export function NetworkSignalIcon({
 
   // Show X icon when no signal (0)
   if (bars === 0) {
-    return <X color={color} width={size} height={size} {...props} />;
+    return <Icon name={iconNames.x} size={size} color={color} {...props} />;
   }
 
   return (

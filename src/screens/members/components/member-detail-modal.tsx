@@ -6,92 +6,93 @@ import type { User } from '@/types';
 import { Theme, useTheme } from '@/theme';
 
 type Props = {
-  ref: React.RefObject<any>;
   user: User | null;
-};
+}
 
-export const MemberDetailModal = React.forwardRef<any, Props>(
-  ({ user }, ref) => {
-    const theme = useTheme();
-    const styles = createStyles(theme);
-    if (!user) {
-      return (
-        <Modal ref={ref}>
+export const MemberDetailModal = React.forwardRef<any, Props>(({ user }, ref) => {
+  const theme = useTheme();
+  const styles = createStyles(theme);
+
+  return (
+    <Modal ref={ref}>
+      <View style={styles.content}>
+        {!user ? (
           <Text variant="body" style={styles.emptyText}>
             No member selected
           </Text>
-        </Modal>
-      );
-    }
-
-    return (
-      <Modal ref={ref}>
-        <View style={styles.content}>
-          {/* Basic Info */}
-          <Text variant="h4" style={styles.sectionTitle}>
-            Basic Info
-          </Text>
-          <View style={styles.item}>
-            <Text variant="body" style={styles.label}>
-              Full Name:
+        ) : (
+          <>
+            {/* Basic Info */}
+            <Text variant="h4" style={styles.sectionTitle}>
+              Basic Info
             </Text>
-            <Text variant="body">{user.fullName}</Text>
-          </View>
-          <View style={styles.item}>
-            <Text variant="body" style={styles.label}>
-              Username:
-            </Text>
-            <Text variant="body">{user.username}</Text>
-          </View>
-          <View style={styles.item}>
-            <Text variant="body" style={styles.label}>
-              Email:
-            </Text>
-            <Text variant="body">{user.email}</Text>
-          </View>
-          <View style={styles.item}>
-            <Text variant="body" style={styles.label}>
-              Email Verified:
-            </Text>
-            <Text variant="body">{user.emailVerified ? 'Yes' : 'No'}</Text>
-          </View>
-          <View style={styles.item}>
-            <Text variant="body" style={styles.label}>
-              Enabled:
-            </Text>
-            <Text variant="body">{user.enabled ? 'Active' : 'Disabled'}</Text>
-          </View>
-          <View style={styles.item}>
-            <Text variant="body" style={styles.label}>
-              Created At:
-            </Text>
-            <Text variant="body">
-              {new Date(user.createdAt).toLocaleString()}
-            </Text>
-          </View>
-
-          {/* Roles */}
-          <Text variant="h4" style={[styles.sectionTitle, { marginTop: 16 }]}>
-            Roles
-          </Text>
-          {user.roles && user.roles.length > 0 ? (
-            user.roles.map((role, index) => (
-              <View key={index} style={styles.roleCard}>
-                <Text variant="body" style={styles.roleName}>
-                  {role.displayName}
+            <View style={styles.item}>
+              <Text variant="body" style={styles.label}>
+                Full Name:
+              </Text>
+              <Text variant="body">{user.fullName || 'N/A'}</Text>
+            </View>
+            <View style={styles.item}>
+              <Text variant="body" style={styles.label}>
+                Username:
+              </Text>
+              <Text variant="body">{user.username || 'N/A'}</Text>
+            </View>
+            <View style={styles.item}>
+              <Text variant="body" style={styles.label}>
+                Email:
+              </Text>
+              <Text variant="body">{user.email || 'N/A'}</Text>
+            </View>
+            <View style={styles.item}>
+              <Text variant="body" style={styles.label}>
+                Email Verified:
+              </Text>
+              <Text variant="body">{user.emailVerified ? 'Yes' : 'No'}</Text>
+            </View>
+            <View style={styles.item}>
+              <Text variant="body" style={styles.label}>
+                Enabled:
+              </Text>
+              <Text variant="body">{user.enabled ? 'Active' : 'Disabled'}</Text>
+            </View>
+            {user.createdAt && (
+              <View style={styles.item}>
+                <Text variant="body" style={styles.label}>
+                  Created At:
+                </Text>
+                <Text variant="body">
+                  {new Date(user.createdAt).toLocaleString()}
                 </Text>
               </View>
-            ))
-          ) : (
-            <Text variant="body" style={styles.noRoles}>
-              No roles assigned
+            )}
+
+            {/* Roles */}
+            <Text variant="h4" style={[styles.sectionTitle, { marginTop: 16 }]}>
+              Roles
             </Text>
-          )}
-        </View>
-      </Modal>
-    );
-  }
-);
+            {user.roles && user.roles.length > 0 ? (
+              user.roles.map((role, index) => (
+                <View key={index} style={styles.roleCard}>
+                  <Text variant="body" style={styles.roleName}>
+                    {role.displayName || role.name || 'Unknown'}
+                  </Text>
+                </View>
+              ))
+            ) : (
+              <Text variant="body" style={styles.noRoles}>
+                No roles assigned
+              </Text>
+            )}
+          </>
+        )}
+      </View>
+    </Modal>
+  );
+});
+
+// Attach display name for better debugging and satisfying lint rules
+MemberDetailModal.displayName = 'MemberDetailModal';
 
 const createStyles = (theme: Theme) =>
   StyleSheet.create({

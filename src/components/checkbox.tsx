@@ -11,7 +11,7 @@ import {
   mergeStyles,
   useThemedStyles,
 } from './base-component';
-import { Check, Minus } from './icons';
+import { Icon, iconNames } from './icon';
 import { ErrorText, Text } from './text';
 import type { BaseComponentProps } from './types';
 import { useTheme } from '@/theme';
@@ -393,24 +393,22 @@ export const Checkbox = forwardRef<RNView, CheckboxProps>(
 
       if (indeterminate) {
         return (
-          <Minus
-            width={iconSize}
-            height={iconSize}
+          <Icon
+            name={iconNames.minus}
+            size={iconSize}
             color={iconColor}
             style={iconStyles}
-            strokeWidth={strokeWidth}
           />
         );
       }
 
       if (checked) {
         return (
-          <Check
-            width={iconSize}
-            height={iconSize}
+          <Icon
+            name={iconNames.check}
+            size={iconSize}
             color={iconColor}
             style={iconStyles}
-            strokeWidth={strokeWidth}
           />
         );
       }

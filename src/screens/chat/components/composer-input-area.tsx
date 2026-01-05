@@ -41,6 +41,8 @@ export function ComposerInputArea({
           containerStyle={styles.inputWrapper}
           inputStyle={styles.input}
           onSubmitEditing={onSend}
+          blurOnSubmit={false}
+          returnKeyType="default"
         />
       </View>
 

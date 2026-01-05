@@ -12,7 +12,6 @@ import {
   mergeStyles,
   useThemedStyles,
 } from './base-component';
-import { CaretDown } from './icons';
 import { ErrorText, Text } from './text';
 import type { BaseComponentProps } from './types';
 import { View } from './view';
@@ -468,9 +467,9 @@ export const Select = forwardRef<RNView, SelectProps>(
           </View>
 
           {/* Dropdown Arrow */}
-          <CaretDown
-            width={16}
-            height={16}
+          <Icon
+            name={iconNames.caret_down}
+            size={16}
             stroke={theme.colors.text.muted}
             style={{
               marginLeft: 8,

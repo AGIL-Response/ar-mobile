@@ -1,3 +1,4 @@
+import React from 'react';
 import type { SvgProps } from 'react-native-svg';
 
 import HomeIcon from './home.svg';
@@ -19,7 +20,6 @@ import BatteryIcon from './battery.svg';
 import MobileSignalIcon from './mobile-signal.svg';
 import MessageDotsSquareIcon from './message-dots-square.svg';
 import ChevronLeftIcon from './chevron-left.svg';
-import CameraIcon from './camera.svg';
 import UserPlusIcon from './user-plus.svg';
 import CheckCircleBrokenIcon from './check-circle-broken.svg';
 import HourglassIcon from './hourglass.svg';
@@ -32,9 +32,22 @@ import LogOutIcon from './log-out.svg';
 import EyeIcon from './eye.svg';
 import EyeOffIcon from './eye-off.svg';
 import SendIcon from './send.svg';
-import { ImageGallery } from '@/components/icons/image-gallery';
-import { Microphone } from '@/components/icons/microphone';
-import { Camera } from '@/components/icons/camera';
+import ImageGallery from './image.svg';
+import Microphone from './microphone.svg';
+import Camera from './camera.svg';
+import X from './x.svg';
+import RefreshIcon from './refresh.svg';
+import ArrowRightIcon from './arrow-right.svg';
+import CaretDownIcon from './caret-down.svg';
+import CheckIcon from './check.svg';
+import FeedIcon from './feed.svg';
+import FileIcon from './file.svg';
+import ImageGalleryIcon from './image-gallery.svg';
+import ImageIcon from './image-icon.svg';
+import LanguageIcon from './language.svg';
+import MapPinIcon from './map-pin.svg';
+import MinusIcon from './minus.svg';
+import StyleIcon from './style.svg';
 
 // Icon component type
 type IconComponent = React.ComponentType<SvgProps>;
@@ -75,6 +88,19 @@ export const iconNames = {
   image: 'image',
   microphone: 'microphone',
   send: 'send',
+  x: 'x',
+  refresh: 'refresh',
+  arrow_right: 'arrowRight',
+  caret_down: 'caretDown',
+  check: 'check',
+  feed: 'feed',
+  file: 'file',
+  image_gallery: 'imageGallery',
+  image_icon: 'imageIcon',
+  language: 'language',
+  map_pin: 'mapPin',
+  minus: 'minus',
+  style: 'style',
 } as const;
 
 // Icons object with proper typing
@@ -118,6 +144,19 @@ const icons: Record<string, IconComponent> = {
   [iconNames.image]: ImageGallery,
   [iconNames.microphone]: Microphone,
   [iconNames.send]: SendIcon,
+  [iconNames.x]: X,
+  [iconNames.refresh]: RefreshIcon,
+  [iconNames.arrow_right]: ArrowRightIcon,
+  [iconNames.caret_down]: CaretDownIcon,
+  [iconNames.check]: CheckIcon,
+  [iconNames.feed]: FeedIcon,
+  [iconNames.file]: FileIcon,
+  [iconNames.image_gallery]: ImageGalleryIcon,
+  [iconNames.image_icon]: ImageIcon,
+  [iconNames.language]: LanguageIcon,
+  [iconNames.map_pin]: MapPinIcon,
+  [iconNames.minus]: MinusIcon,
+  [iconNames.style]: StyleIcon,
 } as const;
 
 // Export icon names as type for better TypeScript support

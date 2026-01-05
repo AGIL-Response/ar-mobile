@@ -72,7 +72,7 @@ export function useAudioRecording(
           // If not already set, use the recorded time
           const audioFileWithDuration = {
             ...audioFile,
-            duration: audioFile.duration || recordingTimeRef.current.toFixed(3),
+            duration: recordingTimeRef.current.toFixed(3),
           };
           onRecordingComplete(audioFileWithDuration);
           resetRecordingState();

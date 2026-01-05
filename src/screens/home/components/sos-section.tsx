@@ -12,7 +12,6 @@ import type { Theme } from "@/theme";
 import { useTheme } from "@/theme";
 import { useTasksStore } from "@/stores/tasks";
 import { useLocationStore } from "@/stores/location";
-import { Check } from "@/components/icons";
 
 type ModalState = "confirm" | "success" | "cancel";
 
@@ -97,10 +96,9 @@ export function SosSection() {
     } else if (modalState === "success") {
       return (
         <View style={styles.statusIconCircle}>
-          <Check
-            width={28}
-            height={28}
-            strokeWidth={3}
+          <Icon
+            name={iconNames.check}
+            size={28}
             color={theme.colors.semantic.white}
           />
         </View>

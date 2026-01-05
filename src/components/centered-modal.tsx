@@ -14,7 +14,7 @@ import {
 
 import { Text } from './text';
 import { useTheme } from '@/theme';
-import { X } from './icons';
+import { Icon, iconNames } from './icon';
 
 interface CenteredModalProps {
   visible: boolean;
@@ -62,7 +62,7 @@ export function CenteredModal({
               testID="centered-modal-close"
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <X width={20} height={20} color={theme.colors.text.icon} />
+              <Icon name={iconNames.x} size={20} color={theme.colors.text.icon} />
             </TouchableOpacity>
           )}
           {/* Header */}

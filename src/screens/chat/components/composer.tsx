@@ -4,7 +4,7 @@
  * Follows SOLID principles: delegates to specialized hooks and components
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useTheme, type Theme } from '@/theme';
 import type { SendMessageData, ChatMessage } from '@/services/chat';
@@ -40,11 +40,11 @@ export function Composer({
   const styles = createStyles(theme);
 
   // State management
-  const { message, attachments, setMessage, addAttachment, removeAttachment, clearAll, hasContent } =
+  const { message, attachments, setMessage, addAttachment, clearAll, hasContent } =
     useComposerState();
 
   // Send logic
-  const { sendMessage, isSending, uploadProgress, isUploading } = useComposerSend({
+  const { sendMessage, isSending } = useComposerSend({
     onSend,
     roomId,
     replyTo,
@@ -53,12 +53,30 @@ export function Composer({
   // Typing indicator
   const { handleTextChange } = useComposerTyping({ onTyping });
 
+  // Track if we should auto-send after recording completes
+  const shouldAutoSendRef = useRef(false);
+
   // Audio recording
   const handleRecordingComplete = useCallback(
-    (audioFile: any) => {
-      addAttachment(audioFile);
+    async (audioFile: any) => {
+      // If send button was pressed, auto-send immediately without adding to state
+      if (shouldAutoSendRef.current) {
+        shouldAutoSendRef.current = false;
+        try {
+          await sendMessage(message, [audioFile]);
+          clearAll();
+          if (onTyping) {
+            onTyping(false);
+          }
+        } catch {
+          // Error already handled in useComposerSend, state preserved
+        }
+      } else {
+        // Only add to state if not auto-sending (user might want to review before sending)
+        addAttachment(audioFile);
+      }
     },
-    [addAttachment]
+    [addAttachment, sendMessage, message, clearAll, onTyping]
   );
 
   const {
@@ -121,8 +139,10 @@ export function Composer({
   }, [pickFromGallery, addAttachment, sendMessage, message, clearAll, onTyping]);
 
   const handleStopRecording = useCallback(async () => {
+    // Set flag to auto-send when recording completes
+    shouldAutoSendRef.current = true;
     await stopRecording();
-    // Audio will be added via handleRecordingComplete
+    // Audio will be added and sent via handleRecordingComplete
   }, [stopRecording]);
 
   const handleTextChangeWithTyping = useCallback(

@@ -65,24 +65,6 @@ function getValidUri(attachment: ChatAttachment, isVideo: boolean = false): stri
 }
 
 /**
- * Filename overlay component
- */
-function FilenameOverlay({ filename, backgroundColor = 'rgba(0, 0, 0, 0.3)' }: { filename: string; backgroundColor?: string }) {
-  return (
-    <View
-      style={[
-        styles.filenameOverlay,
-        { backgroundColor },
-      ]}
-    >
-      <Text variant="caption" style={styles.filenameText} numberOfLines={1}>
-        {filename}
-      </Text>
-    </View>
-  );
-}
-
-/**
  * Image attachment renderer
  * Similar to audio-attachment.tsx which uses attachment.url directly
  */

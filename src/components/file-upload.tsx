@@ -9,7 +9,7 @@ import {
   mergeStyles,
   useThemedStyles,
 } from './base-component';
-import { File, Image as ImageIcon, Upload, X } from './icons';
+import { Icon, iconNames } from './icon';
 import { ErrorText, Text } from './text';
 import type { BaseComponentProps } from './types';
 import { View } from './view';
@@ -303,9 +303,9 @@ const formatFileSize = (bytes: number): string => {
 
 const getFileIcon = (type: string, size: number = 24) => {
   if (type.startsWith('image/')) {
-    return <ImageIcon width={size} height={size} />;
+    return <Icon name={iconNames.image_icon} size={size} />;
   }
-  return <File width={size} height={size} />;
+  return <Icon name={iconNames.file} size={size} />;
 };
 
 /* ================================
@@ -482,7 +482,7 @@ export const FileUpload = forwardRef<RNView, FileUploadProps>(
           disabled={disabled || isUploading}
           {...accessibilityProps}
         >
-          <Upload width={32} height={32} style={uploadIconStyles} />
+          <Icon name={iconNames.upload} size={32} style={uploadIconStyles} />
           <Text style={uploadTextStyles}>
             {isUploading
               ? 'Selecting files...'
@@ -527,7 +527,7 @@ export const FileUpload = forwardRef<RNView, FileUploadProps>(
                     accessibilityRole="button"
                     testID={`remove-${file.name}`}
                   >
-                    <X width={20} height={20} />
+                    <Icon name={iconNames.x} size={20} />
                   </Pressable>
                 </View>
               );

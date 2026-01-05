@@ -10,8 +10,6 @@ import { Image, TouchableOpacity } from 'react-native';
 import { Icon, iconNames, View } from '@/components';
 import { useMediaViewerStore } from '@/stores/media-viewer';
 import { useTheme } from '@/theme';
-
-import { X } from './icons';
 import type { MediaItem } from './media-viewer-modal';
 import { useVideoThumbnail } from './use-video-thumbnail';
 
@@ -181,11 +179,10 @@ export function LocalAttachmentPreview({
           }}
           testID={`local-attachment-preview-remove-${attachment.id}`}
         >
-          <X
-            width={20}
-            height={20}
+          <Icon
+            name={iconNames.x}
+            size={20}
             color={theme.colors.text.icon}
-            strokeWidth={3}
           />
         </TouchableOpacity>
       )}

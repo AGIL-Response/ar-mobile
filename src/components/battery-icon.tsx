@@ -6,7 +6,7 @@
 import React from 'react';
 import type { SvgProps } from 'react-native-svg';
 import Svg, { Path, Rect } from 'react-native-svg';
-import { X } from './icons';
+import { Icon, iconNames } from './icon';
 
 interface BatteryIconProps extends SvgProps {
   /** Battery percentage (0-100) */
@@ -64,7 +64,7 @@ export function BatteryIcon({
 
   // Show X icon when battery is 0
   if (batteryPercentage === 0) {
-    return <X color={outlineColor} width={size} height={size} {...props} />;
+    return <Icon name={iconNames.x} size={size} color={outlineColor} {...props} />;
   }
 
   // Clamp percentage between 0 and 100

@@ -42,7 +42,7 @@ import { Palette, type Theme } from '@/theme';
 
 import { createStyleCreator, useThemedStyles } from './base-component';
 import { Text } from './text';
-import { X } from './icons';
+import { Icon, iconNames } from './icon';
 import { FontFamilies } from '@/lib/fonts';
 
 type ModalProps = BottomSheetModalProps & {
@@ -238,7 +238,7 @@ const ModalHeader = React.memo(
         >
           <Text variant="h4" style={styles.title}>{title}</Text>
           <Pressable onPress={dismiss}>
-            <X width={20} height={20} color={styles.iconColor.color} />
+            <Icon name={iconNames.x} size={20} color={styles.iconColor.color} />
           </Pressable>
         </View>
       </View>

@@ -29,9 +29,9 @@ export function ComposerRecordingUI({
       <IconButton
         icon="x"
         size="medium"
-        backgroundColor="#ef4444"
         iconColor="white"
         iconSize={18}
+        backgroundColor={theme.colors.semantic.error}
         onPress={onCancel}
         accessibilityLabel="Cancel recording"
       />
@@ -47,7 +47,8 @@ export function ComposerRecordingUI({
         icon="send"
         size="medium"
         colorVariant="transparent"
-        iconColor={theme.colors.button.secondary}
+        iconColor={theme.colors.text.inverse}
+        backgroundColor={theme.colors.button.secondary}
         iconSize={18}
         onPress={onStop}
         accessibilityLabel="Stop recording and send"
@@ -59,17 +60,21 @@ export function ComposerRecordingUI({
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
     container: {
+      flex: 1,
+      padding: theme.spacing.gap.xl,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: theme.spacing.gap.sm,
+      gap: theme.spacing.gap.lg,
     },
     timerContainer: {
+      flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'space-between',
       gap: theme.spacing.gap.xs,
-      paddingHorizontal: theme.spacing.gap.sm,
-      paddingVertical: theme.spacing.gap.xs,
-      backgroundColor: theme.colors.background.secondary,
+      paddingHorizontal: theme.spacing.gap.lg,
+      paddingVertical: theme.spacing.gap.lg,
+      backgroundColor: theme.colors.background.overlay,
       borderRadius: 18,
     },
     indicator: {

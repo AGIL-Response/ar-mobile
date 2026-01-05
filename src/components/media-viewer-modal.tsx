@@ -24,7 +24,7 @@ import { runOnJS } from 'react-native-reanimated';
 import { Text } from '@/components';
 import { useTheme } from '@/theme';
 
-import { X } from './icons';
+import { Icon, iconNames } from './icon';
 
 export interface MediaItem {
   fileId: string;
@@ -159,7 +159,7 @@ export function MediaViewerModal({
               { backgroundColor: theme.colors.button.ghost },
             ]}
           >
-            <X width={20} height={20} color={theme.colors.text.icon} />
+            <Icon name={iconNames.x} size={20} color={theme.colors.text.icon} />
           </TouchableOpacity>
         </View>
 

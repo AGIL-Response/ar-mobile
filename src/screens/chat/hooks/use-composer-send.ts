@@ -13,22 +13,22 @@ import { isAudio } from '@/utils/media';
 import useAuthStore from '@/stores/auth';
 
 interface UseComposerSendProps {
-  onSend: (data: Omit<SendMessageData, 'roomId'> & { localMessage?: ChatMessage }) => Promise<void>;
   roomId?: string;
   replyTo?: { messageId: string; content: string };
+  onSend: (data: Omit<SendMessageData, 'roomId'> & { localMessage?: ChatMessage }) => Promise<void>;
 }
 
 interface UseComposerSendReturn {
-  sendMessage: (message: string, attachments: MediaFile[]) => Promise<void>;
   isSending: boolean;
-  uploadProgress: Record<string, number>;
   isUploading: boolean;
+  uploadProgress: Record<string, number>;
+  sendMessage: (message: string, attachments: MediaFile[]) => Promise<void>;
 }
 
 export function useComposerSend({
-  onSend,
   roomId,
   replyTo,
+  onSend,
 }: UseComposerSendProps): UseComposerSendReturn {
   const [isSending, setIsSending] = useState(false);
   const currentUser = useAuthStore((state) => state.user);
@@ -57,6 +57,15 @@ export function useComposerSend({
             (file.name && isAudio(file.name)) ||
             (file.mimeType && file.mimeType.toLowerCase().startsWith('audio/'))
         );
+
+        console.log('send message', {
+          messageToSend,
+          attachmentsToSend,
+          messageType,
+          fileIds,
+          localAttachments,
+          isVoice,
+        });
 
         let localMessage: ChatMessage | undefined;
         if (roomId && currentUser) {

@@ -24,8 +24,7 @@ import Mapbox, {
   import { type Theme, useTheme } from '@/theme';
   import { Pressable } from 'react-native-gesture-handler';
   import type { IncidentCoordinate, UserCoordinate } from '@/screens/map/types';
-import { useAuthStore } from '@/stores/auth';
-import { X } from '@/components/icons';
+  import { useAuthStore } from '@/stores/auth';
   
   Mapbox.setAccessToken(
     'sk.eyJ1IjoibGFpem4iLCJhIjoiY21lamxqZzh4MDQ0bjJrcXZ0dWRiZHAzNyJ9.NU6sHZrIkDuDpHCEManSJQ'
@@ -253,7 +252,7 @@ import { X } from '@/components/icons';
           onBackPress={resetToHome} 
           rightContent={
             <TouchableOpacity onPress={resetToHome}>
-              <X width={20} height={20} color={theme.colors.text.icon} /> 
+              <Icon name={iconNames.x} size={20} color={theme.colors.text.icon} /> 
             </TouchableOpacity>
           }
         />

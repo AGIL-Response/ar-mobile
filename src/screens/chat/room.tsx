@@ -153,11 +153,17 @@ export default function ChatRoomScreen() {
     (messages.length > 0 && initialScrollIndex === undefined);
 
 
+  // Calculate keyboard offset accounting for AppBar and safe area
+  // AppBar minHeight is 56, plus safe area top inset
+  const keyboardVerticalOffset = Platform.OS === 'ios' 
+    ? (insets.top + 56) 
+    : 0;
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={keyboardVerticalOffset}
     >
       <Background>
         <AppBar

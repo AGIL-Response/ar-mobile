@@ -18,10 +18,6 @@ jest.mock('@/components/centered-modal', () => ({
   CenteredModal: () => null,
 }));
 
-jest.mock('@/components/icons', () => ({
-  Check: () => null,
-}));
-
 describe('SosSection', () => {
   const mockCreateTask = jest.fn();
 

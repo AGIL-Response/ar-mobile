@@ -323,6 +323,16 @@ export class ChatSocketService {
       payload.isVoice = true;
     }
 
+    console.log('[SocketService] Emitting message:send', {
+      conversationId: payload.conversationId,
+      content: payload.content,
+      type: payload.type,
+      fileIds: payload.fileIds,
+      clientId: payload.clientId,
+      id: payload.id,
+      isVoice: payload.isVoice,
+    });
+
     this.socket.emit('message:send', payload);
   }
 

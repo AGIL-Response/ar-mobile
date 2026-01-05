@@ -240,6 +240,16 @@ export class ChatService {
    * Send a message via socket (matching chat-client-js pattern)
    */
   async sendMessage(data: SendMessageData, fileIds?: string[], localMessage?: ChatMessage): Promise<void> {
+    console.log('[ChatService] sendMessage called', {
+      roomId: data.roomId,
+      content: data.content,
+      type: data.type,
+      fileIds,
+      clientId: data.clientId,
+      messageId: localMessage?.id,
+      isVoice: data.isVoice,
+    });
+
     // Emit to socket with fileIds, clientId, id, and isVoice if provided
     this.socketService.sendMessage(
       data.roomId,

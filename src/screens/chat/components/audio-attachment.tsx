@@ -10,7 +10,6 @@ import type { ChatAttachment } from '@/services/chat';
 import { Icon, Text } from '@/components';
 import { useTheme } from '@/theme';
 import { useAudioPlayerStore } from '@/stores/audio-player';
-import { formatFileSize } from '@/utils/media';
 
 interface AudioAttachmentProps {
   attachment: ChatAttachment;
@@ -54,7 +53,6 @@ export function AudioAttachment({ attachment, isOwnMessage = false, onPress }: A
   const isActive = currentId === attachment.id;
   const isPlaying = isActive && status === 'playing';
   const isLoading = isActive && status === 'loading';
-  const isPaused = isActive && status === 'paused';
 
   // Use duration from store if available, otherwise parse from attachment
   const attachmentDurationMillis = useMemo(() => parseDuration(attachment.duration), [attachment.duration]);
@@ -86,7 +84,6 @@ export function AudioAttachment({ attachment, isOwnMessage = false, onPress }: A
       onPress={onPress}
       style={{
         flex: 1,
-        width: 210,
         borderRadius: 12,
         overflow: 'hidden',
         backgroundColor: containerBg,
