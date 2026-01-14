@@ -49,6 +49,7 @@ export * from './modal';
 export * from './centered-modal';
 export * from './theme-toggle';
 export * from './utils';
+export * from './bottom-sheet-scroll-view';
 
 // Re-export React Native components for convenience
 export {

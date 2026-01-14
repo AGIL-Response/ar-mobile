@@ -384,5 +384,294 @@ describe('authApi', () => {
       });
     });
   });
+
+  describe('refreshToken', () => {
+    it('successfully refreshes token', async () => {
+      const refreshToken = 'refresh-token-123';
+      const realm = 'test-realm';
+
+      const mockTokenData = {
+        access_token: 'new-access-token',
+        refresh_token: 'new-refresh-token',
+        expires_in: 3600,
+      };
+
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue(mockTokenData),
+      });
+
+      const result = await authApi.refreshToken(refreshToken, realm);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        'https://dev-auth.agilres.net/realms/test-realm/protocol/openid-connect/token',
+        expect.objectContaining({
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: expect.stringContaining('grant_type=refresh_token'),
+        })
+      );
+      expect(result).toEqual(mockTokenData);
+    });
+
+    it('handles 401 unauthorized error', async () => {
+      const refreshToken = 'expired-token';
+      const realm = 'test-realm';
+
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 401,
+        text: jest.fn().mockResolvedValue('Unauthorized'),
+      });
+
+      await expect(
+        authApi.refreshToken(refreshToken, realm)
+      ).rejects.toThrow('Refresh token expired or invalid');
+    });
+
+    it('handles 400 bad request error', async () => {
+      const refreshToken = 'invalid-token';
+      const realm = 'test-realm';
+
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 400,
+        text: jest.fn().mockResolvedValue('Bad Request'),
+      });
+
+      await expect(
+        authApi.refreshToken(refreshToken, realm)
+      ).rejects.toThrow('Refresh token expired or invalid');
+    });
+
+    it('handles other HTTP errors', async () => {
+      const refreshToken = 'refresh-token';
+      const realm = 'test-realm';
+
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 500,
+        text: jest.fn().mockResolvedValue('Server Error'),
+      });
+
+      await expect(
+        authApi.refreshToken(refreshToken, realm)
+      ).rejects.toThrow('Token refresh failed (500)');
+    });
+
+    it('handles fetch errors', async () => {
+      const refreshToken = 'refresh-token';
+      const realm = 'test-realm';
+
+      const fetchError = new Error('Network error');
+      (global.fetch as jest.Mock).mockRejectedValue(fetchError);
+
+      await expect(
+        authApi.refreshToken(refreshToken, realm)
+      ).rejects.toThrow('Network error');
+    });
+
+    it('handles non-Error rejections', async () => {
+      const refreshToken = 'refresh-token';
+      const realm = 'test-realm';
+
+      (global.fetch as jest.Mock).mockRejectedValue('String error');
+      (handleApiError as jest.Mock).mockReturnValue({
+        message: 'An error occurred',
+        status: 500,
+      });
+
+      await expect(
+        authApi.refreshToken(refreshToken, realm)
+      ).rejects.toEqual({
+        message: 'An error occurred',
+        status: 500,
+      });
+    });
+  });
+
+  describe('getUserTeams', () => {
+    it('successfully gets user teams', async () => {
+      const userId = 'user-1';
+
+      const mockTeams = {
+        data: [
+          {
+            id: 'team-1',
+            name: 'Team Alpha',
+            isLocationTracked: true,
+          },
+          {
+            id: 'team-2',
+            name: 'Team Beta',
+            isLocationTracked: true,
+          },
+        ],
+      };
+
+      const mockResponse = {
+        data: mockTeams,
+      };
+
+      (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+
+      const result = await authApi.getUserTeams(userId);
+
+      expect(apiClient.get).toHaveBeenCalledWith(
+        '/teams?userId=user-1&isLocationTracked=true&sort={}&count=false'
+      );
+      expect(result).toEqual(mockTeams);
+    });
+
+    it('encodes userId in URL query parameter', async () => {
+      const userId = 'user@example.com';
+      const mockResponse = {
+        data: { data: [] },
+      };
+
+      (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+
+      await authApi.getUserTeams(userId);
+
+      expect(apiClient.get).toHaveBeenCalledWith(
+        '/teams?userId=user%40example.com&isLocationTracked=true&sort={}&count=false'
+      );
+    });
+
+    it('handles errors', async () => {
+      const userId = 'user-1';
+      const error = new Error('Failed to get teams');
+      (apiClient.get as jest.Mock).mockRejectedValue(error);
+      (handleApiError as jest.Mock).mockReturnValue({
+        message: 'Failed to get teams',
+        status: 500,
+      });
+
+      await expect(authApi.getUserTeams(userId)).rejects.toEqual({
+        message: 'Failed to get teams',
+        status: 500,
+      });
+    });
+  });
+
+  describe('updateUser', () => {
+    it('successfully updates user', async () => {
+      const userId = 'user-1';
+      const updatePayload = {
+        username: 'johndoe',
+        fullName: 'John Doe Updated',
+        email: 'john.updated@example.com',
+        description: 'Updated description',
+        avatarId: 'avatar-123',
+        updatedAt: '2024-01-01T00:00:00Z',
+      };
+
+      const mockResponse = {
+        data: {
+          data: {
+            id: 'user-1',
+            ...updatePayload,
+          },
+        },
+      };
+
+      (apiClient.patch as jest.Mock).mockResolvedValue(mockResponse);
+
+      const result = await authApi.updateUser(userId, updatePayload);
+
+      expect(apiClient.patch).toHaveBeenCalledWith(
+        '/users/user-1',
+        updatePayload
+      );
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    it('handles update with all fields', async () => {
+      const userId = 'user-1';
+      const updatePayload = {
+        username: 'newusername',
+        fullName: 'John Michael Doe',
+        email: 'newemail@example.com',
+        description: 'New description',
+        avatarId: 'new-avatar-id',
+        updatedAt: '2024-01-15T10:30:00Z',
+      };
+
+      const mockResponse = {
+        data: {
+          data: {
+            id: 'user-1',
+            ...updatePayload,
+          },
+        },
+      };
+
+      (apiClient.patch as jest.Mock).mockResolvedValue(mockResponse);
+
+      const result = await authApi.updateUser(userId, updatePayload);
+
+      expect(apiClient.patch).toHaveBeenCalledWith(
+        '/users/user-1',
+        updatePayload
+      );
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    it('handles update errors', async () => {
+      const userId = 'user-1';
+      const updatePayload = {
+        username: 'johndoe',
+        fullName: 'John Doe',
+        email: 'john@example.com',
+        description: 'Description',
+        avatarId: 'avatar-1',
+        updatedAt: '2024-01-01T00:00:00Z',
+      };
+
+      const error = new Error('Failed to update user');
+      (apiClient.patch as jest.Mock).mockRejectedValue(error);
+      (handleApiError as jest.Mock).mockReturnValue({
+        message: 'Failed to update user',
+        status: 400,
+      });
+
+      await expect(authApi.updateUser(userId, updatePayload)).rejects.toEqual({
+        message: 'Failed to update user',
+        status: 400,
+      });
+    });
+
+    it('handles validation errors', async () => {
+      const userId = 'user-1';
+      const updatePayload = {
+        username: 'johndoe',
+        fullName: 'John Doe',
+        email: 'invalid-email',
+        description: 'Description',
+        avatarId: 'avatar-1',
+        updatedAt: '2024-01-01T00:00:00Z',
+      };
+
+      const error = new Error('Validation failed');
+      (apiClient.patch as jest.Mock).mockRejectedValue(error);
+      (handleApiError as jest.Mock).mockReturnValue({
+        message: 'Validation failed',
+        status: 422,
+        errors: {
+          email: ['Invalid email format'],
+        },
+      });
+
+      await expect(authApi.updateUser(userId, updatePayload)).rejects.toEqual({
+        message: 'Validation failed',
+        status: 422,
+        errors: {
+          email: ['Invalid email format'],
+        },
+      });
+    });
+  });
 });
 

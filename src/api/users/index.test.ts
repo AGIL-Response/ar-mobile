@@ -1,4 +1,4 @@
-import { getUsersByTenant, getUserRoles } from './index';
+import { getUsersByTenant, getUserRoles, getTeamMembers } from './index';
 import { apiClient, handleApiError } from '../api-client';
 
 // Mock dependencies
@@ -289,6 +289,240 @@ describe('usersApi', () => {
         message: 'Failed to get roles',
         status: 404,
       });
+    });
+  });
+
+  describe('getTeamMembers', () => {
+    it('successfully gets team members', async () => {
+      const teamId = 'team-1';
+      const mockMembersResponse = [
+        {
+          id: 'user-1',
+          userId: 'user-1',
+          fullName: 'Team Member One',
+          email: 'member1@example.com',
+          username: 'member1',
+          createdAt: 1234567890,
+          avatarId: 'avatar-1',
+          description: 'Team member description',
+          location: 'New York',
+          roles: [
+            {
+              id: 'role-1',
+              name: 'team-lead',
+              displayName: 'Team Lead',
+              description: 'Lead role',
+            },
+          ],
+          updatedAt: '2024-01-15T10:00:00Z',
+        },
+        {
+          userId: 'user-2',
+          fullName: 'Team Member Two',
+          email: 'member2@example.com',
+          username: 'member2',
+          createdAt: 1234567891,
+          roles: [],
+        },
+      ];
+
+      const mockResponse = {
+        data: {
+          data: mockMembersResponse,
+        },
+      };
+
+      (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+
+      const result = await getTeamMembers(teamId);
+
+      expect(apiClient.get).toHaveBeenCalledWith('/teams/team-1/users?sort={}&count=false');
+      expect(result).toHaveLength(2);
+      
+      // Check first member
+      expect(result[0]).toMatchObject({
+        id: 'user-1',
+        fullName: 'Team Member One',
+        email: 'member1@example.com',
+        username: 'member1',
+        emailVerified: true,
+        createdAt: 1234567890,
+        enabled: true,
+        avatarId: 'avatar-1',
+        description: 'Team member description',
+        location: 'New York',
+        updatedAt: '2024-01-15T10:00:00Z',
+      });
+      
+      expect(result[0].roles).toHaveLength(1);
+      expect(result[0].roles[0]).toMatchObject({
+        id: 'role-1',
+        name: 'team-lead',
+        displayName: 'Team Lead',
+        description: 'Lead role',
+        composite: false,
+        clientRole: false,
+        containerId: '',
+      });
+    });
+
+    it('uses userId field when id is not present', async () => {
+      const teamId = 'team-1';
+      const mockMembersResponse = [
+        {
+          userId: 'user-123',
+          fullName: 'Test User',
+          email: 'test@example.com',
+          username: 'testuser',
+          createdAt: 1234567890,
+        },
+      ];
+
+      const mockResponse = {
+        data: {
+          data: mockMembersResponse,
+        },
+      };
+
+      (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+
+      const result = await getTeamMembers(teamId);
+
+      expect(result[0].id).toBe('user-123');
+    });
+
+    it('handles members without optional fields', async () => {
+      const teamId = 'team-1';
+      const mockMembersResponse = [
+        {
+          userId: 'user-1',
+          fullName: 'Simple User',
+          email: 'simple@example.com',
+          username: 'simple',
+          createdAt: 1234567890,
+        },
+      ];
+
+      const mockResponse = {
+        data: {
+          data: mockMembersResponse,
+        },
+      };
+
+      (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+
+      const result = await getTeamMembers(teamId);
+
+      expect(result[0]).toMatchObject({
+        id: 'user-1',
+        fullName: 'Simple User',
+        email: 'simple@example.com',
+        username: 'simple',
+        emailVerified: true,
+        enabled: true,
+        description: '',
+        location: undefined,
+        roles: [],
+        updatedAt: '',
+      });
+    });
+
+    it('handles members with roles missing optional fields', async () => {
+      const teamId = 'team-1';
+      const mockMembersResponse = [
+        {
+          userId: 'user-1',
+          fullName: 'User One',
+          email: 'user1@example.com',
+          username: 'user1',
+          createdAt: 1234567890,
+          roles: [
+            {
+              id: 'role-1',
+              name: 'member',
+            },
+          ],
+        },
+      ];
+
+      const mockResponse = {
+        data: {
+          data: mockMembersResponse,
+        },
+      };
+
+      (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+
+      const result = await getTeamMembers(teamId);
+
+      expect(result[0].roles[0]).toMatchObject({
+        id: 'role-1',
+        name: 'member',
+        displayName: undefined,
+        description: '',
+        composite: false,
+        clientRole: false,
+        containerId: '',
+      });
+    });
+
+    it('transforms multiple members correctly', async () => {
+      const teamId = 'team-1';
+      const mockMembersResponse = [
+        {
+          userId: 'user-1',
+          fullName: 'User One',
+          email: 'user1@example.com',
+          username: 'user1',
+          createdAt: 1234567890,
+        },
+        {
+          userId: 'user-2',
+          fullName: 'User Two',
+          email: 'user2@example.com',
+          username: 'user2',
+          createdAt: 1234567891,
+        },
+        {
+          userId: 'user-3',
+          fullName: 'User Three',
+          email: 'user3@example.com',
+          username: 'user3',
+          createdAt: 1234567892,
+        },
+      ];
+
+      const mockResponse = {
+        data: {
+          data: mockMembersResponse,
+        },
+      };
+
+      (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+
+      const result = await getTeamMembers(teamId);
+
+      expect(result).toHaveLength(3);
+      expect(result[0].id).toBe('user-1');
+      expect(result[1].id).toBe('user-2');
+      expect(result[2].id).toBe('user-3');
+    });
+
+    it('handles errors', async () => {
+      const teamId = 'team-1';
+      const error = new Error('Failed to get team members');
+      (apiClient.get as jest.Mock).mockRejectedValue(error);
+      (handleApiError as jest.Mock).mockReturnValue({
+        message: 'Failed to get team members',
+        status: 404,
+      });
+
+      await expect(getTeamMembers(teamId)).rejects.toEqual({
+        message: 'Failed to get team members',
+        status: 404,
+      });
+
+      expect(handleApiError).toHaveBeenCalledWith(error);
     });
   });
 });

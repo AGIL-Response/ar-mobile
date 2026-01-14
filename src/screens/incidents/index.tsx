@@ -137,7 +137,7 @@ export default function IncidentsScreen() {
                 onRefresh={handleRefresh}
                 tintColor={theme.colors.text.primary}
                 colors={[theme.colors.text.primary]}
-                progressBackgroundColor={theme.colors.background.secondary}
+                progressBackgroundColor={theme.colors.semantic.white}
               />
             }
           />

@@ -2,16 +2,16 @@ import { iconNames } from '@assets/icons';
 import { RelativePathString, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ScrollView,
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
 
-import { Avatar, Background, Icon, Text, View } from '@/components';
+import { Avatar, Background, BottomSheetScrollView, Icon, Text, View } from '@/components';
 import { BatteryIcon } from '@/components/battery-icon';
 import { useModal } from '@/components/modal';
 import { NetworkSignalIcon } from '@/components/network-signal-icon';
 import { FontFamilies } from '@/lib/fonts';
+import { useSafeAreaInsets } from '@/lib/hooks';
 import { useUsersStore } from '@/stores/users';
 import { useMapStore } from '@/stores/map';
 import { useTheme } from '@/theme';
@@ -26,6 +26,7 @@ export function MembersScreen(): React.JSX.Element {
   const setMapFocusUserId = useMapStore((state) => state.actions.setMapFocusUserId);
   const setFlatViewFocusUserId = useMapStore((state) => state.actions.setFlatViewFocusUserId);
   const theme = useTheme();
+  const { bottomInset } = useSafeAreaInsets();
   const { ref, present } = useModal();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const router = useRouter();
@@ -179,9 +180,12 @@ export function MembersScreen(): React.JSX.Element {
   return (
     <Background>
       <View style={styles.container}>
-        <ScrollView
+        <BottomSheetScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: 100 + bottomInset },
+          ]}
           showsVerticalScrollIndicator={false}
         >
           {isLoading && users.length === 0 ? (
@@ -223,7 +227,7 @@ export function MembersScreen(): React.JSX.Element {
               </Text>
             </View>
           )}
-        </ScrollView>
+        </BottomSheetScrollView>
         <MemberDetailModal ref={ref} user={selectedUser} />
       </View>
     </Background>

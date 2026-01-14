@@ -583,9 +583,14 @@ jest.mock('@/lib/hooks', () => ({
   useCurrentLocation: jest.fn(),
   useObservable: jest.fn(),
   handleAppOpenEvent: jest.fn().mockResolvedValue(undefined),
+  useSafeAreaInsets: jest.fn(() => ({
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    bottomInset: 0,
+  })),
 }));
-
-
 
 jest.mock('@/lib/storage', () => ({
   storage: {

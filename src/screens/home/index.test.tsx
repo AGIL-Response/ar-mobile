@@ -23,17 +23,6 @@ jest.mock('./components/flat-view', () => {
   };
 });
 
-jest.mock('./components/map-view', () => {
-  const React = require('react');
-  return {
-    __esModule: true,
-    MapView: (props: unknown) => {
-      mockMapViewRender(props);
-      return React.createElement('Text', null, 'Mock Map View');
-    },
-  };
-});
-
 jest.mock('./components/location-status', () => {
   const React = require('react');
   return {

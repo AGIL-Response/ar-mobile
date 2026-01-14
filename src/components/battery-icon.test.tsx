@@ -4,10 +4,6 @@ import { reactNativeRender as render } from '@/lib/test-utils';
 
 import { BatteryIcon } from './battery-icon';
 
-jest.mock('./icons', () => ({
-  X: jest.fn(() => null),
-}));
-
 describe('BatteryIcon', () => {
   it('returns SVG when batteryPercentage has a value', () => {
     const { rerender } = render(<BatteryIcon batteryPercentage={100}/>);

@@ -66,7 +66,7 @@ describe('Icon component', () => {
   it('passes through additional props to icon component', () => {
     render(<Icon name="home" testID="icon" fill="#ff0000" />);
     const icon = screen.getByTestId('icon');
-    expect(icon.props.fill).toBe('#ff0000');
+    expect(icon.props.color).toBe('#ff0000');
   });
 
   it('renders different icons based on name prop', () => {
