@@ -5,6 +5,8 @@ import checkUsername from '@/stores/auth/actions/check-username';
 // eslint-disable-next-line import/no-cycle
 import createGeoEntityIfNeeded from '@/stores/auth/actions/create-geo-entity-if-needed';
 // eslint-disable-next-line import/no-cycle
+import loginWithOAuth from '@/stores/auth/actions/login-with-oauth';
+// eslint-disable-next-line import/no-cycle
 import loginWithPassword from '@/stores/auth/actions/login-with-password';
 import register from '@/stores/auth/actions/register';
 import updateGeoEntityLocation from '@/stores/auth/actions/update-geo-entity-location';
@@ -81,6 +83,7 @@ export interface AuthState extends IBaseState {
   actions: {
     checkUsername: (username: string) => Promise<string | null>;
     loginWithPassword: (username: string, password: string) => Promise<any>;
+    loginWithOAuth: (tokenResponse: any) => Promise<any>;
     register: (params: RegisterRequest) => Promise<any>;
     logout: () => void;
     setTokens: (tokens: ITokens) => void;
@@ -118,6 +121,7 @@ const authStore = (set: any, get: any) => ({
   actions: {
     checkUsername: checkUsername(set, get),
     loginWithPassword: loginWithPassword(set, get),
+    loginWithOAuth: loginWithOAuth(set, get),
     register: register(set, get),
     logout: async () => {
       // Stop location monitoring and disconnect WebSocket
@@ -201,7 +205,7 @@ const authStore = (set: any, get: any) => ({
     updateUser: async (userId: string, payload: UpdateUserRequest) => {
       const response = await authApi.updateUser(userId, payload);
 
-      const normalizedUpdatedUser = {
+      const normalizedUpdatedUser: Partial<IUser> = {
         username: response.data.username,
         email: response.data.email,
         fullName: response.data.fullName,
@@ -210,12 +214,14 @@ const authStore = (set: any, get: any) => ({
         updatedAt: response.data.updatedAt,
       };
       set((state: AuthState) => {
-        state.user = {
-          ...state.user,
-          ...normalizedUpdatedUser,
-        };
+        if (state.user) {
+          state.user = {
+            ...state.user,
+            ...normalizedUpdatedUser,
+          };
+        }
       });
-      return normalizedUpdatedUser;
+      return get().user || ({} as IUser);
     },
   },
   reset: () => resetStore(initialState, set),

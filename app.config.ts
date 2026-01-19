@@ -43,6 +43,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: process.env.APP_NAME || '[?] AgilResponse ',
   slug: 'agil-response',
+  scheme: 'myapp',
   ios: {
     ...config.ios,
     bundleIdentifier: process.env.PACKAGE_NAME,
