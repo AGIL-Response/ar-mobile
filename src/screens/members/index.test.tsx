@@ -44,6 +44,14 @@ jest.mock('@/components/network-signal-icon', () => ({
     );
   },
 }));
+
+jest.mock('@/components/bottom-sheet-scroll-view', () => ({
+  BottomSheetScrollView: (props: any) => {
+    const React = require('react');
+    const RN = require('react-native');
+    return React.createElement(RN.ScrollView, props);
+  },
+}));
 /* eslint-enable @typescript-eslint/no-require-imports */
 
 

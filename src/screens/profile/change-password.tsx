@@ -18,6 +18,7 @@ import {
   Text,
   View,
 } from '@/components';
+import { useSafeAreaInsets } from '@/lib/hooks';
 import { useTheme } from '@/theme';
 
 interface PasswordFieldProps {
@@ -97,6 +98,7 @@ const PasswordField = ({
 
 export default function ChangePasswordScreen() {
   const theme = useTheme();
+  const { bottomInset } = useSafeAreaInsets();
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -154,6 +156,7 @@ export default function ChangePasswordScreen() {
         ]
       );
     } catch (error) {
+      console.error('❌ Password change error:', error);
       Alert.alert('Error', 'Failed to change password. Please try again.');
     } finally {
       setIsSaving(false);
@@ -172,7 +175,7 @@ export default function ChangePasswordScreen() {
 
       <ScrollView
         style={{ flex: 1, paddingTop: 20 }}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 100 + bottomInset }}
         showsVerticalScrollIndicator={false}
       >
         <View style={{ paddingHorizontal: 16, gap: 20 }}>
@@ -249,6 +252,7 @@ export default function ChangePasswordScreen() {
           left: 0,
           right: 0,
           padding: 24,
+          paddingBottom: 24 + bottomInset,
           backgroundColor: theme.colors.background.primary,
           borderTopWidth: 1,
           borderTopColor: theme.colors.surface.border,

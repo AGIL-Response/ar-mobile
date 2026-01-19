@@ -24,6 +24,7 @@ import {
 import { Select } from '@/components/select';
 import { TextArea } from '@/components/textarea';
 import { useLocation } from '@/lib/hooks/use-location';
+import { useSafeAreaInsets } from '@/lib/hooks';
 import { useIncidentsStore } from '@/stores/incidents';
 import { useTheme } from '@/theme';
 
@@ -55,6 +56,7 @@ export const getMimeTypeFromUri = (uri: string) => {
 
 export default function CreateIncidentScreen() {
   const theme = useTheme();
+  const { bottomInset } = useSafeAreaInsets();
   const router = useRouter();
   const createIncident = useIncidentsStore((state) => state.actions.createIncident);
   const location = useLocation();
@@ -417,6 +419,7 @@ export default function CreateIncidentScreen() {
       <View
         style={{
           padding: 24,
+          paddingBottom: 24 + bottomInset,
           flexDirection: 'row',
           gap: 16,
           backgroundColor: theme.colors.background.primary,

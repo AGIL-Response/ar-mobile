@@ -1,9 +1,10 @@
 import axios from 'axios';
 
+import { API_CODE, apiClient, handleApiError } from './api-client';
+import { requestQueue } from './request-queue';
+
 // Unmock api-client for this test file since we're testing the actual implementation
 jest.unmock('./api-client');
-
-import { API_CODE, apiClient, handleApiError } from './api-client';
 
 const useAuthStoreModule = require('@/stores/auth');
 const useAuthStore = useAuthStoreModule.default;
@@ -120,6 +121,8 @@ describe('api-client', () => {
     it('calls logout on 401 error', async () => {
       const logoutSpy = jest.fn();
       (useAuthStore.getState as jest.Mock).mockReturnValue({
+        token: null,
+        user: { realm: 'test-realm' },
         actions: { logout: logoutSpy },
       });
 
@@ -136,7 +139,7 @@ describe('api-client', () => {
 
       const interceptor = (apiClient.interceptors.response as any).handlers[0];
 
-      await expect(interceptor.rejected(error)).rejects.toEqual(error);
+      await expect(interceptor.rejected(error)).rejects.toThrow('No refresh token available');
       expect(logoutSpy).toHaveBeenCalled();
     });
   });
@@ -232,6 +235,259 @@ describe('api-client', () => {
   describe('API_CODE', () => {
     it('exports OK constant', () => {
       expect(API_CODE.OK).toBe(200);
+    });
+  });
+
+  describe('token refresh and request queue', () => {
+    let mockAuthApi: any;
+    let setTokensSpy: jest.Mock;
+    let logoutSpy: jest.Mock;
+
+    beforeEach(() => {
+      requestQueue.clear();
+      requestQueue.setRefreshing(false);
+      requestQueue.setRefreshPromise(null);
+
+      mockAuthApi = {
+        refreshToken: jest.fn(),
+      };
+
+      setTokensSpy = jest.fn();
+      logoutSpy = jest.fn();
+
+      (useAuthStore.getState as jest.Mock).mockReturnValue({
+        token: {
+          accessToken: 'old-access-token',
+          refreshToken: 'test-refresh-token',
+          idToken: 'test-id-token',
+          expiresIn: 3600,
+        },
+        user: { realm: 'test-realm' },
+        actions: {
+          setTokens: setTokensSpy,
+          logout: logoutSpy,
+        },
+      });
+
+      // Mock the auth API module
+      jest.mock('./auth', () => ({
+        authApi: mockAuthApi,
+      }));
+    });
+
+    afterEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('refreshes token on 401 error', async () => {
+      const newAccessToken = 'new-access-token';
+      
+      mockAuthApi.refreshToken.mockResolvedValue({
+        access_token: newAccessToken,
+        refresh_token: 'new-refresh-token',
+        id_token: 'new-id-token',
+        expires_in: 3600,
+      });
+
+      const error = {
+        response: {
+          status: 401,
+          data: { message: 'Unauthorized' },
+        },
+        config: {
+          method: 'get',
+          url: '/api/protected',
+          headers: {},
+        },
+      };
+
+      const interceptor = (apiClient.interceptors.response as any).handlers[0];
+
+      await expect(interceptor.rejected(error)).rejects.toThrow();
+
+      expect(mockAuthApi.refreshToken).toHaveBeenCalledWith(
+        'test-refresh-token',
+        'test-realm'
+      );
+
+      expect(setTokensSpy).toHaveBeenCalledWith({
+        accessToken: newAccessToken,
+        refreshToken: 'new-refresh-token',
+        idToken: 'new-id-token',
+        expiresIn: 3600,
+      });
+    });
+
+    it('queues requests when token refresh is in progress', async () => {
+      requestQueue.setRefreshing(true);
+
+      const error = {
+        response: {
+          status: 401,
+          data: { message: 'Unauthorized' },
+        },
+        config: {
+          method: 'get',
+          url: '/api/protected',
+          headers: {},
+        },
+      };
+
+      const interceptor = (apiClient.interceptors.response as any).handlers[0];
+
+      const resultPromise = interceptor.rejected(error);
+
+      expect(requestQueue.length()).toBe(1);
+
+      requestQueue.setRefreshing(false);
+      const queuedRequests = requestQueue.getQueuedRequests();
+      expect(queuedRequests).toHaveLength(1);
+
+      const mockResponse = { data: { success: true } };
+      queuedRequests[0].resolve(mockResponse);
+
+      await expect(resultPromise).resolves.toEqual(mockResponse);
+    });
+
+    it('queues requests when refresh is already in progress', async () => {
+      requestQueue.setRefreshing(true);
+
+      const error = {
+        response: {
+          status: 401,
+          data: { message: 'Unauthorized' },
+        },
+        config: {
+          method: 'get',
+          url: '/api/users/1',
+          headers: {},
+        },
+      };
+
+      const interceptor = (apiClient.interceptors.response as any).handlers[0];
+
+      const rejectedPromise = interceptor.rejected(error);
+
+      expect(requestQueue.length()).toBe(1);
+
+      expect(mockAuthApi.refreshToken).not.toHaveBeenCalled();
+
+      requestQueue.setRefreshing(false);
+      
+      const queued = requestQueue.getQueuedRequests();
+      expect(queued).toHaveLength(1);
+      expect(queued[0].config.url).toBe('/api/users/1');
+      
+      queued[0].reject(new Error('Test completed'));
+      
+      await expect(rejectedPromise).rejects.toThrow('Test completed');
+    });
+
+    it('skips refresh for auth endpoints and logs out', async () => {
+      const error = {
+        response: {
+          status: 401,
+          data: { message: 'Unauthorized' },
+        },
+        config: {
+          method: 'post',
+          url: '/auth/login',
+          headers: {},
+        },
+      };
+
+      const interceptor = (apiClient.interceptors.response as any).handlers[0];
+
+      await expect(interceptor.rejected(error)).rejects.toEqual(error);
+
+      expect(mockAuthApi.refreshToken).not.toHaveBeenCalled();
+
+      expect(logoutSpy).toHaveBeenCalled();
+    });
+
+    it('rejects request that has already been retried once', async () => {
+      const newAccessToken = 'new-access-token';
+
+      mockAuthApi.refreshToken.mockResolvedValue({
+        access_token: newAccessToken,
+        refresh_token: 'new-refresh-token',
+        id_token: 'new-id-token',
+        expires_in: 3600,
+      });
+
+      const error = {
+        response: {
+          status: 401,
+          data: { message: 'Unauthorized' },
+        },
+        config: {
+          method: 'get',
+          url: '/api/protected',
+          headers: {},
+          __retryCount: 1,
+        },
+      };
+
+      const interceptor = (apiClient.interceptors.response as any).handlers[0];
+
+      await expect(interceptor.rejected(error)).rejects.toThrow(
+        'Request failed after token refresh retry'
+      );
+
+      expect(mockAuthApi.refreshToken).not.toHaveBeenCalled();
+    });
+    
+    it('handles multiple concurrent 401 errors correctly', async () => {
+      const newAccessToken = 'new-access-token';
+
+      mockAuthApi.refreshToken.mockResolvedValue({
+        access_token: newAccessToken,
+        refresh_token: 'new-refresh-token',
+        id_token: 'new-id-token',
+        expires_in: 3600,
+      });
+
+      requestQueue.setRefreshing(true);
+
+      const interceptor = (apiClient.interceptors.response as any).handlers[0];
+
+      const error1 = {
+        response: { status: 401, data: { message: 'Unauthorized' } },
+        config: { method: 'get', url: '/api/users/1', headers: {} },
+      };
+      const error2 = {
+        response: { status: 401, data: { message: 'Unauthorized' } },
+        config: { method: 'get', url: '/api/users/2', headers: {} },
+      };
+      const error3 = {
+        response: { status: 401, data: { message: 'Unauthorized' } },
+        config: { method: 'get', url: '/api/users/3', headers: {} },
+      };
+
+      const promise1 = interceptor.rejected(error1);
+      const promise2 = interceptor.rejected(error2);
+      const promise3 = interceptor.rejected(error3);
+
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(requestQueue.length()).toBe(3);
+
+      expect(mockAuthApi.refreshToken).not.toHaveBeenCalled();
+
+      const queuedRequests = requestQueue.getQueuedRequests();
+      expect(queuedRequests).toHaveLength(3);
+      
+      queuedRequests.forEach(req => req.reject(new Error('Test: Queue processed')));
+
+      requestQueue.setRefreshing(false);
+
+      const results = await Promise.allSettled([promise1, promise2, promise3]);
+
+      results.forEach(result => {
+        expect(result.status).toBe('rejected');
+      });
+
+      expect(requestQueue.length()).toBe(0);
     });
   });
 });

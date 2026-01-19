@@ -24,6 +24,7 @@ import {
   useModal,
   View,
 } from '@/components';
+import { useSafeAreaInsets } from '@/lib/hooks';
 import { useTasksStore } from '@/stores/tasks';
 import { Palette, useTheme } from '@/theme';
 
@@ -79,6 +80,7 @@ export const formatDateTime = (dateString?: string) => {
 
 export default function TaskDetailScreen() {
   const theme = useTheme();
+  const { bottomInset } = useSafeAreaInsets();
   const { id } = useLocalSearchParams();
   const task = useTasksStore((state) => state.selectedTask);
   const isLoadingDetail = useTasksStore((state) => state.isLoadingDetail);
@@ -320,7 +322,7 @@ export default function TaskDetailScreen() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 100 + bottomInset }}
       >
         {/* Task Information Section */}
         <View
@@ -487,6 +489,7 @@ export default function TaskDetailScreen() {
             left: 0,
             right: 0,
             padding: 24,
+            paddingBottom: 24 + bottomInset,
             backgroundColor: theme.colors.background.primary,
             borderTopWidth: 1,
             borderTopColor: theme.colors.surface.border,
@@ -530,8 +533,8 @@ export default function TaskDetailScreen() {
       <CenteredModal
         visible={isMarkDoneModalVisible}
         onClose={() => setIsMarkDoneModalVisible(false)}
-        title="Header"
-        subText="Sub text here"
+        title="Task Completed"
+        subText="Are you sure you want to mark this task as completed?"
       >
         <View
           style={{

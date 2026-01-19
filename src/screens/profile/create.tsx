@@ -24,6 +24,7 @@ import {
   Text,
   View,
 } from '@/components';
+import { useSafeAreaInsets } from '@/lib/hooks';
 import { useAuthStore } from '@/stores/auth';
 import { useTheme } from '@/theme';
 
@@ -43,6 +44,7 @@ const formatDate = (date: Date) =>
 
 export default function EditProfileScreen() {
   const theme = useTheme();
+  const { bottomInset } = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
   const updateUser = useAuthStore((state) => state.actions.updateUser);
 
@@ -176,7 +178,7 @@ export default function EditProfileScreen() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 100 + bottomInset }}
         showsVerticalScrollIndicator={false}
       >
         {/* Profile Picture Section */}
@@ -389,6 +391,7 @@ export default function EditProfileScreen() {
           left: 0,
           right: 0,
           padding: 24,
+          paddingBottom: 24 + bottomInset,
           backgroundColor: theme.colors.background.primary,
           borderTopWidth: 1,
           borderTopColor: theme.colors.surface.border,

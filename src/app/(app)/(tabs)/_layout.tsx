@@ -4,6 +4,7 @@ import { TouchableOpacity, View } from 'react-native';
 
 // Import the new Icon component and constants
 import { Icon, type IconName, iconNames } from '@/components';
+import { useSafeAreaInsets } from '@/lib/hooks';
 import { useTheme } from '@/theme';
 
 function TabBarIcon({
@@ -32,6 +33,10 @@ function TabBarIcon({
 export default function TabLayout() {
   const theme = useTheme();
   const router = useRouter();
+  const { bottomInset } = useSafeAreaInsets();
+
+  const tabBarHeight = 85;
+  const totalHeight = tabBarHeight + bottomInset;
 
   return (
     <Tabs
@@ -42,7 +47,8 @@ export default function TabLayout() {
           backgroundColor: theme.colors.background.tertiary, // Dark background from Figma
           borderTopWidth: 0,
           paddingTop: 20,
-          height: 85,
+          paddingBottom: bottomInset,
+          height: totalHeight,
         },
         tabBarActiveTintColor: theme.colors.text.tertiary, // Blue from Figma
         tabBarInactiveTintColor: theme.colors.text.inactive, // White from Figma

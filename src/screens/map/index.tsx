@@ -17,6 +17,7 @@ import React, {
 } from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import { AppBar, Avatar, Background, Center, Icon, Text, View, iconNames } from '@/components';
+import { useSafeAreaInsets } from '@/lib/hooks';
 import { getCoordinate } from '@/screens/incidents/utils';
 import { useIncidentsStore } from '@/stores/incidents';
 import { useUsersStore } from '@/stores/users';
@@ -27,13 +28,12 @@ import type { IncidentCoordinate, UserCoordinate } from '@/screens/map/types';
 import { useAuthStore } from '@/stores/auth';
 import { useLocationStore } from '@/stores/location';
 
-Mapbox.setAccessToken(
-  'sk.eyJ1IjoibGFpem4iLCJhIjoiY21lamxqZzh4MDQ0bjJrcXZ0dWRiZHAzNyJ9.NU6sHZrIkDuDpHCEManSJQ'
-);
+Mapbox.setAccessToken('sk.eyJ1IjoibGFpem4iLCJhIjoiY21lamxqZzh4MDQ0bjJrcXZ0dWRiZHAzNyJ9.NU6sHZrIkDuDpHCEManSJQ');
 
 function MapView() {
   const theme = useTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  const { bottomInset } = useSafeAreaInsets();
+  const styles = useMemo(() => createStyles(theme, bottomInset), [theme, bottomInset]);
   const incidents = useIncidentsStore((state) => state.incidents);
   const users = useUsersStore((state) => state.users);
   const incidentsLoading = useIncidentsStore((state) => state.isLoading);
@@ -313,7 +313,7 @@ function MapScreen() {
   );
 }
 
-const createStyles = (theme: Theme) => {
+const createStyles = (theme: Theme, bottomInset: number) => {
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -352,7 +352,7 @@ const createStyles = (theme: Theme) => {
     },
     currentLocationButton: {
       position: 'absolute',
-      bottom: 20,
+      bottom: 20 + bottomInset,
       right: 20,
       width: 48,
       height: 48,

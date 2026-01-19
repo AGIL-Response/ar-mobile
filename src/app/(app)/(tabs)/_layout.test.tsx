@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { reactNativeRender as render, fireEvent } from '@/lib/test-utils';
+import { reactNativeRender as render } from '@/lib/test-utils';
 
 import TabLayout from './_layout';
 
@@ -33,7 +33,8 @@ describe('TabLayout', () => {
     );
     expect(screenOptions.tabBarStyle.borderTopWidth).toBe(0);
     expect(screenOptions.tabBarStyle.paddingTop).toBe(20);
-    expect(screenOptions.tabBarStyle.height).toBe(85);
+    expect(screenOptions.tabBarStyle.paddingBottom).toBe(0); // bottomInset from mock
+    expect(screenOptions.tabBarStyle.height).toBe(85); // tabBarHeight + bottomInset (85 + 0)
     expect(screenOptions.tabBarActiveTintColor).toBe(
       mockTheme.text.tertiary
     );

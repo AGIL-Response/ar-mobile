@@ -4,10 +4,6 @@ import { reactNativeRender as render } from '@/lib/test-utils';
 
 import { NetworkSignalIcon } from './network-signal-icon';
 
-jest.mock('./icons', () => ({
-  X: jest.fn(() => null),
-}));
-
 describe('NetworkSignalIcon', () => {
   it('returns SVG when networkMbps has a value', () => {
     const { rerender } = render(<NetworkSignalIcon networkMbps={100} />);

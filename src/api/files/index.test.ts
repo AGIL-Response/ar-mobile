@@ -503,5 +503,213 @@ describe('filesApi', () => {
       expect(handleApiError).toHaveBeenCalledWith(error);
     });
   });
+
+  describe('uploadChatFile', () => {
+    const mockFileUri = 'file:///cache/test.mp3';
+    const mockBase64 = 'dGVzdCBhdWRpbw=='; // base64 for "test audio"
+
+    beforeEach(() => {
+      (FileSystemLegacy.readAsStringAsync as jest.Mock) = jest
+        .fn()
+        .mockResolvedValue(mockBase64);
+      (FileSystemLegacy.EncodingType as any) = {
+        Base64: 'base64',
+      };
+    });
+
+    it('successfully uploads chat file without duration', async () => {
+      const options = {
+        fileUri: mockFileUri,
+        fileName: 'test.jpg',
+        mimeType: 'image/jpeg',
+      };
+
+      const mockResponse = {
+        data: {
+          code: 'SUCCESS',
+          data: { id: 'file-123', url: 'https://example.com/file-123' },
+          message: 'File uploaded successfully',
+        },
+      };
+
+      (mediaApiClient.post as jest.Mock).mockResolvedValue(mockResponse);
+
+      const result = await filesApi.uploadChatFile(options);
+
+      expect(FileSystemLegacy.readAsStringAsync).toHaveBeenCalledWith(mockFileUri, {
+        encoding: 'base64',
+      });
+      expect(mediaApiClient.post).toHaveBeenCalledWith(
+        '/files',
+        expect.any(Uint8Array),
+        {
+          headers: {
+            'x-file-name': 'test.jpg',
+            'x-attached-type': 'chat_message',
+            'Content-Type': 'image/jpeg',
+          },
+          onUploadProgress: expect.any(Function),
+        }
+      );
+      expect(result).toEqual({
+        fileId: 'file-123',
+        url: 'https://example.com/file-123',
+      });
+    });
+
+    it('successfully uploads chat file with duration as number', async () => {
+      const options = {
+        fileUri: mockFileUri,
+        fileName: 'audio.mp3',
+        mimeType: 'audio/mpeg',
+        duration: 120,
+      };
+
+      const mockResponse = {
+        data: {
+          code: 'SUCCESS',
+          data: { fileId: 'file-456', key: 'audio-key' },
+        },
+      };
+
+      (mediaApiClient.post as jest.Mock).mockResolvedValue(mockResponse);
+
+      const result = await filesApi.uploadChatFile(options);
+
+      expect(mediaApiClient.post).toHaveBeenCalledWith(
+        '/files',
+        expect.any(Uint8Array),
+        {
+          headers: {
+            'x-file-name': 'audio.mp3',
+            'x-attached-type': 'chat_message',
+            'Content-Type': 'audio/mpeg',
+            'x-duration': '120',
+          },
+          onUploadProgress: expect.any(Function),
+        }
+      );
+      expect(result).toEqual({
+        fileId: 'file-456',
+        url: 'audio-key',
+      });
+    });
+
+    it('successfully uploads chat file with duration as string', async () => {
+      const options = {
+        fileUri: mockFileUri,
+        fileName: 'audio.mp3',
+        mimeType: 'audio/mpeg',
+        duration: '45.5',
+      };
+
+      const mockResponse = {
+        data: {
+          code: 'SUCCESS',
+          data: { id: 'file-789' },
+        },
+      };
+
+      (mediaApiClient.post as jest.Mock).mockResolvedValue(mockResponse);
+
+      await filesApi.uploadChatFile(options);
+
+      const callArgs = (mediaApiClient.post as jest.Mock).mock.calls[0];
+      expect(callArgs[2].headers['x-duration']).toBe('45.5');
+    });
+
+    it('calls onProgress callback during upload', async () => {
+      const onProgress = jest.fn();
+      const options = {
+        fileUri: mockFileUri,
+        fileName: 'test.jpg',
+        mimeType: 'image/jpeg',
+        onProgress,
+      };
+
+      const mockResponse = {
+        data: {
+          code: 'SUCCESS',
+          data: { id: 'file-123' },
+        },
+      };
+
+      (mediaApiClient.post as jest.Mock).mockImplementation((url, data, config) => {
+        // Simulate progress event
+        if (config.onUploadProgress) {
+          config.onUploadProgress({ loaded: 50, total: 100 });
+          config.onUploadProgress({ loaded: 100, total: 100 });
+        }
+        return Promise.resolve(mockResponse);
+      });
+
+      await filesApi.uploadChatFile(options);
+
+      expect(onProgress).toHaveBeenCalledWith(50);
+      expect(onProgress).toHaveBeenCalledWith(100);
+    });
+
+    it('converts base64 to Uint8Array correctly', async () => {
+      const options = {
+        fileUri: mockFileUri,
+        fileName: 'test.jpg',
+        mimeType: 'image/jpeg',
+      };
+
+      (mediaApiClient.post as jest.Mock).mockResolvedValue({
+        data: { code: 'SUCCESS', data: { id: 'file-123' } },
+      });
+
+      await filesApi.uploadChatFile(options);
+
+      const callArgs = (mediaApiClient.post as jest.Mock).mock.calls[0];
+      const bytes = callArgs[1] as Uint8Array;
+
+      expect(bytes).toBeInstanceOf(Uint8Array);
+      expect(bytes.length).toBeGreaterThan(0);
+    });
+
+    it('handles upload errors', async () => {
+      const options = {
+        fileUri: mockFileUri,
+        fileName: 'test.jpg',
+        mimeType: 'image/jpeg',
+      };
+
+      const error = new Error('Upload failed');
+      (mediaApiClient.post as jest.Mock).mockRejectedValue(error);
+      (handleApiError as jest.Mock).mockReturnValue({
+        message: 'Upload failed',
+        status: 500,
+      });
+
+      await expect(filesApi.uploadChatFile(options)).rejects.toEqual({
+        message: 'Upload failed',
+        status: 500,
+      });
+
+      expect(handleApiError).toHaveBeenCalledWith(error);
+    });
+
+    it('handles file read errors', async () => {
+      const options = {
+        fileUri: mockFileUri,
+        fileName: 'test.jpg',
+        mimeType: 'image/jpeg',
+      };
+
+      const readError = new Error('File read failed');
+      (FileSystemLegacy.readAsStringAsync as jest.Mock).mockRejectedValue(readError);
+      (handleApiError as jest.Mock).mockReturnValue({
+        message: 'File read failed',
+        status: 400,
+      });
+
+      await expect(filesApi.uploadChatFile(options)).rejects.toEqual({
+        message: 'File read failed',
+        status: 400,
+      });
+    });
+  });
 });
 

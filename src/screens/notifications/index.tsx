@@ -352,7 +352,7 @@ export default function NotificationsScreen() {
               onRefresh={handleRefresh}
               tintColor={theme.colors.text.primary}
               colors={[theme.colors.text.primary]}
-              progressBackgroundColor={theme.colors.background.secondary}
+              progressBackgroundColor={theme.colors.semantic.white}
             />
           }
           showsVerticalScrollIndicator={false}

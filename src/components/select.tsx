@@ -15,7 +15,7 @@ import {
 import { ErrorText, Text } from './text';
 import type { BaseComponentProps } from './types';
 import { View } from './view';
-
+import { Icon, iconNames } from './icon';
 /* ================================
    TYPES & INTERFACES
    ================================ */

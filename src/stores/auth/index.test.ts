@@ -228,7 +228,7 @@ describe('AuthStore', () => {
       expect(result.current.geoEntity).toBeUndefined();
     });
 
-    it('handles location store errors gracefully', () => {
+    it('handles location store errors gracefully', async () => {
       jest.spyOn(locationMock, 'useLocationStore').mockImplementation(() => {
         throw new Error('Location store error');
       });
@@ -240,8 +240,8 @@ describe('AuthStore', () => {
       });
 
       // Should not throw
-      act(() => {
-        result.current.actions.logout();
+      await act(async () => {
+        await result.current.actions.logout();
       });
 
       expect(result.current.token.accessToken).toBeUndefined();
