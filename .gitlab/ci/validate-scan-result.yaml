@@ -1,0 +1,194 @@
+# SAST Vulnerability Checker - Reads actual GitLab Advanced SAST artifacts
+sast-vulnerability-checker:
+  stage: validate
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache jq
+  script:
+    - echo "🔍 SAST Vulnerability Checker - Analyzing GitLab Advanced SAST artifacts..."
+    - |
+      # Look for the SAST report file (GitLab Advanced SAST generates gl-sast-report.json)
+      SAST_REPORT_FILE="gl-sast-report.json"
+
+      echo "📁 Checking for SAST report file: $SAST_REPORT_FILE"
+
+      if [ ! -f "$SAST_REPORT_FILE" ]; then
+          echo "❌ SAST report file not found: $SAST_REPORT_FILE"
+          echo "📂 Available files in current directory:"
+          ls -la
+          echo ""
+          echo "🔍 Searching for any SAST-related files..."
+          find . -name "*sast*" -o -name "*report*" -o -name "*.json" | head -10
+          exit 1
+      fi
+
+      echo "✅ Found SAST report file: $SAST_REPORT_FILE"
+
+      # Validate JSON format
+      if ! jq . "$SAST_REPORT_FILE" > /dev/null 2>&1; then
+          echo "❌ Invalid JSON format in SAST report"
+          echo "📄 File contents (first 500 chars):"
+          head -c 500 "$SAST_REPORT_FILE"
+          exit 1
+      fi
+
+      # Check for vulnerabilities
+      echo "🔍 Analyzing SAST report for vulnerabilities..."
+      VULN_COUNT=$(jq '.vulnerabilities | length' "$SAST_REPORT_FILE" 2>/dev/null || echo "0")
+
+      echo ""
+      echo "📊 Vulnerability Analysis Results:"
+      echo "   📄 Report file: $SAST_REPORT_FILE"
+      echo "   🔢 Total vulnerabilities found: $VULN_COUNT"
+
+      if [ "$VULN_COUNT" -gt 0 ]; then
+          echo ""
+          echo "🚨 SECURITY FAILURE: $VULN_COUNT vulnerabilities detected!"
+          echo ""
+          echo "📋 Vulnerability Summary:"
+          
+          # Show vulnerability details with proper error handling
+          jq -r '.vulnerabilities[]? | "  ❌ \(.severity // "Unknown") severity: \(.name // "Unknown") in \(.location.file // "Unknown"):\(.location.start_line // "?")"' "$SAST_REPORT_FILE" || echo "  ❌ Could not parse vulnerability details"
+          
+          echo ""
+          echo "📊 Severity Breakdown:"
+          jq -r '.vulnerabilities[]? | .severity // "Unknown"' "$SAST_REPORT_FILE" | sort | uniq -c | while read count severity; do
+              echo "   $severity: $count"
+          done
+          
+          echo ""
+          echo "❌ Pipeline MUST FAIL due to security vulnerabilities"
+          echo "🔒 Deployment blocked until vulnerabilities are resolved"
+          echo ""
+          echo "🔧 To fix this:"
+          echo "   1. Review the vulnerabilities listed above"
+          echo "   2. Fix the security issues in your code"
+          echo "   3. Re-run the pipeline"
+          
+          # Save vulnerability report for artifacts
+          jq '.vulnerabilities[]? | {severity, name, file: .location.file, line: .location.start_line, description}' "$SAST_REPORT_FILE" > vulnerability-summary.json 2>/dev/null || echo "[]" > vulnerability-summary.json
+          
+          exit 1
+      else
+          echo "✅ No vulnerabilities found - Security check PASSED"
+          echo "🔒 Deployment can proceed"
+      fi
+  artifacts:
+    when: always
+    paths:
+      - gl-sast-report.json
+      - vulnerability-summary.json
+    expire_in: 1 week
+    reports:
+      # Make the vulnerability report available in GitLab UI
+      sast: gl-sast-report.json
+  needs:
+    - job: gitlab-advanced-sast
+      artifacts: true # We need the artifacts from the SAST job
+    - job: semgrep-sast
+      artifacts: true # We need the artifacts from the SAST job
+  allow_failure: true
+  rules:
+    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "187-test-story-for-pipeline-test"
+      when: never
+    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# Secret Detection Validator - Reads actual GitLab Secret Detection artifacts
+secret-detection-validator:
+  stage: validate
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache jq
+  script:
+    - echo "🔍 Secret Detection Validator - Analyzing GitLab Secret Detection artifacts..."
+    - |
+      # Look for the secret detection report file
+      SECRET_REPORT_FILE="gl-secret-detection-report.json"
+
+      echo "📁 Checking for secret detection report file: $SECRET_REPORT_FILE"
+
+      if [ ! -f "$SECRET_REPORT_FILE" ]; then
+          echo "❌ Secret detection report file not found: $SECRET_REPORT_FILE"
+          echo "📂 Available files in current directory:"
+          ls -la
+          echo ""
+          echo "🔍 Searching for any secret detection related files..."
+          find . -name "*secret*" -o -name "*report*" -o -name "*.json" | head -10
+          exit 1
+      fi
+
+      echo "✅ Found secret detection report file: $SECRET_REPORT_FILE"
+
+      # Validate JSON format
+      if ! jq . "$SECRET_REPORT_FILE" > /dev/null 2>&1; then
+          echo "❌ Invalid JSON format in secret detection report"
+          echo "📄 File contents (first 500 chars):"
+          head -c 500 "$SECRET_REPORT_FILE"
+          exit 1
+      fi
+
+      # Check for vulnerabilities (secrets)
+      echo "🔍 Analyzing secret detection report for vulnerabilities..."
+      VULN_COUNT=$(jq '.vulnerabilities | length' "$SECRET_REPORT_FILE" 2>/dev/null || echo "0")
+
+      echo ""
+      echo "📊 Secret Detection Analysis Results:"
+      echo "   📄 Report file: $SECRET_REPORT_FILE"
+      echo "   🔢 Total secrets found: $VULN_COUNT"
+
+      if [ "$VULN_COUNT" -gt 0 ]; then
+          echo ""
+          echo "🚨 SECURITY FAILURE: $VULN_COUNT secrets detected!"
+          echo ""
+          echo "📋 Secret Detection Summary:"
+          
+          # Show secret details with proper error handling
+          jq -r '.vulnerabilities[]? | "  🔑 Secret: \(.name // "Unknown") in \(.location.file // "Unknown"):\(.location.start_line // "?")"' "$SECRET_REPORT_FILE" || echo "  ❌ Could not parse secret details"
+          
+          echo ""
+          echo "📊 Secret Types Found:"
+          jq -r '.vulnerabilities[]? | .name // "Unknown"' "$SECRET_REPORT_FILE" | sort | uniq -c | while read count secret_type; do
+              echo "   $secret_type: $count"
+          done
+          
+          echo ""
+          echo "❌ Pipeline MUST FAIL due to detected secrets"
+          echo "🔒 Deployment blocked until secrets are removed"
+          echo ""
+          echo "🔧 To fix this:"
+          echo "   1. Review the secrets listed above"
+          echo "   2. Remove or properly secure the detected secrets"
+          echo "   3. Use environment variables or secure storage for sensitive data"
+          echo "   4. Re-run the pipeline"
+          echo ""
+          echo "⚠️  IMPORTANT: Never commit secrets to version control!"
+          
+          # Save secret detection report for artifacts
+          jq '.vulnerabilities[]? | {name, file: .location.file, line: .location.start_line, description}' "$SECRET_REPORT_FILE" > secret-summary.json 2>/dev/null || echo "[]" > secret-summary.json
+          
+          exit 1
+      else
+          echo "✅ No secrets found - Security check PASSED"
+          echo "🔒 Deployment can proceed"
+      fi
+  artifacts:
+    when: always
+    paths:
+      - gl-secret-detection-report.json
+      - secret-summary.json
+    expire_in: 1 week
+    reports:
+      # Make the secret detection report available in GitLab UI
+      secret_detection: gl-secret-detection-report.json
+  needs:
+    - job: secret_detection
+      artifacts: true # We need the artifacts from the secret detection job
+  allow_failure: true
+  rules:
+    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "187-test-story-for-pipeline-test"
+      when: never
+    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"

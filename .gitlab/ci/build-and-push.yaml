@@ -1,0 +1,140 @@
+# ---------- BUILD & PUSH TO ECR ----------
+build_and_push:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:24-dind
+  id_tokens:
+    GITLAB_OIDC_TOKEN:
+      aud: 'gitlab.agilres.net'
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ''
+
+  before_script:
+    # Install AWS CLI and jq via Alpine packages
+    - apk add --no-cache aws-cli jq
+    - aws --version
+
+    # Verify OIDC token is available
+    - |
+      if [ -z "$GITLAB_OIDC_TOKEN" ]; then
+          echo "❌ ERROR: GITLAB_OIDC_TOKEN not available"
+          exit 1
+      fi
+      echo "✅ OIDC token is available"
+
+    # Verify AWS_ROLE_ARN is configured and valid
+    - |
+      if [ -z "$AWS_ROLE_ARN" ]; then
+          echo "❌ ERROR: AWS_ROLE_ARN not configured in GitLab CI variables"
+          exit 1
+      fi
+
+      if ! echo "$AWS_ROLE_ARN" | grep -q "^arn:aws:iam::[0-9]\{12\}:role"; then
+          echo "❌ ERROR: AWS_ROLE_ARN must be a valid IAM role ARN (arn:aws:iam::<account-id>:role/<role-name>)"
+          echo "Current value: $AWS_ROLE_ARN"
+          exit 1
+      fi
+
+      echo "✅ AWS_ROLE_ARN is valid: $AWS_ROLE_ARN"
+
+    # Assume IAM role using OIDC
+    - |
+      echo "🔐 Assuming IAM role using OIDC..."
+      echo "Role ARN: $AWS_ROLE_ARN"
+      echo "Region: $AWS_DEFAULT_REGION"
+      echo "Session Name: GitLabCI-${CI_PROJECT_ID}-${CI_PIPELINE_ID}"
+
+      # Use proper STS assume-role-with-web-identity command
+      echo "Calling AWS STS assume-role-with-web-identity..."
+      if ! TEMP_ROLE=$(aws sts assume-role-with-web-identity \
+          --role-arn "$AWS_ROLE_ARN" \
+          --role-session-name "GitLabCI-${CI_PROJECT_ID}-${CI_PIPELINE_ID}" \
+          --web-identity-token "$GITLAB_OIDC_TOKEN" \
+          --duration-seconds 3600 \
+          --region "$AWS_DEFAULT_REGION" \
+          --output json 2>&1); then
+          echo "❌ Failed to assume role:"
+          echo "$TEMP_ROLE"
+          
+          # Try to decode the token again to see exact claims
+          echo "🔍 Re-checking token claims..."
+          echo "$GITLAB_OIDC_TOKEN" | cut -d'.' -f2 | base64 -d 2>/dev/null | jq . || echo "Failed to decode"
+          exit 1
+      fi
+
+      # Extract credentials from JSON response
+      export AWS_ACCESS_KEY_ID=$(echo "$TEMP_ROLE" | jq -r '.Credentials.AccessKeyId')
+      export AWS_SECRET_ACCESS_KEY=$(echo "$TEMP_ROLE" | jq -r '.Credentials.SecretAccessKey')
+      export AWS_SESSION_TOKEN=$(echo "$TEMP_ROLE" | jq -r '.Credentials.SessionToken')
+
+      # Verify credentials were extracted
+      if [ "$AWS_ACCESS_KEY_ID" = "null" ] || [ -z "$AWS_ACCESS_KEY_ID" ]; then
+          echo "❌ Failed to extract AWS credentials"
+          echo "STS Response: $TEMP_ROLE"
+          exit 1
+      fi
+
+      echo "✅ Successfully assumed role and extracted credentials"
+
+    # Verify AWS credentials
+    - |
+      echo "✅ Verifying AWS credentials..."
+      aws sts get-caller-identity --region $AWS_DEFAULT_REGION
+
+    # Login to ECR
+    - |
+      echo "🔑 Logging into ECR..."
+      aws ecr get-login-password --region $AWS_DEFAULT_REGION | \
+      docker login --username AWS --password-stdin $ECR_REGISTRY
+      echo "✅ Successfully logged into ECR"
+
+  script:
+    # Extract semantic version from package.json and build Docker image
+    - |
+      export IMAGE_TAG=$(jq -r '.version' package.json)
+      echo "Extracted version from package.json: $IMAGE_TAG"
+      echo "🔨 Building Docker image..."
+      docker build \
+          --build-arg COMMIT_SHA=$CI_COMMIT_SHA \
+          --build-arg STE_VN_KEY=$STE_VN_KEY \
+          --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+          --label "git.commit.sha=$CI_COMMIT_SHA" \
+          --label "git.commit.ref=$CI_COMMIT_REF_NAME" \
+          --label "git.project.path=$CI_PROJECT_PATH" \
+          --label "build.pipeline.id=$CI_PIPELINE_ID" \
+          --label "build.job.id=$CI_JOB_ID" \
+          --label "build.date=$BUILD_DATE" \
+          --label "version=$IMAGE_TAG" \
+          -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+          .
+
+    # Push to ECR with timestamp tag
+    - |
+      echo "🚀 Pushing image to ECR..."
+      docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG      
+      echo "✅ Successfully pushed: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+    # Verify image in ECR
+
+  after_script:
+    # Clean up
+    - docker logout $ECR_REGISTRY || true
+    - docker rmi $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG || true
+
+  rules:
+    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "187-test-story-for-pipeline-test"
+      when: never
+    - if: $CI_COMMIT_BRANCH == "develop"
+      when: on_success
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: on_success
+    - if: $CI_COMMIT_BRANCH == "188-workflow-pipeline"
+      when: on_success
+
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure

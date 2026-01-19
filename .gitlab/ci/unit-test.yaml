@@ -1,0 +1,28 @@
+unit_tests:
+  stage: test
+  image:
+    name: node:24-alpine
+    pull_policy: if-not-present
+  script:
+    - apk add --no-cache git jq bc
+    - npm install -g pnpm
+    - pnpm install --frozen-lockfile && npx prisma generate
+    - echo "🧪 Running unit tests with coverage..."
+    - pnpm test --coverage --verbose --silent=false --force-exit
+  coverage: '/Statements\s*:\s*([\d\.]+)%/'
+  artifacts:
+    paths:
+      - coverage/lcov.info
+    expire_in: 3 hours
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+  allow_failure: true
+  rules:
+    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "187-test-story-for-pipeline-test"
+      when: never
+    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"

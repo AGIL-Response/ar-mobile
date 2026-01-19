@@ -1,0 +1,5 @@
+# .gitlab-ci.yml
+noop:
+  stage: test
+  script:
+    - echo "Doing nothing"
