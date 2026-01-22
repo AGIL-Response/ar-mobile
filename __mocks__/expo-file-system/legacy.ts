@@ -1,8 +1,12 @@
 module.exports = {
   __esModule: true,
   documentDirectory: 'file:///mock-document-directory/',
-  cacheDirectory: 'file:///mock-cache-directory/',
+  cacheDirectory: '/mock/cache/',
   bundleDirectory: null,
+  EncodingType: {
+    UTF8: 'utf8',
+    Base64: 'base64',
+  },
   getInfoAsync: jest.fn().mockResolvedValue({
     exists: true,
     uri: 'file:///mock-file',

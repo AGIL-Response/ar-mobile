@@ -29,30 +29,26 @@ jest.mock('./components/username-step', () => {
   };
 });
 
-jest.mock('./components/password-step', () => {
+jest.mock('./components/oauth-step', () => {
   // eslint-disable-next-line
   const React = require('react');
   return {
-    PasswordStep: ({ username, password, setPassword, onSubmit, onBack, isLoading, selectedTenant }: any) =>
+    OAuthStep: ({ username, onSubmit, onBack, isLoading, isReady, isProcessing, selectedTenant }: any) =>
       React.createElement(
         'View',
-        { testID: 'password-step' },
-        React.createElement('Text', { testID: 'password-username' }, username),
-        React.createElement('Text', { testID: 'password-value' }, password),
-        React.createElement('Text', { testID: 'password-loading' }, isLoading ? 'Loading' : 'Not Loading'),
-        selectedTenant && React.createElement('Text', { testID: 'password-tenant' }, selectedTenant.name),
+        { testID: 'oauth-step' },
+        React.createElement('Text', { testID: 'oauth-username' }, username),
+        React.createElement('Text', { testID: 'oauth-loading' }, isLoading ? 'Loading' : 'Not Loading'),
+        React.createElement('Text', { testID: 'oauth-ready' }, isReady ? 'Ready' : 'Not Ready'),
+        React.createElement('Text', { testID: 'oauth-processing' }, isProcessing ? 'Processing' : 'Not Processing'),
+        selectedTenant && React.createElement('Text', { testID: 'oauth-tenant' }, selectedTenant.name),
         React.createElement('TouchableOpacity', {
-          testID: 'password-submit',
+          testID: 'oauth-submit',
           onPress: onSubmit,
         }),
         React.createElement('TouchableOpacity', {
-          testID: 'password-back',
+          testID: 'oauth-back',
           onPress: onBack,
-        }),
-        React.createElement('TextInput', {
-          testID: 'password-input',
-          value: password,
-          onChangeText: setPassword,
         })
       ),
   };
@@ -63,11 +59,15 @@ jest.mock('./hooks/use-login-handlers', () => {
   const React = require('react');
   return {
     useLoginHandlers: jest.fn((props: any) => ({
-      handleUsernameSubmit: jest.fn(() => props.authState.actions.checkUsername?.(props.username)),
-      handlePasswordSubmit: jest.fn(() => props.authState.actions.loginWithPassword?.(props.username, props.password)),
+      handleUsernameSubmit: jest.fn(async () => {
+        await props.authState.actions.checkUsername?.(props.username);
+        props.setStep('password');
+      }),
+      handleOAuthSuccess: jest.fn(),
+      handleOAuthError: jest.fn(),
       handleBackToUsername: jest.fn(() => {
         props.setStep('username');
-        props.setPassword('');
+        props.setUsername('');
         props.authState.actions.clearUsernameError?.();
         props.authState.actions.setSelectedTenant?.(null);
       }),
@@ -95,7 +95,6 @@ const routerModule = require('expo-router');
 
 describe('Login', () => {
   const mockCheckUsername = jest.fn();
-  const mockLoginWithPassword = jest.fn();
   const mockClearUsernameError = jest.fn();
   const mockSetSelectedTenant = jest.fn();
   const mockRouterNavigate = jest.fn();
@@ -111,7 +110,6 @@ describe('Login', () => {
     usernameError: null,
     actions: {
       checkUsername: mockCheckUsername,
-      loginWithPassword: mockLoginWithPassword,
       clearUsernameError: mockClearUsernameError,
       setSelectedTenant: mockSetSelectedTenant,
       logout: jest.fn(),
@@ -130,14 +128,13 @@ describe('Login', () => {
 
     (useAuthStore as unknown as jest.Mock).mockImplementation(() => createMockAuthState());
     mockCheckUsername.mockResolvedValue(undefined);
-    mockLoginWithPassword.mockResolvedValue(undefined);
   });
 
   describe('Initial Render', () => {
     it('renders login screen with username step by default', () => {
       render(<Login />);
       expect(screen.getByTestId('username-step')).toBeTruthy();
-      expect(screen.queryByTestId('password-step')).toBeNull();
+      expect(screen.queryByTestId('oauth-step')).toBeNull();
     });
 
     it('renders branding section with logo and title', () => {
@@ -152,7 +149,7 @@ describe('Login', () => {
       expect(screen.getByTestId('status-bar')).toBeTruthy();
     });
 
-    it('pre-fills username and password in dev mode', () => {
+    it('pre-fills username in dev mode', () => {
       const originalDev = __DEV__;
       // @ts-ignore
       global.__DEV__ = true;
@@ -162,13 +159,13 @@ describe('Login', () => {
       expect(usernameStep).toBeTruthy();
       // In dev mode, username should be pre-filled
       const usernameValue = screen.getByTestId('username-value');
-      expect(usernameValue.props.children).toBe('org6r1');
+      expect(usernameValue.props.children).toBe('org7r1');
 
       // @ts-ignore
       global.__DEV__ = originalDev;
     });
 
-    it('does not pre-fill username and password in production mode', () => {
+    it('does not pre-fill username in production mode', () => {
       const originalDev = __DEV__;
       // @ts-ignore
       global.__DEV__ = false;
@@ -192,7 +189,7 @@ describe('Login', () => {
 
       render(<Login />);
       expect(screen.getByTestId('username-step')).toBeTruthy();
-      expect(screen.queryByTestId('password-step')).toBeNull();
+      expect(screen.queryByTestId('oauth-step')).toBeNull();
     });
   });
 
@@ -215,12 +212,12 @@ describe('Login', () => {
     it('shows username step when step state is username', () => {
       render(<Login />);
       expect(screen.getByTestId('username-step')).toBeTruthy();
-      expect(screen.queryByTestId('password-step')).toBeNull();
+      expect(screen.queryByTestId('oauth-step')).toBeNull();
     });
   });
 
-  describe('Password Step Rendering', () => {
-    it('renders password step when step state is password', async () => {
+  describe('OAuth Step Rendering', () => {
+    it('renders oauth step when step is password and tenant is selected', async () => {
       (useAuthStore as unknown as jest.Mock).mockImplementation(() =>
         createMockAuthState({
           selectedTenant: {
@@ -232,13 +229,20 @@ describe('Login', () => {
       );
 
       render(<Login />);
+      
+      // Initially shows username step
+      expect(screen.getByTestId('username-step')).toBeTruthy();
+      
+      // Simulate username submit by triggering the step change
+      const usernameSubmit = screen.getByTestId('username-submit');
+      await usernameSubmit.props.onPress();
 
       await waitFor(() => {
-        expect(screen.getByTestId('password-step')).toBeTruthy();
+        expect(screen.getByTestId('oauth-step')).toBeTruthy();
       });
     });
 
-    it('passes correct props to PasswordStep component', async () => {
+    it('passes correct props to OAuthStep component', async () => {
       (useAuthStore as unknown as jest.Mock).mockImplementation(() =>
         createMockAuthState({
           selectedTenant: {
@@ -251,16 +255,20 @@ describe('Login', () => {
       );
 
       render(<Login />);
+      
+      // Trigger username submit to change step
+      const usernameSubmit = screen.getByTestId('username-submit');
+      await usernameSubmit.props.onPress();
 
       await waitFor(() => {
-        const passwordStep = screen.getByTestId('password-step');
-        expect(passwordStep).toBeTruthy();
-        expect(screen.getByTestId('password-loading').props.children).toBe('Loading');
-        expect(screen.getByTestId('password-tenant').props.children).toBe('Test Tenant');
+        const oauthStep = screen.getByTestId('oauth-step');
+        expect(oauthStep).toBeTruthy();
+        expect(screen.getByTestId('oauth-loading').props.children).toBe('Loading');
+        expect(screen.getByTestId('oauth-tenant').props.children).toBe('Test Tenant');
       });
     });
 
-    it('displays username in password step welcome message', async () => {
+    it('displays username in oauth step', async () => {
       (useAuthStore as unknown as jest.Mock).mockImplementation(() =>
         createMockAuthState({
           selectedTenant: {
@@ -271,9 +279,13 @@ describe('Login', () => {
       );
 
       render(<Login />);
+      
+      // Trigger username submit to change step
+      const usernameSubmit = screen.getByTestId('username-submit');
+      await usernameSubmit.props.onPress();
 
       await waitFor(() => {
-        expect(screen.getByTestId('password-username')).toBeTruthy();
+        expect(screen.getByTestId('oauth-username')).toBeTruthy();
       });
     });
   });
@@ -325,30 +337,29 @@ describe('Login', () => {
     });
   });
 
-  describe('useEffect Behavior', () => {
-    it('updates step when username and selectedTenant change', async () => {
-      let authState = createMockAuthState({
-        selectedTenant: null,
-      });
+  describe('Step Behavior', () => {
+    it('shows oauth step when username is submitted successfully', async () => {
+      (useAuthStore as unknown as jest.Mock).mockImplementation(() =>
+        createMockAuthState({
+          selectedTenant: {
+            id: 'tenant-1',
+            name: 'Test Tenant',
+          },
+        })
+      );
 
-      (useAuthStore as unknown as jest.Mock).mockImplementation(() => authState);
-
-      const { rerender } = render(<Login />);
+      render(<Login />);
+      
+      // Initially shows username step
       expect(screen.getByTestId('username-step')).toBeTruthy();
 
-      // Update auth state to have selectedTenant
-      authState = createMockAuthState({
-        selectedTenant: {
-          id: 'tenant-1',
-          name: 'Test Tenant',
-        },
-      });
+      // Trigger username submit
+      const usernameSubmit = screen.getByTestId('username-submit');
+      await usernameSubmit.props.onPress();
 
-      (useAuthStore as unknown as jest.Mock).mockImplementation(() => authState);
-      rerender(<Login />);
-
+      // After submit, should show oauth step
       await waitFor(() => {
-        expect(screen.getByTestId('password-step')).toBeTruthy();
+        expect(screen.getByTestId('oauth-step')).toBeTruthy();
       });
     });
   });
@@ -363,9 +374,7 @@ describe('Login', () => {
       const callArgs = (useLoginHandlers as jest.Mock).mock.calls[0][0];
       expect(callArgs).toHaveProperty('authState');
       expect(callArgs).toHaveProperty('username');
-      expect(callArgs).toHaveProperty('password');
       expect(callArgs).toHaveProperty('setStep');
-      expect(callArgs).toHaveProperty('setPassword');
       expect(callArgs).toHaveProperty('setUsername');
       expect(callArgs).toHaveProperty('router');
     });

@@ -4,6 +4,7 @@
  */
 
 import { authApi, handleApiError } from '@/api';
+import { getTeam } from '@/api/users';
 import { decodeJWT } from '@/lib/utils';
 import { type AuthState, type ITenant } from '@/stores/auth';
 import { useLocationStore } from '@/stores/location';
@@ -30,7 +31,6 @@ const loginWithOAuth =
       const accessToken = tokenResponse.accessToken;
       const refreshToken = tokenResponse.refreshToken;
       const idToken = tokenResponse.idToken;
-
       if (!accessToken) {
         throw new Error('No access token received from OAuth flow');
       }
@@ -39,6 +39,7 @@ const loginWithOAuth =
       const jwtPayload = decodeJWT(accessToken);
       const tenantId = jwtPayload?.tenantId;
       const userId = jwtPayload?.id || jwtPayload?.sub;
+      const teamId = jwtPayload?.teamIds?.[0];
 
       console.log(
         `\x1b[34m🐣️ login-with-oauth token data`,
@@ -127,25 +128,17 @@ const loginWithOAuth =
       // Set user data
       get().actions.setUser(userProfile);
 
-      // Fetch user teams (non-blocking)
+      // Fetch user team by team ID (non-blocking)
       try {
-        console.log('Fetching user teams...');
-        const teamsResponse = await authApi.getUserTeams(userId);
-
-        if (
-          teamsResponse?.data &&
-          Array.isArray(teamsResponse.data) &&
-          teamsResponse.data.length > 0
-        ) {
-          // Store only the first team since user only has one team
-          get().actions.setSelectedTeam(teamsResponse.data[0]);
-          console.log(
-            'User team fetched successfully:',
-            teamsResponse.data[0].name
-          );
-        } else {
-          throw new Error('No teams found for user');
+        console.log('Fetching user team...');
+        
+        if (!teamId) {
+          throw new Error('No team ID found in user team roles');
         }
+        
+        const team = await getTeam(teamId);
+        get().actions.setSelectedTeam(team);
+        console.log('User team fetched successfully:', team.name);
       } catch (teamsError) {
         throw new Error('Failed to fetch user teams', { cause: teamsError });
       }

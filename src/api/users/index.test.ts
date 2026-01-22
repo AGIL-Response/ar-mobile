@@ -1,5 +1,6 @@
-import { getUsersByTenant, getUserRoles, getTeamMembers } from './index';
+import { getUsersByTenant, getUserRoles, getTeamMembers, getTeams, getTeam } from './index';
 import { apiClient, handleApiError } from '../api-client';
+import type { ITeam, TeamResponse, TeamsQueryParams } from '@/types';
 
 // Mock dependencies
 jest.mock('../api-client');
@@ -523,6 +524,802 @@ describe('usersApi', () => {
       });
 
       expect(handleApiError).toHaveBeenCalledWith(error);
+    });
+  });
+
+  describe('Users API - Teams', () => {
+    const mockTeamResponse: TeamResponse = {
+      tenantId: 'tenant-1',
+      id: 'team-1',
+      name: 'Alpha Team',
+      description: 'Test team description',
+      settings: {
+        isLocationTracked: true,
+      },
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-02T00:00:00Z',
+      deletedAt: null,
+      createdBy: 'user-1',
+      updatedBy: 'user-1',
+      deletedBy: null,
+      location: {
+        type: 'Point',
+        coordinates: [100.0, 0.0],
+      },
+    };
+  
+    const mockExpectedTeam: ITeam = {
+      tenantId: 'tenant-1',
+      id: 'team-1',
+      name: 'Alpha Team',
+      description: 'Test team description',
+      settings: {
+        isLocationTracked: true,
+      },
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-02T00:00:00Z',
+      deletedAt: null,
+      createdBy: 'user-1',
+      updatedBy: 'user-1',
+      deletedBy: null,
+      location: {
+        type: 'Point',
+        coordinates: [100.0, 0.0],
+      },
+    };
+  
+    beforeEach(() => {
+      jest.clearAllMocks();
+      (handleApiError as jest.Mock).mockImplementation((error) => error);
+    });
+  
+    describe('getTeams', () => {
+      describe('Successful Requests', () => {
+        it('should fetch teams without parameters', async () => {
+          const mockResponse = {
+            data: {
+              data: [mockTeamResponse],
+              message: 'Success',
+              code: 'SUCCESS',
+              pagination: {
+                total: 1,
+                hasNextPage: false,
+              },
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          const result = await getTeams();
+  
+          expect(apiClient.get).toHaveBeenCalledWith('/teams');
+          expect(result).toEqual({
+            teams: [mockExpectedTeam],
+            pagination: {
+              total: 1,
+              hasNextPage: false,
+            },
+          });
+        });
+  
+        it('should fetch teams with empty parameters', async () => {
+          const mockResponse = {
+            data: {
+              data: [mockTeamResponse],
+              message: 'Success',
+              code: 'SUCCESS',
+              pagination: {
+                total: 1,
+                hasNextPage: false,
+              },
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          const result = await getTeams({});
+  
+          expect(apiClient.get).toHaveBeenCalledWith('/teams');
+          expect(result.teams).toHaveLength(1);
+          expect(result.teams[0]).toEqual(mockExpectedTeam);
+        });
+  
+        it('should fetch multiple teams', async () => {
+          const mockTeam2: TeamResponse = {
+            ...mockTeamResponse,
+            id: 'team-2',
+            name: 'Bravo Team',
+          };
+  
+          const mockResponse = {
+            data: {
+              data: [mockTeamResponse, mockTeam2],
+              message: 'Success',
+              code: 'SUCCESS',
+              pagination: {
+                total: 2,
+                hasNextPage: false,
+              },
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          const result = await getTeams();
+  
+          expect(result.teams).toHaveLength(2);
+          expect(result.teams[0].name).toBe('Alpha Team');
+          expect(result.teams[1].name).toBe('Bravo Team');
+        });
+  
+        it('should return empty array when no teams found', async () => {
+          const mockResponse = {
+            data: {
+              data: [],
+              message: 'Success',
+              code: 'SUCCESS',
+              pagination: {
+                total: 0,
+                hasNextPage: false,
+              },
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          const result = await getTeams();
+  
+          expect(result.teams).toEqual([]);
+          expect(result.pagination.total).toBe(0);
+        });
+  
+        it('should include pagination info with hasNextPage true', async () => {
+          const mockResponse = {
+            data: {
+              data: [mockTeamResponse],
+              message: 'Success',
+              code: 'SUCCESS',
+              pagination: {
+                total: 100,
+                hasNextPage: true,
+              },
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          const result = await getTeams({ limit: 10 });
+  
+          expect(result.pagination).toEqual({
+            total: 100,
+            hasNextPage: true,
+          });
+        });
+      });
+  
+      describe('Query Parameters - Single Values', () => {
+        it('should build URL with isLocationTracked parameter', async () => {
+          const mockResponse = {
+            data: {
+              data: [mockTeamResponse],
+              message: 'Success',
+              code: 'SUCCESS',
+              pagination: { total: 1, hasNextPage: false },
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          await getTeams({ isLocationTracked: true });
+  
+          expect(apiClient.get).toHaveBeenCalledWith('/teams?isLocationTracked=true');
+        });
+  
+        it('should build URL with search parameter', async () => {
+          const mockResponse = {
+            data: {
+              data: [mockTeamResponse],
+              message: 'Success',
+              code: 'SUCCESS',
+              pagination: { total: 1, hasNextPage: false },
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          await getTeams({ search: 'Alpha' });
+  
+          expect(apiClient.get).toHaveBeenCalledWith('/teams?search=Alpha');
+        });
+  
+        it('should build URL with count parameter', async () => {
+          const mockResponse = {
+            data: {
+              data: [mockTeamResponse],
+              message: 'Success',
+              code: 'SUCCESS',
+              pagination: { total: 1, hasNextPage: false },
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          await getTeams({ count: true });
+  
+          expect(apiClient.get).toHaveBeenCalledWith('/teams?count=true');
+        });
+  
+        it('should build URL with offset parameter', async () => {
+          const mockResponse = {
+            data: {
+              data: [mockTeamResponse],
+              message: 'Success',
+              code: 'SUCCESS',
+              pagination: { total: 1, hasNextPage: false },
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          await getTeams({ offset: 10 });
+  
+          expect(apiClient.get).toHaveBeenCalledWith('/teams?offset=10');
+        });
+  
+        it('should build URL with limit parameter', async () => {
+          const mockResponse = {
+            data: {
+              data: [mockTeamResponse],
+              message: 'Success',
+              code: 'SUCCESS',
+              pagination: { total: 1, hasNextPage: false },
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          await getTeams({ limit: 20 });
+  
+          expect(apiClient.get).toHaveBeenCalledWith('/teams?limit=20');
+        });
+  
+        it('should handle isLocationTracked as false', async () => {
+          const mockResponse = {
+            data: {
+              data: [],
+              message: 'Success',
+              code: 'SUCCESS',
+              pagination: { total: 0, hasNextPage: false },
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          await getTeams({ isLocationTracked: false });
+  
+          expect(apiClient.get).toHaveBeenCalledWith('/teams?isLocationTracked=false');
+        });
+      });
+  
+      describe('Query Parameters - Array Values', () => {
+        it('should build URL with single sort parameter', async () => {
+          const mockResponse = {
+            data: {
+              data: [mockTeamResponse],
+              message: 'Success',
+              code: 'SUCCESS',
+              pagination: { total: 1, hasNextPage: false },
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          await getTeams({ sort: ['name:asc'] });
+  
+          expect(apiClient.get).toHaveBeenCalledWith('/teams?sort=name%3Aasc');
+        });
+  
+        it('should build URL with multiple sort parameters', async () => {
+          const mockResponse = {
+            data: {
+              data: [mockTeamResponse],
+              message: 'Success',
+              code: 'SUCCESS',
+              pagination: { total: 1, hasNextPage: false },
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          await getTeams({ sort: ['name:asc', 'createdAt:desc'] });
+  
+          expect(apiClient.get).toHaveBeenCalledWith('/teams?sort=name%3Aasc&sort=createdAt%3Adesc');
+        });
+  
+        it('should build URL with single id parameter', async () => {
+          const mockResponse = {
+            data: {
+              data: [mockTeamResponse],
+              message: 'Success',
+              code: 'SUCCESS',
+              pagination: { total: 1, hasNextPage: false },
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          await getTeams({ id: ['team-1'] });
+  
+          expect(apiClient.get).toHaveBeenCalledWith('/teams?id=team-1');
+        });
+  
+        it('should build URL with multiple id parameters', async () => {
+          const mockResponse = {
+            data: {
+              data: [mockTeamResponse],
+              message: 'Success',
+              code: 'SUCCESS',
+              pagination: { total: 1, hasNextPage: false },
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          await getTeams({ id: ['team-1', 'team-2', 'team-3'] });
+  
+          expect(apiClient.get).toHaveBeenCalledWith('/teams?id=team-1&id=team-2&id=team-3');
+        });
+  
+        it('should build URL with userId parameters', async () => {
+          const mockResponse = {
+            data: {
+              data: [mockTeamResponse],
+              message: 'Success',
+              code: 'SUCCESS',
+              pagination: { total: 1, hasNextPage: false },
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          await getTeams({ userId: ['user-1', 'user-2'] });
+  
+          expect(apiClient.get).toHaveBeenCalledWith('/teams?userId=user-1&userId=user-2');
+        });
+  
+        it('should build URL with notIds parameters', async () => {
+          const mockResponse = {
+            data: {
+              data: [mockTeamResponse],
+              message: 'Success',
+              code: 'SUCCESS',
+              pagination: { total: 1, hasNextPage: false },
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          await getTeams({ notIds: ['team-99', 'team-100'] });
+  
+          expect(apiClient.get).toHaveBeenCalledWith('/teams?notIds=team-99&notIds=team-100');
+        });
+  
+        it('should handle empty array parameters', async () => {
+          const mockResponse = {
+            data: {
+              data: [mockTeamResponse],
+              message: 'Success',
+              code: 'SUCCESS',
+              pagination: { total: 1, hasNextPage: false },
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          await getTeams({ sort: [], id: [], userId: [] });
+  
+          expect(apiClient.get).toHaveBeenCalledWith('/teams');
+        });
+      });
+  
+      describe('Query Parameters - Combined', () => {
+        it('should build URL with multiple parameter types', async () => {
+          const mockResponse = {
+            data: {
+              data: [mockTeamResponse],
+              message: 'Success',
+              code: 'SUCCESS',
+              pagination: { total: 1, hasNextPage: false },
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          await getTeams({
+            isLocationTracked: true,
+            search: 'Alpha',
+            limit: 10,
+            offset: 0,
+            sort: ['name:asc'],
+          });
+  
+          const callUrl = (apiClient.get as jest.Mock).mock.calls[0][0];
+          expect(callUrl).toContain('isLocationTracked=true');
+          expect(callUrl).toContain('search=Alpha');
+          expect(callUrl).toContain('limit=10');
+          expect(callUrl).toContain('offset=0');
+          expect(callUrl).toContain('sort=name%3Aasc');
+        });
+  
+        it('should build URL with all parameter types', async () => {
+          const mockResponse = {
+            data: {
+              data: [mockTeamResponse],
+              message: 'Success',
+              code: 'SUCCESS',
+              pagination: { total: 1, hasNextPage: false },
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          const params: TeamsQueryParams = {
+            sort: ['name:asc', 'createdAt:desc'],
+            id: ['team-1'],
+            userId: ['user-1'],
+            notIds: ['team-99'],
+            isLocationTracked: true,
+            search: 'test',
+            count: true,
+            offset: 10,
+            limit: 20,
+          };
+  
+          await getTeams(params);
+  
+          const callUrl = (apiClient.get as jest.Mock).mock.calls[0][0];
+          expect(callUrl).toContain('/teams?');
+          expect(callUrl).toContain('sort=');
+          expect(callUrl).toContain('id=team-1');
+          expect(callUrl).toContain('userId=user-1');
+          expect(callUrl).toContain('notIds=team-99');
+          expect(callUrl).toContain('isLocationTracked=true');
+          expect(callUrl).toContain('search=test');
+          expect(callUrl).toContain('count=true');
+          expect(callUrl).toContain('offset=10');
+          expect(callUrl).toContain('limit=20');
+        });
+      });
+  
+      describe('Response Mapping', () => {
+        it('should correctly map TeamResponse to ITeam', async () => {
+          const mockResponse = {
+            data: {
+              data: [mockTeamResponse],
+              message: 'Success',
+              code: 'SUCCESS',
+              pagination: { total: 1, hasNextPage: false },
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          const result = await getTeams();
+  
+          expect(result.teams[0]).toEqual(mockExpectedTeam);
+        });
+  
+        it('should handle teams with null deletedAt', async () => {
+          const teamWithNullDeleted: TeamResponse = {
+            ...mockTeamResponse,
+            deletedAt: null,
+            deletedBy: null,
+          };
+  
+          const mockResponse = {
+            data: {
+              data: [teamWithNullDeleted],
+              message: 'Success',
+              code: 'SUCCESS',
+              pagination: { total: 1, hasNextPage: false },
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          const result = await getTeams();
+  
+          expect(result.teams[0].deletedAt).toBeNull();
+          expect(result.teams[0].deletedBy).toBeNull();
+        });
+  
+        it('should handle teams with location data', async () => {
+          const mockResponse = {
+            data: {
+              data: [mockTeamResponse],
+              message: 'Success',
+              code: 'SUCCESS',
+              pagination: { total: 1, hasNextPage: false },
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          const result = await getTeams();
+  
+          expect(result.teams[0].location).toEqual({
+            type: 'Point',
+            coordinates: [100.0, 0.0],
+          });
+        });
+      });
+  
+      describe('Error Handling', () => {
+        it('should handle API errors', async () => {
+          const apiError = new Error('API Error');
+          (apiClient.get as jest.Mock).mockRejectedValue(apiError);
+          (handleApiError as jest.Mock).mockReturnValue(new Error('Handled API Error'));
+  
+          await expect(getTeams()).rejects.toThrow('Handled API Error');
+          expect(handleApiError).toHaveBeenCalledWith(apiError);
+        });
+  
+        it('should handle network errors', async () => {
+          const networkError = new Error('Network error');
+          (apiClient.get as jest.Mock).mockRejectedValue(networkError);
+          (handleApiError as jest.Mock).mockReturnValue(new Error('Handled Network Error'));
+  
+          await expect(getTeams({ search: 'test' })).rejects.toThrow('Handled Network Error');
+          expect(handleApiError).toHaveBeenCalledWith(networkError);
+        });
+  
+        it('should handle 404 errors', async () => {
+          const notFoundError = { status: 404, message: 'Not found' };
+          (apiClient.get as jest.Mock).mockRejectedValue(notFoundError);
+          (handleApiError as jest.Mock).mockReturnValue(new Error('Teams not found'));
+  
+          await expect(getTeams({ id: ['non-existent'] })).rejects.toThrow('Teams not found');
+        });
+  
+        it('should handle 500 server errors', async () => {
+          const serverError = { status: 500, message: 'Internal server error' };
+          (apiClient.get as jest.Mock).mockRejectedValue(serverError);
+          (handleApiError as jest.Mock).mockReturnValue(new Error('Server error'));
+  
+          await expect(getTeams()).rejects.toThrow('Server error');
+        });
+      });
+    });
+  
+    describe('getTeam', () => {
+      describe('Successful Requests', () => {
+        it('should fetch a single team by ID', async () => {
+          const mockResponse = {
+            data: {
+              data: mockTeamResponse,
+              message: 'Success',
+              code: 'SUCCESS',
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          const result = await getTeam('team-1');
+  
+          expect(apiClient.get).toHaveBeenCalledWith('/teams/team-1');
+          expect(result).toEqual(mockExpectedTeam);
+        });
+  
+        it('should fetch team with different ID', async () => {
+          const team2Response: TeamResponse = {
+            ...mockTeamResponse,
+            id: 'team-2',
+            name: 'Bravo Team',
+          };
+  
+          const mockResponse = {
+            data: {
+              data: team2Response,
+              message: 'Success',
+              code: 'SUCCESS',
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          const result = await getTeam('team-2');
+  
+          expect(apiClient.get).toHaveBeenCalledWith('/teams/team-2');
+          expect(result.id).toBe('team-2');
+          expect(result.name).toBe('Bravo Team');
+        });
+  
+        it('should construct correct URL with team ID', async () => {
+          const mockResponse = {
+            data: {
+              data: mockTeamResponse,
+              message: 'Success',
+              code: 'SUCCESS',
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          await getTeam('abc-123-xyz');
+  
+          expect(apiClient.get).toHaveBeenCalledWith('/teams/abc-123-xyz');
+        });
+      });
+  
+      describe('Response Mapping', () => {
+        it('should correctly map TeamResponse to ITeam', async () => {
+          const mockResponse = {
+            data: {
+              data: mockTeamResponse,
+              message: 'Success',
+              code: 'SUCCESS',
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          const result = await getTeam('team-1');
+  
+          expect(result).toEqual(mockExpectedTeam);
+          expect(result.tenantId).toBe('tenant-1');
+          expect(result.id).toBe('team-1');
+          expect(result.name).toBe('Alpha Team');
+          expect(result.description).toBe('Test team description');
+          expect(result.settings).toEqual({ isLocationTracked: true });
+          expect(result.createdAt).toBe('2024-01-01T00:00:00Z');
+          expect(result.updatedAt).toBe('2024-01-02T00:00:00Z');
+          expect(result.deletedAt).toBeNull();
+          expect(result.createdBy).toBe('user-1');
+          expect(result.updatedBy).toBe('user-1');
+          expect(result.deletedBy).toBeNull();
+        });
+  
+        it('should handle team with location data', async () => {
+          const mockResponse = {
+            data: {
+              data: mockTeamResponse,
+              message: 'Success',
+              code: 'SUCCESS',
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          const result = await getTeam('team-1');
+  
+          expect(result.location).toEqual({
+            type: 'Point',
+            coordinates: [100.0, 0.0],
+          });
+        });
+  
+        it('should handle team with null deletedAt and deletedBy', async () => {
+          const mockResponse = {
+            data: {
+              data: mockTeamResponse,
+              message: 'Success',
+              code: 'SUCCESS',
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          const result = await getTeam('team-1');
+  
+          expect(result.deletedAt).toBeNull();
+          expect(result.deletedBy).toBeNull();
+        });
+      });
+  
+      describe('Error Handling', () => {
+        it('should handle API errors', async () => {
+          const apiError = new Error('API Error');
+          (apiClient.get as jest.Mock).mockRejectedValue(apiError);
+          (handleApiError as jest.Mock).mockReturnValue(new Error('Handled API Error'));
+  
+          await expect(getTeam('team-1')).rejects.toThrow('Handled API Error');
+          expect(handleApiError).toHaveBeenCalledWith(apiError);
+        });
+  
+        it('should handle 404 not found error', async () => {
+          const notFoundError = { status: 404, message: 'Team not found' };
+          (apiClient.get as jest.Mock).mockRejectedValue(notFoundError);
+          (handleApiError as jest.Mock).mockReturnValue(new Error('Team not found'));
+  
+          await expect(getTeam('non-existent-id')).rejects.toThrow('Team not found');
+          expect(handleApiError).toHaveBeenCalledWith(notFoundError);
+        });
+  
+        it('should handle network errors', async () => {
+          const networkError = new Error('Network error');
+          (apiClient.get as jest.Mock).mockRejectedValue(networkError);
+          (handleApiError as jest.Mock).mockReturnValue(new Error('Handled Network Error'));
+  
+          await expect(getTeam('team-1')).rejects.toThrow('Handled Network Error');
+          expect(handleApiError).toHaveBeenCalledWith(networkError);
+        });
+  
+        it('should handle 500 server error', async () => {
+          const serverError = { status: 500, message: 'Internal server error' };
+          (apiClient.get as jest.Mock).mockRejectedValue(serverError);
+          (handleApiError as jest.Mock).mockReturnValue(new Error('Server error'));
+  
+          await expect(getTeam('team-1')).rejects.toThrow('Server error');
+          expect(handleApiError).toHaveBeenCalledWith(serverError);
+        });
+  
+        it('should handle 401 unauthorized error', async () => {
+          const unauthorizedError = { status: 401, message: 'Unauthorized' };
+          (apiClient.get as jest.Mock).mockRejectedValue(unauthorizedError);
+          (handleApiError as jest.Mock).mockReturnValue(new Error('Unauthorized access'));
+  
+          await expect(getTeam('team-1')).rejects.toThrow('Unauthorized access');
+        });
+  
+        it('should handle 403 forbidden error', async () => {
+          const forbiddenError = { status: 403, message: 'Forbidden' };
+          (apiClient.get as jest.Mock).mockRejectedValue(forbiddenError);
+          (handleApiError as jest.Mock).mockReturnValue(new Error('Access forbidden'));
+  
+          await expect(getTeam('team-1')).rejects.toThrow('Access forbidden');
+        });
+      });
+  
+      describe('Edge Cases', () => {
+        it('should handle empty string team ID', async () => {
+          const mockResponse = {
+            data: {
+              data: mockTeamResponse,
+              message: 'Success',
+              code: 'SUCCESS',
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          await getTeam('');
+  
+          expect(apiClient.get).toHaveBeenCalledWith('/teams/');
+        });
+  
+        it('should handle team ID with special characters', async () => {
+          const mockResponse = {
+            data: {
+              data: mockTeamResponse,
+              message: 'Success',
+              code: 'SUCCESS',
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          await getTeam('team-123-abc_xyz');
+  
+          expect(apiClient.get).toHaveBeenCalledWith('/teams/team-123-abc_xyz');
+        });
+  
+        it('should handle UUID format team ID', async () => {
+          const mockResponse = {
+            data: {
+              data: mockTeamResponse,
+              message: 'Success',
+              code: 'SUCCESS',
+            },
+          };
+  
+          (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+  
+          const uuid = '550e8400-e29b-41d4-a716-446655440000';
+          await getTeam(uuid);
+  
+          expect(apiClient.get).toHaveBeenCalledWith(`/teams/${uuid}`);
+        });
+      });
     });
   });
 });

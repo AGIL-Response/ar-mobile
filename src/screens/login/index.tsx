@@ -25,7 +25,7 @@ export default function Login() {
   const theme = useTheme();
   const styles = createStyles(theme);
 
-  const [username, setUsername] = useState(__DEV__ ? 'org6r1' : '');
+  const [username, setUsername] = useState(__DEV__ ? 'org7r1' : '');
   const [step, setStep] = useState<'username' | 'password'>('username');
 
   const handlers = useLoginHandlers({
@@ -38,6 +38,7 @@ export default function Login() {
 
   const { startLoginFlow, isReady, isProcessing } = useOAuthFlow({
     realm: authState.selectedTenant?.name || '',
+    username: username,
     onSuccess: handlers.handleOAuthSuccess,
     onError: handlers.handleOAuthError,
   });

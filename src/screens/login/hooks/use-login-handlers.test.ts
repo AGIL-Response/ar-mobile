@@ -1,8 +1,8 @@
 import { renderHook, waitFor } from '@testing-library/react-native';
-import { Alert } from 'react-native';
 
 import { useLoginHandlers } from './use-login-handlers';
 import { showError } from '@/components/utils';
+import type * as AuthSession from 'expo-auth-session';
 
 // Mock dependencies
 jest.mock('@/components/utils', () => ({
@@ -11,14 +11,12 @@ jest.mock('@/components/utils', () => ({
 
 describe('useLoginHandlers', () => {
   const mockCheckUsername = jest.fn();
-  const mockLoginWithPassword = jest.fn();
+  const mockLoginWithOAuth = jest.fn();
   const mockClearUsernameError = jest.fn();
   const mockSetSelectedTenant = jest.fn();
   const mockSetStep = jest.fn();
-  const mockSetPassword = jest.fn();
   const mockSetUsername = jest.fn();
   const mockRouterNavigate = jest.fn();
-  const alertSpy = jest.spyOn(Alert, 'alert');
   const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
   const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
 
@@ -26,29 +24,37 @@ describe('useLoginHandlers', () => {
     authState: {
       actions: {
         checkUsername: mockCheckUsername,
-        loginWithPassword: mockLoginWithPassword,
+        loginWithOAuth: mockLoginWithOAuth,
         clearUsernameError: mockClearUsernameError,
         setSelectedTenant: mockSetSelectedTenant,
       },
     },
     username: 'testuser',
-    password: 'testpass',
     setStep: mockSetStep,
-    setPassword: mockSetPassword,
     setUsername: mockSetUsername,
     router: {
       navigate: mockRouterNavigate,
     } as any,
   };
 
+  const mockTokenResponse: AuthSession.TokenResponse = {
+    accessToken: 'mock-access-token',
+    refreshToken: 'mock-refresh-token',
+    idToken: 'mock-id-token',
+    tokenType: 'Bearer',
+    expiresIn: 3600,
+    issuedAt: Date.now() / 1000,
+    scope: 'openid',
+    state: 'mock-state',
+  } as unknown as AuthSession.TokenResponse;
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockCheckUsername.mockResolvedValue('test-realm');
-    mockLoginWithPassword.mockResolvedValue(undefined);
+    mockLoginWithOAuth.mockResolvedValue(undefined);
   });
 
   afterAll(() => {
-    alertSpy.mockRestore();
     consoleLogSpy.mockRestore();
     consoleErrorSpy.mockRestore();
   });
@@ -58,7 +64,8 @@ describe('useLoginHandlers', () => {
       const { result } = renderHook(() => useLoginHandlers(defaultProps));
 
       expect(result.current.handleUsernameSubmit).toBeDefined();
-      expect(result.current.handlePasswordSubmit).toBeDefined();
+      expect(result.current.handleOAuthSuccess).toBeDefined();
+      expect(result.current.handleOAuthError).toBeDefined();
       expect(result.current.handleBackToUsername).toBeDefined();
     });
 
@@ -72,11 +79,12 @@ describe('useLoginHandlers', () => {
       rerender(defaultProps);
       const secondRender = result.current;
 
-      // Functions are recreated on each render (not memoized)
       expect(typeof firstRender.handleUsernameSubmit).toBe('function');
       expect(typeof secondRender.handleUsernameSubmit).toBe('function');
-      expect(typeof firstRender.handlePasswordSubmit).toBe('function');
-      expect(typeof secondRender.handlePasswordSubmit).toBe('function');
+      expect(typeof firstRender.handleOAuthSuccess).toBe('function');
+      expect(typeof secondRender.handleOAuthSuccess).toBe('function');
+      expect(typeof firstRender.handleOAuthError).toBe('function');
+      expect(typeof secondRender.handleOAuthError).toBe('function');
       expect(typeof firstRender.handleBackToUsername).toBe('function');
       expect(typeof secondRender.handleBackToUsername).toBe('function');
     });
@@ -101,6 +109,18 @@ describe('useLoginHandlers', () => {
       });
     });
 
+    it('sets step to password when username check succeeds', async () => {
+      mockCheckUsername.mockResolvedValue('test-realm');
+
+      const { result } = renderHook(() => useLoginHandlers(defaultProps));
+
+      await result.current.handleUsernameSubmit();
+
+      await waitFor(() => {
+        expect(mockSetStep).toHaveBeenCalledWith('password');
+      });
+    });
+
     it('logs realm when username check succeeds', async () => {
       mockCheckUsername.mockResolvedValue('test-realm');
 
@@ -116,7 +136,7 @@ describe('useLoginHandlers', () => {
       });
     });
 
-    it('does not log when realm is null', async () => {
+    it('does not log or change step when realm is null', async () => {
       mockCheckUsername.mockResolvedValue(null);
 
       const { result } = renderHook(() => useLoginHandlers(defaultProps));
@@ -128,6 +148,7 @@ describe('useLoginHandlers', () => {
           expect.stringContaining('Username check completed'),
           expect.anything()
         );
+        expect(mockSetStep).not.toHaveBeenCalled();
       });
     });
 
@@ -153,110 +174,121 @@ describe('useLoginHandlers', () => {
     });
   });
 
-  describe('handlePasswordSubmit', () => {
-    it('shows error when password is empty', async () => {
-      const props = { ...defaultProps, password: '' };
-      const { result } = renderHook(() => useLoginHandlers(props));
-
-      await result.current.handlePasswordSubmit();
-
-      expect(alertSpy).toHaveBeenCalledWith('Error', 'Please enter your password');
-      expect(mockLoginWithPassword).not.toHaveBeenCalled();
-    });
-
-    it('shows error when password is only whitespace', async () => {
-      const props = { ...defaultProps, password: '   ' };
-      const { result } = renderHook(() => useLoginHandlers(props));
-
-      await result.current.handlePasswordSubmit();
-
-      expect(alertSpy).toHaveBeenCalledWith('Error', 'Please enter your password');
-      expect(mockLoginWithPassword).not.toHaveBeenCalled();
-    });
-
-    it('logs login start', async () => {
+  describe('handleOAuthSuccess', () => {
+    it('logs OAuth completion message', async () => {
       const { result } = renderHook(() => useLoginHandlers(defaultProps));
 
-      await result.current.handlePasswordSubmit();
+      await result.current.handleOAuthSuccess(mockTokenResponse);
 
       expect(consoleLogSpy).toHaveBeenCalledWith(
-        'Login screen: Starting login process for username:',
-        'testuser'
+        'OAuth flow completed, processing tokens...'
       );
     });
 
-    it('calls loginWithPassword with username and password', async () => {
+    it('calls loginWithOAuth with token response', async () => {
       const { result } = renderHook(() => useLoginHandlers(defaultProps));
 
-      await result.current.handlePasswordSubmit();
+      await result.current.handleOAuthSuccess(mockTokenResponse);
 
       await waitFor(() => {
-        expect(mockLoginWithPassword).toHaveBeenCalledWith('testuser', 'testpass');
+        expect(mockLoginWithOAuth).toHaveBeenCalledWith(mockTokenResponse);
       });
     });
 
-    it('navigates to home on successful login', async () => {
+    it('navigates to home on successful OAuth login', async () => {
       const { result } = renderHook(() => useLoginHandlers(defaultProps));
 
-      await result.current.handlePasswordSubmit();
+      await result.current.handleOAuthSuccess(mockTokenResponse);
 
       await waitFor(() => {
+        expect(consoleLogSpy).toHaveBeenCalledWith(
+          'OAuth login successful, navigating to home...'
+        );
         expect(mockRouterNavigate).toHaveBeenCalledWith('/');
       });
     });
 
-    it('shows error message when login fails with error message', async () => {
-      const error = new Error('Invalid credentials');
-      mockLoginWithPassword.mockRejectedValue(error);
+    it('shows error message when OAuth login fails with error message', async () => {
+      const error = new Error('Invalid token');
+      mockLoginWithOAuth.mockRejectedValue(error);
 
       const { result } = renderHook(() => useLoginHandlers(defaultProps));
 
-      await result.current.handlePasswordSubmit();
+      await result.current.handleOAuthSuccess(mockTokenResponse);
 
       await waitFor(() => {
-        expect(showError).toHaveBeenCalledWith('Invalid credentials');
+        expect(showError).toHaveBeenCalledWith('Invalid token');
       });
     });
 
-    it('shows generic error when login fails without error message', async () => {
-      mockLoginWithPassword.mockRejectedValue({});
+    it('shows generic error when OAuth login fails without error message', async () => {
+      mockLoginWithOAuth.mockRejectedValue({});
 
       const { result } = renderHook(() => useLoginHandlers(defaultProps));
 
-      await result.current.handlePasswordSubmit();
+      await result.current.handleOAuthSuccess(mockTokenResponse);
 
       await waitFor(() => {
-        expect(showError).toHaveBeenCalledWith(
-          'Login failed. Please check your credentials and try again.'
-        );
+        expect(showError).toHaveBeenCalledWith('Login failed. Please try again.');
       });
     });
 
-    it('logs error when login fails', async () => {
+    it('logs error when OAuth login fails', async () => {
       const error = new Error('Test error');
-      mockLoginWithPassword.mockRejectedValue(error);
+      mockLoginWithOAuth.mockRejectedValue(error);
 
       const { result } = renderHook(() => useLoginHandlers(defaultProps));
 
-      await result.current.handlePasswordSubmit();
+      await result.current.handleOAuthSuccess(mockTokenResponse);
 
       await waitFor(() => {
-        expect(consoleErrorSpy).toHaveBeenCalledWith('Login error:', error);
+        expect(consoleErrorSpy).toHaveBeenCalledWith('OAuth login error:', error);
       });
     });
 
-    it('does not navigate when login fails', async () => {
-      mockLoginWithPassword.mockRejectedValue(new Error('Test error'));
+    it('does not navigate when OAuth login fails', async () => {
+      mockLoginWithOAuth.mockRejectedValue(new Error('Test error'));
 
       const { result } = renderHook(() => useLoginHandlers(defaultProps));
 
-      await result.current.handlePasswordSubmit();
+      await result.current.handleOAuthSuccess(mockTokenResponse);
 
       await waitFor(() => {
         expect(showError).toHaveBeenCalled();
       });
 
       expect(mockRouterNavigate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('handleOAuthError', () => {
+    it('shows error message from error object', () => {
+      const error = new Error('Authentication failed');
+      const { result } = renderHook(() => useLoginHandlers(defaultProps));
+
+      result.current.handleOAuthError(error);
+
+      expect(showError).toHaveBeenCalledWith('Authentication failed');
+    });
+
+    it('shows generic error when error has no message', () => {
+      const error = new Error();
+      const { result } = renderHook(() => useLoginHandlers(defaultProps));
+
+      result.current.handleOAuthError(error);
+
+      expect(showError).toHaveBeenCalledWith(
+        'Authentication failed. Please try again.'
+      );
+    });
+
+    it('logs OAuth error', () => {
+      const error = new Error('Test error');
+      const { result } = renderHook(() => useLoginHandlers(defaultProps));
+
+      result.current.handleOAuthError(error);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith('OAuth error:', error);
     });
   });
 
@@ -269,12 +301,12 @@ describe('useLoginHandlers', () => {
       expect(mockSetStep).toHaveBeenCalledWith('username');
     });
 
-    it('clears password', () => {
+    it('clears username', () => {
       const { result } = renderHook(() => useLoginHandlers(defaultProps));
 
       result.current.handleBackToUsername();
 
-      expect(mockSetPassword).toHaveBeenCalledWith('');
+      expect(mockSetUsername).toHaveBeenCalledWith('');
     });
 
     it('clears username error', () => {
@@ -299,7 +331,7 @@ describe('useLoginHandlers', () => {
       result.current.handleBackToUsername();
 
       expect(mockSetStep).toHaveBeenCalled();
-      expect(mockSetPassword).toHaveBeenCalled();
+      expect(mockSetUsername).toHaveBeenCalled();
       expect(mockClearUsernameError).toHaveBeenCalled();
       expect(mockSetSelectedTenant).toHaveBeenCalled();
     });
@@ -316,25 +348,25 @@ describe('useLoginHandlers', () => {
       expect(mockCheckUsername).toHaveBeenCalledTimes(3);
     });
 
-    it('handles multiple sequential password submissions', async () => {
+    it('handles multiple sequential OAuth success calls', async () => {
       const { result } = renderHook(() => useLoginHandlers(defaultProps));
 
-      await result.current.handlePasswordSubmit();
-      await result.current.handlePasswordSubmit();
+      await result.current.handleOAuthSuccess(mockTokenResponse);
+      await result.current.handleOAuthSuccess(mockTokenResponse);
 
-      expect(mockLoginWithPassword).toHaveBeenCalledTimes(2);
+      expect(mockLoginWithOAuth).toHaveBeenCalledTimes(2);
     });
 
-    it('handles back navigation after failed login', async () => {
-      mockLoginWithPassword.mockRejectedValue(new Error('Test error'));
+    it('handles back navigation after failed OAuth login', async () => {
+      mockLoginWithOAuth.mockRejectedValue(new Error('Test error'));
 
       const { result } = renderHook(() => useLoginHandlers(defaultProps));
 
-      await result.current.handlePasswordSubmit();
+      await result.current.handleOAuthSuccess(mockTokenResponse);
       result.current.handleBackToUsername();
 
       expect(mockSetStep).toHaveBeenCalledWith('username');
-      expect(mockSetPassword).toHaveBeenCalledWith('');
+      expect(mockSetUsername).toHaveBeenCalledWith('');
     });
 
     it('handles empty username', async () => {
@@ -346,21 +378,32 @@ describe('useLoginHandlers', () => {
       expect(mockCheckUsername).toHaveBeenCalledWith('');
     });
 
-    it('handles special characters in credentials', async () => {
+    it('handles special characters in username', async () => {
       const props = {
         ...defaultProps,
         username: 'user@example.com',
-        password: 'p@ssw0rd!#$',
       };
       const { result } = renderHook(() => useLoginHandlers(props));
 
-      await result.current.handlePasswordSubmit();
+      await result.current.handleUsernameSubmit();
 
       await waitFor(() => {
-        expect(mockLoginWithPassword).toHaveBeenCalledWith(
-          'user@example.com',
-          'p@ssw0rd!#$'
-        );
+        expect(mockCheckUsername).toHaveBeenCalledWith('user@example.com');
+      });
+    });
+
+    it('handles token response with missing optional fields', async () => {
+      const minimalTokenResponse = {
+        accessToken: 'mock-access-token',
+        tokenType: 'Bearer',
+      } as unknown as AuthSession.TokenResponse;
+
+      const { result } = renderHook(() => useLoginHandlers(defaultProps));
+
+      await result.current.handleOAuthSuccess(minimalTokenResponse);
+
+      await waitFor(() => {
+        expect(mockLoginWithOAuth).toHaveBeenCalledWith(minimalTokenResponse);
       });
     });
   });

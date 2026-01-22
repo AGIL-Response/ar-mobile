@@ -1,5 +1,6 @@
 import { authApi } from '@/api';
 import { UpdateUserRequest, type RegisterRequest } from '@/api/auth/types';
+import type { ITeam } from '@/api/users';
 // eslint-disable-next-line import/no-cycle
 import checkUsername from '@/stores/auth/actions/check-username';
 // eslint-disable-next-line import/no-cycle
@@ -8,11 +9,12 @@ import createGeoEntityIfNeeded from '@/stores/auth/actions/create-geo-entity-if-
 import loginWithOAuth from '@/stores/auth/actions/login-with-oauth';
 // eslint-disable-next-line import/no-cycle
 import loginWithPassword from '@/stores/auth/actions/login-with-password';
+// eslint-disable-next-line import/no-cycle
+import logoutWithKeycloak from '@/stores/auth/actions/logout-with-keycloak';
 import register from '@/stores/auth/actions/register';
 import updateGeoEntityLocation from '@/stores/auth/actions/update-geo-entity-location';
 import type IBaseState from '@/stores/interfaces/IBaseState';
 import { type InitStateType } from '@/stores/interfaces/IBaseState';
-import { useLocationStore } from '@/stores/location';
 import { createStore, resetStore } from '@/stores/utils';
 import { type GeoEntity } from '@/types/geo-entity';
 
@@ -29,25 +31,6 @@ export interface ITenant {
   displayName: string;
 }
 
-export interface ITeam {
-  tenantId: string;
-  id: string;
-  name: string;
-  description: string;
-  createdAt: string;
-  updatedAt: string | null;
-  deletedAt: string | null;
-  createdBy: string;
-  updatedBy: string | null;
-  deletedBy: string | null;
-  settings: {
-    isLocationTracked: boolean;
-  };
-  location: {
-    type: string;
-    coordinates: number[][][];
-  };
-}
 
 export interface IUser {
   id: string;
@@ -85,7 +68,7 @@ export interface AuthState extends IBaseState {
     loginWithPassword: (username: string, password: string) => Promise<any>;
     loginWithOAuth: (tokenResponse: any) => Promise<any>;
     register: (params: RegisterRequest) => Promise<any>;
-    logout: () => void;
+    logout: (options?: { silent?: boolean }) => Promise<void>;
     setTokens: (tokens: ITokens) => void;
     setUser: (user: IUser) => void;
     setTenants: (tenants: ITenant[]) => void;
@@ -123,44 +106,7 @@ const authStore = (set: any, get: any) => ({
     loginWithPassword: loginWithPassword(set, get),
     loginWithOAuth: loginWithOAuth(set, get),
     register: register(set, get),
-    logout: async () => {
-      // Stop location monitoring and disconnect WebSocket
-      try {
-        const locationStore = useLocationStore.getState();
-        locationStore.actions.stopLocationMonitoring();
-        locationStore.actions.disconnectFromWebSocket();
-        console.log('📍 Location monitoring stopped during logout');
-      } catch (error) {
-        console.warn(
-          'Error stopping location monitoring during logout:',
-          error
-        );
-      }
-
-      // Disconnect chat socket and clear database
-      try {
-        const { chatService } = await import('@/services/chat');
-        chatService.disconnect();
-        console.log('💬 Chat socket disconnected during logout');
-        
-        const { chatDbService } = await import('@/services/chat/db-service');
-        await chatDbService.clearAll();
-        console.log('💬 Chat database cleared during logout');
-      } catch (error) {
-        console.warn('Error clearing chat during logout:', error);
-      }
-
-      set((state: AuthState) => {
-        state.token = initialState.token;
-        state.user = undefined;
-        state.tenants = [];
-        state.selectedTenant = null;
-        state.selectedTeam = null;
-        state.geoEntity = undefined;
-        state.usernameError = null;
-        state.isCheckingUsername = false;
-      });
-    },
+    logout: logoutWithKeycloak(set, get),
     setTokens: (tokens: ITokens) => {
       set((state: AuthState) => {
         state.token = tokens;

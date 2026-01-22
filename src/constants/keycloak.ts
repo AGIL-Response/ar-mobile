@@ -3,8 +3,12 @@
  * Centralized configuration for OAuth 2.0 + PKCE authentication
  */
 
+import Constants from 'expo-constants';
+
+const env = Constants.expoConfig?.extra?.env || {};
+
 export const KEYCLOAK_CONFIG = {
-  host: 'https://dev-auth.agilres.net',
+  host: env.KEYCLOAK_HOST || 'https://dev-auth.agilres.net', 
   clientId: 'ar_app',
   scopes: ['openid'],
 

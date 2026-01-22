@@ -12,12 +12,14 @@ WebBrowser.maybeCompleteAuthSession();
 
 interface UseOAuthFlowProps {
   realm: string;
+  username?: string;
   onSuccess: (tokenResponse: AuthSession.TokenResponse) => void;
   onError: (error: Error) => void;
 }
 
 export function useOAuthFlow({
   realm,
+  username,
   onSuccess,
   onError,
 }: UseOAuthFlowProps) {
@@ -25,7 +27,8 @@ export function useOAuthFlow({
 
   // Create the redirect URI
   const redirectUri = AuthSession.makeRedirectUri({
-    scheme: 'myapp',
+    scheme: 'agilresponse',
+    path: 'redirect',
   });
 
   // Create the auth request with PKCE enabled
@@ -36,15 +39,10 @@ export function useOAuthFlow({
       redirectUri,
       responseType: AuthSession.ResponseType.Code,
       usePKCE: true, // Enable PKCE for security
+      extraParams: username ? { login_hint: username } : {},
     },
     realm ? KEYCLOAK_CONFIG.getDiscovery(realm) : null
   );
-
-  console.log('🔐 OAuth Debug Info:');
-  console.log('  Redirect URI:', redirectUri);
-  console.log('  Realm:', realm);
-  console.log('  Request ready:', !!request);
-  console.log('  Discovery:', realm ? KEYCLOAK_CONFIG.getDiscovery(realm) : null);
 
   // Handle the OAuth response
   useEffect(() => {
@@ -121,14 +119,28 @@ export function useOAuthFlow({
     }
 
     try {
+      // Build auth URL with PKCE parameters
+      const params = new URLSearchParams({
+        client_id: KEYCLOAK_CONFIG.clientId,
+        redirect_uri: redirectUri,
+        response_type: 'code',
+        scope: KEYCLOAK_CONFIG.scopes.join(' '),
+        kc_action: 'UPDATE_PASSWORD',
+        // PKCE parameters (required!)
+        code_challenge: request.codeChallenge || '',
+        code_challenge_method: request.codeChallengeMethod || 'S256',
+        state: request.state || '',
+      });
+
+      // Add login_hint if username is provided
+      if (username) {
+        params.append('login_hint', username);
+      }
+
       const discovery = KEYCLOAK_CONFIG.getDiscovery(realm);
-      const authUrl = `${discovery.authorizationEndpoint}?client_id=${
-        KEYCLOAK_CONFIG.clientId
-      }&redirect_uri=${encodeURIComponent(
-        redirectUri
-      )}&response_type=code&scope=${KEYCLOAK_CONFIG.scopes.join(
-        '%20'
-      )}&kc_action=UPDATE_PASSWORD`;
+      const authUrl = `${discovery.authorizationEndpoint}?${params.toString()}`;
+
+      console.log('🔐 Change Password URL:', authUrl);
 
       const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
 
