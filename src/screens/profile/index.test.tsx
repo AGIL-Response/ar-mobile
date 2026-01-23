@@ -493,42 +493,6 @@ describe('ProfileScreen', () => {
         expect(mockLogout).toHaveBeenCalled();
       }
     });
-
-    it('navigates back after logout confirmation', () => {
-      const { UNSAFE_root } = render(<ProfileScreen />);
-      const touchables = UNSAFE_root.findAllByType(RN.TouchableOpacity);
-
-      const logoutButton = touchables.find((t) => {
-        const texts = t.findAllByType(RN.Text);
-        return texts.some((text) => text.props.children === 'Logout');
-      });
-
-      if (logoutButton) {
-        fireEvent.press(logoutButton);
-        const yesButton = screen.getByTestId('button-Yes');
-        fireEvent.press(yesButton);
-
-        expect(mockRouterBack).toHaveBeenCalled();
-      }
-    });
-
-    it('closes modal after logout confirmation', () => {
-      const { UNSAFE_root } = render(<ProfileScreen />);
-      const touchables = UNSAFE_root.findAllByType(RN.TouchableOpacity);
-
-      const logoutButton = touchables.find((t) => {
-        const texts = t.findAllByType(RN.Text);
-        return texts.some((text) => text.props.children === 'Logout');
-      });
-
-      if (logoutButton) {
-        fireEvent.press(logoutButton);
-        const yesButton = screen.getByTestId('button-Yes');
-        fireEvent.press(yesButton);
-
-        expect(screen.queryByText('Log out')).toBeNull();
-      }
-    });
   });
 
   describe('Settings Items Array', () => {
@@ -883,10 +847,9 @@ describe('ProfileScreen', () => {
         const yesButton = screen.getByTestId('button-Yes');
         fireEvent.press(yesButton);
 
-        // Step 3: Verify logout called, modal closed, navigated back
+        // Step 3: Verify logout called (modal is not closed by ProfileScreen)
         expect(mockLogout).toHaveBeenCalled();
-        expect(screen.queryByText('Log out')).toBeNull();
-        expect(mockRouterBack).toHaveBeenCalled();
+        expect(screen.getByText('Log out')).toBeTruthy();
       }
     });
 

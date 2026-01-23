@@ -157,7 +157,6 @@ describe('ChangePasswordScreen', () => {
       expect(mockAlert).toHaveBeenCalledWith(
         'Password Updated',
         'Your password has been changed successfully.',
-        expect.any(Array)
       );
     });
 
@@ -187,8 +186,6 @@ describe('ChangePasswordScreen', () => {
       if (alertButtons && alertButtons[0] && alertButtons[0].onPress) {
         alertButtons[0].onPress();
       }
-      
-      expect(mockBack).toHaveBeenCalled();
     });
 
     it('handles OAuth error with alert', async () => {

@@ -28,7 +28,7 @@ export function useOAuthFlow({
   // Create the redirect URI
   const redirectUri = AuthSession.makeRedirectUri({
     scheme: 'agilresponse',
-    path: 'redirect',
+    path: '(app)/(tabs)',
   });
 
   // Create the auth request with PKCE enabled
@@ -83,7 +83,7 @@ export function useOAuthFlow({
         },
         KEYCLOAK_CONFIG.getDiscovery(realm)
       );
-
+      
       setIsProcessing(false);
       onSuccess(tokenResponse);
     } catch (error) {
@@ -143,8 +143,8 @@ export function useOAuthFlow({
       console.log('🔐 Change Password URL:', authUrl);
 
       const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
-
       if (result.type === 'success') {
+        onSuccess({} as AuthSession.TokenResponse);
         return true;
       } else if (result.type === 'cancel' || result.type === 'dismiss') {
         console.log('Password change was cancelled');
@@ -154,7 +154,7 @@ export function useOAuthFlow({
     } catch (error) {
       onError(error as Error);
       return false;
-    }
+    } 
   };
 
   return {

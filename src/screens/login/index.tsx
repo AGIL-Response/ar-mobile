@@ -1,6 +1,7 @@
 import images from '@assets/images';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import type { RelativePathString } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
   Image,
   ImageBackground,
@@ -28,6 +29,12 @@ export default function Login() {
   const [username, setUsername] = useState(__DEV__ ? 'org7r1' : '');
   const [step, setStep] = useState<'username' | 'password'>('username');
 
+  useEffect(() => {
+    if (authState.token?.accessToken) {
+      router.replace('/(app)/(tabs)' as RelativePathString);
+    }
+  }, [authState.token?.accessToken, router]);
+
   const handlers = useLoginHandlers({
     authState,
     username,
@@ -42,6 +49,11 @@ export default function Login() {
     onSuccess: handlers.handleOAuthSuccess,
     onError: handlers.handleOAuthError,
   });
+
+
+  if (authState.token?.accessToken) {
+    return null;
+  }
 
   return (
     <ImageBackground

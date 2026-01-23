@@ -59,6 +59,7 @@ export interface AuthState extends IBaseState {
   selectedTenant: ITenant | null;
   selectedTeam: ITeam | null;
   isLoading: boolean;
+  isLoggingOut: boolean;
   isCheckingUsername: boolean;
   usernameError: string | null;
   geoEntity: GeoEntity | undefined;
@@ -68,7 +69,7 @@ export interface AuthState extends IBaseState {
     loginWithPassword: (username: string, password: string) => Promise<any>;
     loginWithOAuth: (tokenResponse: any) => Promise<any>;
     register: (params: RegisterRequest) => Promise<any>;
-    logout: (options?: { silent?: boolean }) => Promise<void>;
+    logout: () => Promise<void>;
     setTokens: (tokens: ITokens) => void;
     setUser: (user: IUser) => void;
     setTenants: (tenants: ITenant[]) => void;
@@ -94,6 +95,7 @@ const initialState: InitStateType<AuthState> = {
   selectedTenant: null,
   selectedTeam: null,
   isLoading: false,
+  isLoggingOut: false,
   isCheckingUsername: false,
   usernameError: null,
   geoEntity: undefined,

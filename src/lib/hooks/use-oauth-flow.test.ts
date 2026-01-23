@@ -59,7 +59,7 @@ describe('useOAuthFlow', () => {
 
     expect(actualMockMakeRedirectUri).toHaveBeenCalledWith({
       scheme: 'agilresponse',
-      path: 'redirect',
+      path: '(app)/(tabs)',
     });
     expect(result.current.redirectUri).toBe('agilresponse://redirect');
     expect(result.current.isReady).toBe(true);

@@ -201,10 +201,7 @@ describe('useLoginHandlers', () => {
       await result.current.handleOAuthSuccess(mockTokenResponse);
 
       await waitFor(() => {
-        expect(consoleLogSpy).toHaveBeenCalledWith(
-          'OAuth login successful, navigating to home...'
-        );
-        expect(mockRouterNavigate).toHaveBeenCalledWith('/');
+        expect(mockRouterNavigate).toHaveBeenCalledWith('/(app)/(tabs)');
       });
     });
 

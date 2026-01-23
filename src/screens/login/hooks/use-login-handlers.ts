@@ -39,7 +39,7 @@ export const useLoginHandlers = ({
     try {
       await authState.actions.loginWithOAuth(tokenResponse);
       console.log('OAuth login successful, navigating to home...');
-      router.navigate('/' as RelativePathString);
+      router.navigate('/(app)/(tabs)' as RelativePathString);
     } catch (error: any) {
       const errorMessage =
         error?.message || 'Login failed. Please try again.';

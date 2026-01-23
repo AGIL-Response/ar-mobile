@@ -28,18 +28,16 @@ export default function ChangePasswordScreen() {
 
   const realm = authState.selectedTenant?.name || '';
 
-  const { startChangePasswordFlow, isReady, isProcessing } = useOAuthFlow({
+  const {
+    startChangePasswordFlow,
+    isReady,
+    isProcessing,
+  } = useOAuthFlow({
     realm,
     onSuccess: () => {
       Alert.alert(
         'Password Updated',
         'Your password has been changed successfully.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.back(),
-          },
-        ]
       );
     },
     onError: (error) => {
@@ -109,9 +107,9 @@ export default function ChangePasswordScreen() {
               }}
             >
               • You&apos;ll be taken to a secure authentication page{'\n'}
-              • Enter your current password and new password{'\n'}
+              • Enter your new password and confirmation{'\n'}
               • Your password must meet security requirements{'\n'}
-              • You&apos;ll be redirected back after completion
+              • You&apos;ll be redirected back to home screen after completion
             </Text>
           </View>
 

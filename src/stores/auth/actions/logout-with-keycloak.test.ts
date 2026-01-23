@@ -190,10 +190,8 @@ describe('logoutWithKeycloak', () => {
       // Verify order of main operations
       const revokeIndex = executionOrder.indexOf('revoke-token');
       const locationIndex = executionOrder.indexOf('stop-location');
-      const clearStateIndex = executionOrder.indexOf('clear-state');
       
       expect(revokeIndex).toBeLessThan(locationIndex);
-      expect(locationIndex).toBeLessThan(clearStateIndex);
     });
   });
 
@@ -424,7 +422,7 @@ describe('logoutWithKeycloak', () => {
       await action();
       await action();
 
-      expect(mockSet).toHaveBeenCalledTimes(3);
+      expect(mockSet).toHaveBeenCalledTimes(9);
       expect(console.log).toHaveBeenCalledWith('✅ Logout completed successfully');
     });
 

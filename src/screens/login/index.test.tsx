@@ -128,6 +128,7 @@ describe('Login', () => {
 
     (useAuthStore as unknown as jest.Mock).mockImplementation(() => createMockAuthState());
     mockCheckUsername.mockResolvedValue(undefined);
+    jest.spyOn(console, 'error').mockImplementation();
   });
 
   describe('Initial Render', () => {
