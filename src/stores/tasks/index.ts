@@ -166,19 +166,14 @@ const tasksStore: StateCreator<TasksState> = (set, get) => ({
       }
 
       try {
-        // Send all existing data, only change status
-        await taskApi.updateTask(taskId, {
+        // Backend only accepts updatedAt and status when starting/completing tasks
+        const response = await taskApi.updateTask(taskId, {
           updatedAt: currentTask.updatedAt || new Date().toISOString(),
-          name: currentTask.name,
-          description: currentTask.description,
-          type: currentTask.type,
-          priority: currentTask.priority,
-          status, // Only this changes
-          startTime: currentTask.startTime,
-          deadline: currentTask.deadline,
-          incidentId: currentTask.incidentId || undefined,
+          status,
         });
-        
+
+        const newUpdatedAt = response?.data?.updatedAt || currentTask?.updatedAt;
+
         set((state: TasksState) => {
           // Update task in list - only change status, keep other data
           const taskIndex = state.tasks.findIndex((task) => task.id === taskId);
@@ -189,6 +184,7 @@ const tasksStore: StateCreator<TasksState> = (set, get) => ({
           // Update selected task if it's the same one - only change status
           if (state.selectedTask?.id === taskId) {
             state.selectedTask.status = status;
+            state.selectedTask.updatedAt = newUpdatedAt;
           }
         });
         
