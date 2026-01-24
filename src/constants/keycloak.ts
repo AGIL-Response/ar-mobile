@@ -9,7 +9,7 @@ const env = Constants.expoConfig?.extra?.env || {};
 
 export const KEYCLOAK_CONFIG = {
   host: env.KEYCLOAK_HOST || 'https://dev-auth.agilres.net', 
-  clientId: 'ar_app',
+  clientId: env.KEYCLOAK_CLIENT_ID || 'ar_app',
   scopes: ['openid'],
 
   /**

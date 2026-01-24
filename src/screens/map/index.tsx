@@ -27,8 +27,9 @@ import { Pressable } from 'react-native-gesture-handler';
 import type { IncidentCoordinate, UserCoordinate } from '@/screens/map/types';
 import { useAuthStore } from '@/stores/auth';
 import { useLocationStore } from '@/stores/location';
+import Constants from 'expo-constants';
 
-Mapbox.setAccessToken('sk.eyJ1IjoibGFpem4iLCJhIjoiY21lamxqZzh4MDQ0bjJrcXZ0dWRiZHAzNyJ9.NU6sHZrIkDuDpHCEManSJQ');
+Mapbox.setAccessToken(Constants.expoConfig?.extra?.env?.MAPBOX_DOWNLOADS_TOKEN);
 
 function MapView() {
   const theme = useTheme();
