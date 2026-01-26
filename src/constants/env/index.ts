@@ -9,15 +9,14 @@ const envVars = (Constants.expoConfig?.extra?.env || {}) as EnvVars;
  */
 export const REQUIRED_ENV_VARS: string[] = [
   'API_HOST',
-  'KEYCLOAK_HOST',
-  'KEYCLOAK_CLIENT_ID',
-  'APP_VARIANT',
-  'PACKAGE_NAME',
   'APP_NAME',
-  'BASE_URL',
-  'GOOGLE_SERVICES_PLIST',
+  'APP_VARIANT',
   'GOOGLE_SERVICES_JSON',
+  'GOOGLE_SERVICES_PLIST',
+  'KEYCLOAK_CLIENT_ID',
+  'KEYCLOAK_HOST',
   'MAPBOX_DOWNLOADS_TOKEN',
+  'PACKAGE_NAME'
 ];
 
 /**
