@@ -23,10 +23,10 @@ export function chatAttachmentToAttachmentData(attachmentData: ChatAttachment, m
   // Then check if url is a local file URI (file://, content://, or starts with /)
   // React Native file URIs can be: file://, content:// (Android), or absolute paths
   const url = attachmentData.url || '';
-  const isLocalPath = 
+  const isLocalPath =
     url.length > 0 && (
-      url.startsWith('file://') || 
-      url.startsWith('content://') || 
+      url.startsWith('file://') ||
+      url.startsWith('content://') ||
       url.startsWith('/') ||
       (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('data:'))
     );
@@ -48,7 +48,7 @@ export function chatAttachmentToAttachmentData(attachmentData: ChatAttachment, m
   const finalLocalPath = attachmentData.localPath || (isLocalPath ? attachmentData.url : undefined);
 
   // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'attachment/transformer.ts:48',message:'chatAttachmentToAttachmentData - INPUT',data:{attachmentId,messageId:validMessageId,filename:attachmentData.filename,inputUrl:attachmentData.url?.substring(0,50),inputLocalPath:attachmentData.localPath?.substring(0,50),hasInputUrl:!!attachmentData.url,hasInputLocalPath:!!attachmentData.localPath},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'attachment/transformer.ts:48', message: 'chatAttachmentToAttachmentData - INPUT', data: { attachmentId, messageId: validMessageId, filename: attachmentData.filename, inputUrl: attachmentData.url?.substring(0, 50), inputLocalPath: attachmentData.localPath?.substring(0, 50), hasInputUrl: !!attachmentData.url, hasInputLocalPath: !!attachmentData.localPath }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'A' }) }).catch(() => { });
   // #endregion
 
   const result = {
@@ -64,8 +64,18 @@ export function chatAttachmentToAttachmentData(attachmentData: ChatAttachment, m
     duration: attachmentData.duration,
   };
 
+  // Log full URLs to verify they're not being truncated
+  console.log('[AttachmentTransformer] Saving attachment to DB:', {
+    attachmentId,
+    filename: attachmentData.filename,
+    url: result.url,
+    urlLength: result.url?.length,
+    thumbnail: result.thumbnail,
+    thumbnailLength: result.thumbnail?.length,
+  });
+
   // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'attachment/transformer.ts:62',message:'chatAttachmentToAttachmentData - OUTPUT',data:{attachmentId,messageId:validMessageId,filename:attachmentData.filename,outputUrl:result.url?.substring(0,50),outputLocalPath:result.localPath?.substring(0,50),hasOutputUrl:!!result.url,hasOutputLocalPath:!!result.localPath,isLocalPath},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'attachment/transformer.ts:62', message: 'chatAttachmentToAttachmentData - OUTPUT', data: { attachmentId, messageId: validMessageId, filename: attachmentData.filename, outputUrl: result.url?.substring(0, 50), outputLocalPath: result.localPath?.substring(0, 50), hasOutputUrl: !!result.url, hasOutputLocalPath: !!result.localPath, isLocalPath }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'A' }) }).catch(() => { });
   // #endregion
 
   return result;
@@ -76,15 +86,15 @@ export function chatAttachmentToAttachmentData(attachmentData: ChatAttachment, m
  */
 export function attachmentToChatAttachment(attachment: Attachment): ChatAttachment {
   // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'attachment/transformer.ts:67',message:'attachmentToChatAttachment - INPUT',data:{attachmentId:attachment.attachmentId,filename:attachment.filename,dbUrl:attachment.url?.substring(0,50),dbLocalPath:attachment.localPath?.substring(0,50),hasDbUrl:!!attachment.url,hasDbLocalPath:!!attachment.localPath},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+  fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'attachment/transformer.ts:67', message: 'attachmentToChatAttachment - INPUT', data: { attachmentId: attachment.attachmentId, filename: attachment.filename, dbUrl: attachment.url?.substring(0, 50), dbLocalPath: attachment.localPath?.substring(0, 50), hasDbUrl: !!attachment.url, hasDbLocalPath: !!attachment.localPath }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'B' }) }).catch(() => { });
   // #endregion
 
   // Use localPath if url is empty (file hasn't been uploaded to server yet)
   // Empty string is falsy, so we need to check explicitly
-  const url = (attachment.url && attachment.url.trim() !== '') 
-    ? attachment.url 
+  const url = (attachment.url && attachment.url.trim() !== '')
+    ? attachment.url
     : (attachment.localPath || '');
-  
+
   // Debug logging
   if (!attachment.url || attachment.url.trim() === '') {
     if (attachment.localPath) {
@@ -104,7 +114,7 @@ export function attachmentToChatAttachment(attachment: Attachment): ChatAttachme
       });
     }
   }
-  
+
   const result = {
     id: attachment.attachmentId,
     filename: attachment.filename,
@@ -114,10 +124,11 @@ export function attachmentToChatAttachment(attachment: Attachment): ChatAttachme
     uploadedAt: attachment.uploadedAt,
     thumbnail: attachment.thumbnail,
     duration: attachment.duration,
+    localPath: attachment.localPath,
   };
 
   // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'attachment/transformer.ts:104',message:'attachmentToChatAttachment - OUTPUT',data:{attachmentId:attachment.attachmentId,filename:attachment.filename,outputUrl:result.url?.substring(0,50),hasOutputUrl:!!result.url,outputUrlLength:result.url?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+  fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'attachment/transformer.ts:104', message: 'attachmentToChatAttachment - OUTPUT', data: { attachmentId: attachment.attachmentId, filename: attachment.filename, outputUrl: result.url?.substring(0, 50), hasOutputUrl: !!result.url, outputUrlLength: result.url?.length || 0 }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'B' }) }).catch(() => { });
   // #endregion
 
   return result;

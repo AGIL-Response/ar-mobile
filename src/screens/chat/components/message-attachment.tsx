@@ -4,12 +4,14 @@
  */
 
 import React from 'react';
-import { View, TouchableOpacity, Image, Dimensions, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, Dimensions, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { Icon, Text } from '@/components';
 import { useTheme } from '@/theme';
 import { getMediaType } from '@/utils/media';
 import type { ChatAttachment } from '@/services/chat';
 import { AudioAttachment } from './audio-attachment';
+import { clampRGBA } from 'react-native-reanimated/lib/typescript/Colors';
 
 export interface MessageAttachmentProps {
   attachments: ChatAttachment[];
@@ -36,49 +38,79 @@ const IMAGE_ASPECT_RATIO = 0.75;
  * Note: For videos, only thumbnails can be used as image sources, not the video file itself
  * Similar to audio-attachment.tsx which uses attachment.url directly
  */
-function getValidUri(attachment: ChatAttachment, isVideo: boolean = false): string | null {
+function getValidUri(attachment: ChatAttachment, isVideo: boolean = false, version: number = 1): string | null {
   const trimmedThumbnail = attachment.thumbnail?.trim();
   const trimmedUrl = attachment.url?.trim();
 
+  let uri: string | null = null;
+
   // Always prioritize thumbnail if available
   if (trimmedThumbnail && trimmedThumbnail.length > 0) {
-    return trimmedThumbnail;
+    uri = trimmedThumbnail;
   }
-
-  // For videos, don't use the video file URL as an image source (Image component can't display videos)
-  // Only use HTTP/HTTPS URLs that are actual image thumbnails
-  if (isVideo) {
-    // Only return URL if it's an HTTP/HTTPS URL (likely a thumbnail from server)
+  // For videos, don't use the video file URL as an image source
+  else if (isVideo) {
     if (trimmedUrl && (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://'))) {
-      return trimmedUrl;
+      uri = trimmedUrl;
     }
-    return null;
+  }
+  // For images/files, use URL if available
+  else if (trimmedUrl && trimmedUrl.length > 0) {
+    uri = trimmedUrl;
   }
 
-  // For images and other attachments, use URL if available
-  // The url field should contain either the server URL or the local path (converted from localPath by attachmentToChatAttachment)
-  if (trimmedUrl && trimmedUrl.length > 0) {
-    return trimmedUrl;
+  // Append cache buster for remote URLs to fix "LOADING" cache issue
+  if (uri && (uri.startsWith('http://') || uri.startsWith('https://'))) {
+    const separator = uri.includes('?') ? '&' : '?';
+    return `${uri}${separator}v=${version}`;
   }
 
-  return null;
+  return uri;
 }
 
 /**
- * Image attachment renderer
- * Similar to audio-attachment.tsx which uses attachment.url directly
+ * Image attachment renderer with auto-refresh for loading placeholders
+ * Backend serves a "LOADING" placeholder image while processing thumbnails
+ * We force re-renders by updating the version parameter to check if actual image is ready
  */
 function ImageAttachment({ attachment, theme }: { attachment: ChatAttachment; theme: any }) {
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'message-attachment.tsx:79', message: 'ImageAttachment - INPUT', data: { attachmentId: attachment.id, filename: attachment.filename, inputUrl: attachment.url?.substring(0, 50), inputThumbnail: attachment.thumbnail?.substring(0, 50), hasInputUrl: !!attachment.url, hasInputThumbnail: !!attachment.thumbnail, inputUrlLength: attachment.url?.length || 0 }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'D' }) }).catch(() => { });
-  // #endregion
+  // Track version for cache-busting
+  const [version, setVersion] = React.useState(() => {
+    // Initial version based on upload time
+    if (!attachment.uploadedAt) return Date.now();
+    const uploadTime = new Date(attachment.uploadedAt).getTime();
+    const timeSinceUpload = Date.now() - uploadTime;
+    // If uploaded recently (< 10 mins), use current timestamp
+    return timeSinceUpload < 10 * 60 * 1000 ? Date.now() : 1;
+  });
 
-  const imageUri = getValidUri(attachment);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [refreshCount, setRefreshCount] = React.useState(0);
+  const MAX_REFRESHES = 10; // 10 attempts
+  const REFRESH_INTERVAL = 500; // 500ms
 
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'message-attachment.tsx:81', message: 'ImageAttachment - getValidUri result', data: { attachmentId: attachment.id, filename: attachment.filename, imageUri: imageUri || null, imageUriLength: imageUri?.length || 0, hasImageUri: !!imageUri, isFileUri: imageUri?.startsWith('file://') || false, isHttpUri: imageUri?.startsWith('http') || false }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'D' }) }).catch(() => { });
-  // #endregion
+  // Auto-refresh mechanism to detect when LOADING placeholder is replaced
+  React.useEffect(() => {
+    // Only auto-refresh for recent attachments
+    if (!attachment.uploadedAt) return;
 
+    const uploadTime = new Date(attachment.uploadedAt).getTime();
+    const timeSinceUpload = Date.now() - uploadTime;
+
+    // Only refresh if uploaded within last 10 minutes and still loading
+    if (timeSinceUpload > 10 * 60 * 1000) return;
+    if (refreshCount >= MAX_REFRESHES) return;
+
+    const timer = setTimeout(() => {
+      console.log(`🔄 [ImageAttachment] Auto-refresh attempt ${refreshCount + 1}/${MAX_REFRESHES} for ${attachment.filename}`);
+      setVersion(Date.now());
+      setRefreshCount(prev => prev + 1);
+    }, REFRESH_INTERVAL);
+
+    return () => clearTimeout(timer);
+  }, [attachment.uploadedAt, attachment.filename, refreshCount]);
+
+  const imageUri = getValidUri(attachment, false, version);
 
   return (
     <View style={[styles.mediaContainer, { backgroundColor: theme.colors.background.secondary }]}>
@@ -86,7 +118,22 @@ function ImageAttachment({ attachment, theme }: { attachment: ChatAttachment; th
         <Image
           source={{ uri: imageUri }}
           style={styles.mediaImage}
-          resizeMode="cover"
+          contentFit="cover"
+          transition={200}
+          cachePolicy="none"
+          onLoadStart={() => setIsLoading(true)}
+          onLoad={() => {
+            setIsLoading(false);
+            // Stop refreshing once image loads successfully
+            if (refreshCount < MAX_REFRESHES) {
+              console.log(`✅ [ImageAttachment] Image loaded successfully after ${refreshCount} refreshes`);
+              setRefreshCount(MAX_REFRESHES); // Stop further refreshes
+            }
+          }}
+          onError={(error) => {
+            console.warn(`❌ [ImageAttachment] Image load error:`, error);
+            setIsLoading(false);
+          }}
         />
       ) : (
         <View style={[styles.mediaImage, styles.emptyMediaContainer]}>
@@ -114,7 +161,8 @@ function VideoAttachment({ attachment, theme }: { attachment: ChatAttachment; th
         <Image
           source={{ uri: thumbnailUri }}
           style={styles.mediaImage}
-          resizeMode="cover"
+          contentFit="cover"
+          cachePolicy="none"
         />
       ) : (
         // Show placeholder background when no thumbnail is available
@@ -170,7 +218,6 @@ export function MessageAttachment({
     <View style={styles.container}>
       {attachments.map((attachment, index) => {
         const mediaType = getMediaType(attachment.filename, attachment.mimeType);
-        console.log('mediaType', attachment, mediaType);
         if (mediaType === 'audio') {
           return (
             <AudioAttachment

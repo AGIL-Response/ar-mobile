@@ -143,16 +143,46 @@ export function transformMessageToChatMessage(message: any, roomId: string): Cha
           return undefined;
         }
 
-        const transformed = attachmentsArray.map((a: any) => ({
-          id: ensureStringId(a.id || a.fileId || a.key || '', 'attachment.id'),
-          filename: a.filename || a.name || a.key || 'file',
-          url: a.url || a.key || '',
-          size: a.size || 0,
-          mimeType: a.mimeType || a.contentType || a.type || 'application/octet-stream',
-          uploadedAt: a.uploadedAt ? new Date(a.uploadedAt) : new Date(),
-          thumbnail: a.thumbnail || undefined,
-          duration: a.duration ? String(a.duration) : undefined, // Ensure duration is a string
-        }));
+        // Debug logging to see what fields the server actually sends
+        if (attachmentsArray.length > 0) {
+          console.log('[transformMessageToChatMessage] Raw attachment from websocket:', {
+            hasUrl: !!attachmentsArray[0].url,
+            hasKey: !!attachmentsArray[0].key,
+            hasThumbnail: !!attachmentsArray[0].thumbnail,
+            url: attachmentsArray[0].url,
+            key: attachmentsArray[0].key,
+            thumbnail: attachmentsArray[0].thumbnail,
+            allFields: Object.keys(attachmentsArray[0]),
+          });
+        }
+
+        const transformed = attachmentsArray.map((a: any) => {
+          // Construct proper URL - prioritize existing URL, then construct from key
+          // The server may send the S3 URL in a.url or we may need to use a.key
+          const url = a.url || a.key || '';
+
+          const attachment = {
+            id: ensureStringId(a.id || a.fileId || a.key || '', 'attachment.id'),
+            filename: a.filename || a.name || a.key || 'file',
+            url,
+            size: a.size || 0,
+            mimeType: a.mimeType || a.contentType || a.type || 'application/octet-stream',
+            uploadedAt: a.uploadedAt ? new Date(a.uploadedAt) : new Date(),
+            thumbnail: a.thumbnail || undefined,
+            duration: a.duration ? String(a.duration) : undefined, // Ensure duration is a string
+          };
+
+          console.log('[transformMessageToChatMessage] Transformed attachment:', {
+            id: attachment.id,
+            filename: attachment.filename,
+            url: attachment.url, // Show full URL
+            hasUrl: !!attachment.url,
+            thumbnail: attachment.thumbnail, // Show full thumbnail URL
+            hasThumbnail: !!attachment.thumbnail,
+          });
+
+          return attachment;
+        });
         return transformed;
       })(),
       timestamp: message.createdAt ? new Date(message.createdAt) : new Date(),

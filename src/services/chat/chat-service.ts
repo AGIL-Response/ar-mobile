@@ -34,17 +34,17 @@ export class ChatService {
             .fetch();
 
           if (messages.length > 0) {
-            const localMessage = messages[0];
+            const localMessage = messages[0] as any; // Cast to access messageId property
             const oldMessageId = localMessage.messageId;
             const newMessageId = typeof message.id === 'string' ? message.id : String(message.id);
-            
+
             // Update message ID and status in the message data
             // saveMessage will handle the actual DB write, avoiding duplicate writes
             if (oldMessageId !== newMessageId) {
               message.id = newMessageId;
             }
             message.status = 'sent';
-            
+
             // Clear timeout if exists
             const timeout = this.sendingMessageTimeouts.get(message.clientId);
             if (timeout) {

@@ -42,27 +42,27 @@ export function buildLocalMessage(options: MessageBuilderOptions): ChatMessage {
 
   // Build attachments with local file paths for immediate preview
   // Priority: use local file URI from attachmentsToSend, otherwise use localAttachments URL
-  const attachments: ChatAttachment[] | undefined = 
+  const attachments: ChatAttachment[] | undefined =
     attachmentsToSend.length > 0
       ? attachmentsToSend.map((file, idx) => {
-          const localAtt = localAttachments[idx];
-          const attachment = {
-            id: localAtt?.id || generateUUID(), // Use uploaded fileId if available, otherwise generate UUID
-            filename: file.name || localAtt?.filename || 'file',
-            url: file.uri || localAtt?.url || '', // Use local file URI for immediate preview
-            size: file.size || localAtt?.size || 0,
-            mimeType: file.mimeType || getMimeType(file.name) || localAtt?.mimeType || 'application/octet-stream',
-            uploadedAt: localAtt?.uploadedAt || new Date(),
-            thumbnail: localAtt?.thumbnail,
-            // Priority: use duration from file (for audio recordings), then localAtt, then undefined
-            duration: file.duration || localAtt?.duration,
-          };
-          
-          return attachment;
-        })
+        const localAtt = localAttachments[idx];
+        const attachment = {
+          id: localAtt?.id || generateUUID(), // Use uploaded fileId if available, otherwise generate UUID
+          filename: file.name || localAtt?.filename || 'file',
+          url: file.uri || localAtt?.url || '', // Use local file URI for immediate preview
+          size: file.size || localAtt?.size || 0,
+          mimeType: file.mimeType || getMimeType(file.name) || localAtt?.mimeType || 'application/octet-stream',
+          uploadedAt: localAtt?.uploadedAt || new Date(),
+          thumbnail: localAtt?.thumbnail || ((file.type === 'image' || file.mimeType?.startsWith('image/')) ? file.uri : undefined),
+          // Priority: use duration from file (for audio recordings), then localAtt, then undefined
+          duration: file.duration || localAtt?.duration,
+        };
+
+        return attachment;
+      })
       : localAttachments.length > 0
-      ? localAttachments
-      : undefined;
+        ? localAttachments
+        : undefined;
 
   return {
     id: messageId,
@@ -91,10 +91,10 @@ export function determineMessageType(
   attachments: MediaFile[]
 ): 'text' | 'file' | 'image' {
   if (attachments.length === 0) return 'text';
-  
+
   const firstAttachment = attachments[0];
   const mediaType = firstAttachment.type;
-  
+
   return mediaType === 'image' || mediaType === 'video' ? 'image' : 'file';
 }
 
