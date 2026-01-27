@@ -59,6 +59,7 @@ export interface ChatAttachment {
   uploadedAt: Date;
   duration?: string; // Duration in seconds as string (e.g., "4.226032")
   thumbnail?: string; // Thumbnail URL for images
+  localPath?: string; // Local path to the file (e.g., file://...)
 }
 
 export interface ChatMessageReaction {

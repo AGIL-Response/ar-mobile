@@ -121,9 +121,6 @@ export function chatMessageToMessageData(messageData: ChatMessage, roomId: strin
  * Convert WatermelonDB Message to ChatMessage
  */
 export async function messageToChatMessage(message: Message, getUserFn: (userId: string) => Promise<ChatUser | null>): Promise<ChatMessage> {
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'message/transformer.ts:123', message: 'messageToChatMessage - START', data: { messageId: message.messageId, clientId: message.clientId, serverUpdatedAt: message.serverUpdatedAt }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'F' }) }).catch(() => { });
-  // #endregion
 
   // Query attachments directly by message_id field (not using the broken relation)
   // The relation tries to match against WatermelonDB's internal id, but we store business IDs
@@ -131,10 +128,6 @@ export async function messageToChatMessage(message: Message, getUserFn: (userId:
     .get<Attachment>('attachments')
     .query(Q.where('message_id', message.messageId))
     .fetch();
-
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'message/transformer.ts:129', message: 'messageToChatMessage - attachments queried', data: { messageId: message.messageId, attachmentCount: rawAttachments.length, attachmentIds: rawAttachments.map(a => a.attachmentId), hasLocalPaths: rawAttachments.some(a => (a as any).localPath) }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'F' }) }).catch(() => { });
-  // #endregion
 
   // If no attachments found by messageId, try multiple strategies:
   // 1. Retry query with the same messageId (in case attachments were just saved)
@@ -272,9 +265,6 @@ export async function messageToChatMessage(message: Message, getUserFn: (userId:
 
   // Transform attachments, prioritizing localPath if url is empty
   const transformedAttachments = attachments.map((a) => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'message/transformer.ts:266', message: 'messageToChatMessage - attachment INPUT', data: { messageId: message.messageId, attachmentId: a.attachmentId, filename: a.filename, dbUrl: a.url?.substring(0, 50), dbLocalPath: a.localPath?.substring(0, 50), hasDbUrl: !!a.url, hasDbLocalPath: !!a.localPath }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'B' }) }).catch(() => { });
-    // #endregion
 
     // Use localPath if url is empty or whitespace (file hasn't been uploaded to server yet)
     // Empty strings are falsy, so this should work, but be explicit about it
@@ -310,11 +300,8 @@ export async function messageToChatMessage(message: Message, getUserFn: (userId:
       uploadedAt: a.uploadedAt,
       thumbnail: a.thumbnail,
       duration: a.duration,
+      localPath: a.localPath,
     };
-
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'message/transformer.ts:302', message: 'messageToChatMessage - attachment OUTPUT', data: { messageId: message.messageId, attachmentId: a.attachmentId, filename: a.filename, outputUrl: result.url?.substring(0, 50), hasOutputUrl: !!result.url, outputUrlLength: result.url?.length || 0 }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'B' }) }).catch(() => { });
-    // #endregion
 
     return result;
   });

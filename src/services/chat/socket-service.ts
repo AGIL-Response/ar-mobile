@@ -137,6 +137,16 @@ export class ChatSocketService {
         return;
       }
 
+      // Debug logging: log raw websocket message before transformation
+      console.log('🔍 [SocketService] Raw websocket message:new data:', {
+        messageId: messageData.id,
+        hasAttachments: !!messageData.attachments,
+        hasFiles: !!messageData.files,
+        attachmentsLength: messageData.attachments?.length || 0,
+        filesLength: messageData.files?.length || 0,
+        firstAttachment: messageData.attachments?.[0] || messageData.files?.[0],
+      });
+
       try {
         const transformedMessage = transformMessageToChatMessage(messageData, messageData.conversationId || messageData.roomId);
 
