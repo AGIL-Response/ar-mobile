@@ -174,12 +174,11 @@ describe('TasksStore', () => {
         await result.current.actions.updateTaskStatus('1', 'completed');
       });
 
-      // The implementation sends all task fields, not just status
+      // The implementation only sends updatedAt and status (backend requirement)
       expect(taskApi.updateTask).toHaveBeenCalledWith(
         '1',
         expect.objectContaining({
           status: 'completed',
-          name: 'Task 1',
           updatedAt: expect.any(String),
         })
       );

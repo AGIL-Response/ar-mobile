@@ -15,6 +15,8 @@ interface UseOAuthFlowProps {
   username?: string;
   onSuccess: (tokenResponse: AuthSession.TokenResponse) => void;
   onError: (error: Error) => void;
+  /** Optional callback to force logout. Called when logout is needed (e.g., after password change) */
+  onLogout?: () => Promise<void> | void;
 }
 
 export function useOAuthFlow({
@@ -22,6 +24,7 @@ export function useOAuthFlow({
   username,
   onSuccess,
   onError,
+  onLogout,
 }: UseOAuthFlowProps) {
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -144,6 +147,14 @@ export function useOAuthFlow({
 
       const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
       if (result.type === 'success') {
+        if (onLogout) {
+          try {
+            await onLogout();
+            console.log('✅ Logged out after password change');
+          } catch (logoutError) {
+            console.warn('⚠️ Error during logout after password change:', logoutError);
+          }
+        }
         onSuccess({} as AuthSession.TokenResponse);
         return true;
       } else if (result.type === 'cancel' || result.type === 'dismiss') {
@@ -152,6 +163,14 @@ export function useOAuthFlow({
       }
       return false;
     } catch (error) {
+      if (onLogout) {
+        try {
+          await onLogout();
+          console.log('✅ Logged out after password change error');
+        } catch (logoutError) {
+          console.warn('⚠️ Error during logout after password change error:', logoutError);
+        }
+      }
       onError(error as Error);
       return false;
     } 

@@ -156,7 +156,8 @@ describe('ChangePasswordScreen', () => {
       
       expect(mockAlert).toHaveBeenCalledWith(
         'Password Updated',
-        'Your password has been changed successfully.',
+        'Your password has been changed successfully. Please log in again with your new password.',
+        expect.any(Array)
       );
     });
 

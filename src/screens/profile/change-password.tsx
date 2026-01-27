@@ -3,7 +3,7 @@
  * Allows users to update their account password using OAuth
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 
 import { useRouter } from 'expo-router';
 import { Alert, ScrollView } from 'react-native';
@@ -37,7 +37,13 @@ export default function ChangePasswordScreen() {
     onSuccess: () => {
       Alert.alert(
         'Password Updated',
-        'Your password has been changed successfully.',
+        'Your password has been changed successfully. Please log in again with your new password.',
+        [
+          {
+            text: 'OK',
+            onPress: () => {},
+          },
+        ]
       );
     },
     onError: (error) => {
@@ -46,6 +52,10 @@ export default function ChangePasswordScreen() {
         'Error',
         error.message || 'Failed to change password. Please try again.'
       );
+    },
+    // Force logout after password change to ensure user re-authenticates
+    onLogout: async () => {
+      await authState.actions.logout();
     },
   });
 

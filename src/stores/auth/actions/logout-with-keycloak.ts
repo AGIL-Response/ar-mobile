@@ -73,6 +73,7 @@ const logoutWithKeycloak = (set: any, get: any) => async () => {
     console.log('✅ Logout completed successfully');
   } finally {
     set((state: AuthState) => {
+      state.isLoading = false;
       state.isLoggingOut = false;
     });
   }

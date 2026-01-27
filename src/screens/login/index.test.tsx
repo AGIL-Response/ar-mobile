@@ -33,22 +33,22 @@ jest.mock('./components/oauth-step', () => {
   // eslint-disable-next-line
   const React = require('react');
   return {
-    OAuthStep: ({ username, onSubmit, onBack, isLoading, isReady, isProcessing, selectedTenant }: any) =>
+    OAuthStep: ({ username, onBack, onSuccess, onError }: any) =>
       React.createElement(
         'View',
         { testID: 'oauth-step' },
         React.createElement('Text', { testID: 'oauth-username' }, username),
-        React.createElement('Text', { testID: 'oauth-loading' }, isLoading ? 'Loading' : 'Not Loading'),
-        React.createElement('Text', { testID: 'oauth-ready' }, isReady ? 'Ready' : 'Not Ready'),
-        React.createElement('Text', { testID: 'oauth-processing' }, isProcessing ? 'Processing' : 'Not Processing'),
-        selectedTenant && React.createElement('Text', { testID: 'oauth-tenant' }, selectedTenant.name),
-        React.createElement('TouchableOpacity', {
-          testID: 'oauth-submit',
-          onPress: onSubmit,
-        }),
         React.createElement('TouchableOpacity', {
           testID: 'oauth-back',
           onPress: onBack,
+        }),
+        React.createElement('TouchableOpacity', {
+          testID: 'oauth-success-trigger',
+          onPress: () => onSuccess?.({ accessToken: 'mock-token' }),
+        }),
+        React.createElement('TouchableOpacity', {
+          testID: 'oauth-error-trigger',
+          onPress: () => onError?.(new Error('Test error')),
         })
       ),
   };
@@ -61,13 +61,13 @@ jest.mock('./hooks/use-login-handlers', () => {
     useLoginHandlers: jest.fn((props: any) => ({
       handleUsernameSubmit: jest.fn(async () => {
         await props.authState.actions.checkUsername?.(props.username);
-        props.setStep('password');
+        props.setStep?.('password');
       }),
       handleOAuthSuccess: jest.fn(),
       handleOAuthError: jest.fn(),
       handleBackToUsername: jest.fn(() => {
-        props.setStep('username');
-        props.setUsername('');
+        props.setStep?.('username');
+        props.setUsername?.('');
         props.authState.actions.clearUsernameError?.();
         props.authState.actions.setSelectedTenant?.(null);
       }),
@@ -126,7 +126,10 @@ describe('Login', () => {
       replace: jest.fn(),
     }));
 
-    (useAuthStore as unknown as jest.Mock).mockImplementation(() => createMockAuthState());
+    (useAuthStore as unknown as jest.Mock).mockImplementation((selector: any) => {
+      const state = createMockAuthState();
+      return typeof selector === 'function' ? selector(state) : state;
+    });
     mockCheckUsername.mockResolvedValue(undefined);
     jest.spyOn(console, 'error').mockImplementation();
   });
@@ -158,7 +161,6 @@ describe('Login', () => {
       render(<Login />);
       const usernameStep = screen.getByTestId('username-step');
       expect(usernameStep).toBeTruthy();
-      // In dev mode, username should be pre-filled
       const usernameValue = screen.getByTestId('username-value');
       expect(usernameValue.props.children).toBe('org7r1');
 
@@ -182,11 +184,10 @@ describe('Login', () => {
 
   describe('Step Transition', () => {
     it('stays on username step when tenant is not selected', () => {
-      (useAuthStore as unknown as jest.Mock).mockImplementation(() =>
-        createMockAuthState({
-          selectedTenant: null,
-        })
-      );
+      (useAuthStore as unknown as jest.Mock).mockImplementation((selector: any) => {
+        const state = createMockAuthState({ selectedTenant: null });
+        return typeof selector === 'function' ? selector(state) : state;
+      });
 
       render(<Login />);
       expect(screen.getByTestId('username-step')).toBeTruthy();
@@ -196,12 +197,13 @@ describe('Login', () => {
 
   describe('Username Step Rendering', () => {
     it('passes correct props to UsernameStep component', () => {
-      (useAuthStore as unknown as jest.Mock).mockImplementation(() =>
-        createMockAuthState({
+      (useAuthStore as unknown as jest.Mock).mockImplementation((selector: any) => {
+        const state = createMockAuthState({
           isCheckingUsername: true,
           usernameError: 'Username not found',
-        })
-      );
+        });
+        return typeof selector === 'function' ? selector(state) : state;
+      });
 
       render(<Login />);
       const usernameStep = screen.getByTestId('username-step');
@@ -219,24 +221,26 @@ describe('Login', () => {
 
   describe('OAuth Step Rendering', () => {
     it('renders oauth step when step is password and tenant is selected', async () => {
-      (useAuthStore as unknown as jest.Mock).mockImplementation(() =>
-        createMockAuthState({
+      mockCheckUsername.mockResolvedValue('test-realm');
+      (useAuthStore as unknown as jest.Mock).mockImplementation((selector: any) => {
+        const state = createMockAuthState({
           selectedTenant: {
             id: 'tenant-1',
             name: 'Test Tenant',
             displayName: 'Test Tenant Display',
           },
-        })
-      );
+        });
+        return typeof selector === 'function' ? selector(state) : state;
+      });
 
-      render(<Login />);
-      
-      // Initially shows username step
+      const { rerender } = render(<Login />);
+
       expect(screen.getByTestId('username-step')).toBeTruthy();
-      
-      // Simulate username submit by triggering the step change
+
       const usernameSubmit = screen.getByTestId('username-submit');
       await usernameSubmit.props.onPress();
+
+      rerender(<Login />);
 
       await waitFor(() => {
         expect(screen.getByTestId('oauth-step')).toBeTruthy();
@@ -244,46 +248,32 @@ describe('Login', () => {
     });
 
     it('passes correct props to OAuthStep component', async () => {
-      (useAuthStore as unknown as jest.Mock).mockImplementation(() =>
-        createMockAuthState({
-          selectedTenant: {
-            id: 'tenant-1',
-            name: 'Test Tenant',
-            displayName: 'Test Tenant Display',
-          },
-          isLoading: true,
-        })
-      );
-
-      render(<Login />);
+      const { rerender } = render(<Login />);
       
-      // Trigger username submit to change step
+      // Start on username step
+      expect(screen.getByTestId('username-step')).toBeTruthy();
+      
+      // Submit username to move to OAuth step
       const usernameSubmit = screen.getByTestId('username-submit');
       await usernameSubmit.props.onPress();
+      
+      rerender(<Login />);
 
       await waitFor(() => {
-        const oauthStep = screen.getByTestId('oauth-step');
-        expect(oauthStep).toBeTruthy();
-        expect(screen.getByTestId('oauth-loading').props.children).toBe('Loading');
-        expect(screen.getByTestId('oauth-tenant').props.children).toBe('Test Tenant');
+        expect(screen.getByTestId('oauth-step')).toBeTruthy();
+        expect(screen.getByTestId('oauth-username')).toBeTruthy();
+        expect(screen.getByTestId('oauth-back')).toBeTruthy();
       });
     });
 
     it('displays username in oauth step', async () => {
-      (useAuthStore as unknown as jest.Mock).mockImplementation(() =>
-        createMockAuthState({
-          selectedTenant: {
-            id: 'tenant-1',
-            name: 'Test Tenant',
-          },
-        })
-      );
-
-      render(<Login />);
+      const { rerender } = render(<Login />);
       
-      // Trigger username submit to change step
+      // Submit username to move to OAuth step
       const usernameSubmit = screen.getByTestId('username-submit');
       await usernameSubmit.props.onPress();
+      
+      rerender(<Login />);
 
       await waitFor(() => {
         expect(screen.getByTestId('oauth-username')).toBeTruthy();
@@ -340,25 +330,26 @@ describe('Login', () => {
 
   describe('Step Behavior', () => {
     it('shows oauth step when username is submitted successfully', async () => {
-      (useAuthStore as unknown as jest.Mock).mockImplementation(() =>
-        createMockAuthState({
+      mockCheckUsername.mockResolvedValue('test-realm');
+      (useAuthStore as unknown as jest.Mock).mockImplementation((selector: any) => {
+        const state = createMockAuthState({
           selectedTenant: {
             id: 'tenant-1',
             name: 'Test Tenant',
           },
-        })
-      );
+        });
+        return typeof selector === 'function' ? selector(state) : state;
+      });
 
-      render(<Login />);
-      
-      // Initially shows username step
+      const { rerender } = render(<Login />);
+
       expect(screen.getByTestId('username-step')).toBeTruthy();
 
-      // Trigger username submit
       const usernameSubmit = screen.getByTestId('username-submit');
       await usernameSubmit.props.onPress();
 
-      // After submit, should show oauth step
+      rerender(<Login />);
+
       await waitFor(() => {
         expect(screen.getByTestId('oauth-step')).toBeTruthy();
       });
@@ -370,7 +361,7 @@ describe('Login', () => {
       // eslint-disable-next-line
       const { useLoginHandlers } = require('./hooks/use-login-handlers');
       render(<Login />);
-      
+
       expect(useLoginHandlers).toHaveBeenCalled();
       const callArgs = (useLoginHandlers as jest.Mock).mock.calls[0][0];
       expect(callArgs).toHaveProperty('authState');

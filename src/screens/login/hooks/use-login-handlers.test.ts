@@ -367,7 +367,10 @@ describe('useLoginHandlers', () => {
     });
 
     it('handles empty username', async () => {
-      const props = { ...defaultProps, username: '' };
+      const props = {
+        ...defaultProps,
+        username: '',
+      };
       const { result } = renderHook(() => useLoginHandlers(props));
 
       await result.current.handleUsernameSubmit();

@@ -7,31 +7,34 @@ import React from 'react';
 import { StyleSheet, ActivityIndicator } from 'react-native';
 
 import { Button, Text, View } from '@/components';
-import { type ITenant } from '@/stores/auth';
+import { useOAuthFlow } from '@/lib/hooks/use-oauth-flow';
+import { useAuthStore } from '@/stores/auth';
 import { type Theme, useTheme } from '@/theme';
 
 type OAuthStepProps = {
   username: string;
-  onSubmit: () => void;
   onBack: () => void;
-  isLoading: boolean;
-  isReady: boolean;
-  isProcessing: boolean;
-  selectedTenant: ITenant | null;
+  onSuccess: (tokenResponse: any) => void;
+  onError: (error: Error) => void;
 };
 
 export function OAuthStep({
   username,
-  onSubmit,
   onBack,
-  isLoading,
-  isReady,
-  isProcessing,
-  selectedTenant,
+  onSuccess,
+  onError,
 }: OAuthStepProps) {
   const theme = useTheme();
   const styles = createStyles(theme);
+  const selectedTenant = useAuthStore((s) => s.selectedTenant);
+  const isLoading = useAuthStore((s) => s.isLoading);
 
+  const { startLoginFlow, isReady, isProcessing } = useOAuthFlow({
+    realm: selectedTenant?.name ?? '',
+    username,
+    onSuccess,
+    onError,
+  });
   return (
     <>
       {/* Welcome back section */}
@@ -74,7 +77,7 @@ export function OAuthStep({
       ) : (
         <Button
           title="Continue to Sign In"
-          onPress={onSubmit}
+          onPress={startLoginFlow}
           loading={isLoading}
           disabled={isLoading || !isReady}
           fullWidth

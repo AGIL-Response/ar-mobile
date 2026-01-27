@@ -3,6 +3,26 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 
+const mockStartLoginFlow = jest.fn();
+
+jest.mock('@/lib/hooks/use-oauth-flow', () => ({
+  useOAuthFlow: jest.fn(() => ({
+    startLoginFlow: mockStartLoginFlow,
+    isReady: true,
+    isProcessing: false,
+  })),
+}));
+
+jest.mock('@/stores/auth', () => ({
+  useAuthStore: jest.fn((selector: (s: any) => any) => {
+    const state = {
+      selectedTenant: null as any,
+      isLoading: false,
+    };
+    return selector ? selector(state) : state;
+  }),
+}));
+
 // Mock Button, Text, View from '@/components' to simplify assertions
 jest.mock('@/components', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -34,21 +54,30 @@ jest.mock('@/components', () => {
   };
 });
 
+const useAuthStoreMock = jest.requireMock('@/stores/auth').useAuthStore;
+const useOAuthFlowMock = jest.requireMock('@/lib/hooks/use-oauth-flow').useOAuthFlow;
+
 import { OAuthStep } from './oauth-step';
 
 describe('OAuthStep', () => {
   const baseProps = {
     username: 'testuser',
-    onSubmit: jest.fn(),
     onBack: jest.fn(),
-    isLoading: false,
-    isReady: true,
-    isProcessing: false,
-    selectedTenant: null,
+    onSuccess: jest.fn(),
+    onError: jest.fn(),
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
+    useAuthStoreMock.mockImplementation((selector: (s: any) => any) => {
+      const s = { selectedTenant: null, isLoading: false };
+      return selector ? selector(s) : s;
+    });
+    useOAuthFlowMock.mockReturnValue({
+      startLoginFlow: mockStartLoginFlow,
+      isReady: true,
+      isProcessing: false,
+    });
   });
 
   it('renders welcome message with username', () => {
@@ -66,13 +95,12 @@ describe('OAuthStep', () => {
       name: 'tenant-name',
       displayName: 'Tenant Display',
     } as any;
+    useAuthStoreMock.mockImplementation((selector: (s: any) => any) => {
+      const s = { selectedTenant: tenant, isLoading: false };
+      return selector ? selector(s) : s;
+    });
 
-    const { getByText } = render(
-      <OAuthStep
-        {...baseProps}
-        selectedTenant={tenant}
-      />
-    );
+    const { getByText } = render(<OAuthStep {...baseProps} />);
 
     expect(getByText('Organization:')).toBeTruthy();
     expect(getByText('Tenant Display')).toBeTruthy();
@@ -84,29 +112,26 @@ describe('OAuthStep', () => {
       name: 'tenant-name',
       displayName: '',
     } as any;
+    useAuthStoreMock.mockImplementation((selector: (s: any) => any) => {
+      const s = { selectedTenant: tenant, isLoading: false };
+      return selector ? selector(s) : s;
+    });
 
-    const { getByText } = render(
-      <OAuthStep
-        {...baseProps}
-        selectedTenant={tenant}
-      />
-    );
+    const { getByText } = render(<OAuthStep {...baseProps} />);
 
     expect(getByText('tenant-name')).toBeTruthy();
   });
 
   it('shows processing indicator and hides buttons when isProcessing is true', () => {
-    const { getByText, queryByTestId } = render(
-      <OAuthStep
-        {...baseProps}
-        isProcessing={true}
-      />
-    );
+    useOAuthFlowMock.mockReturnValue({
+      startLoginFlow: mockStartLoginFlow,
+      isReady: true,
+      isProcessing: true,
+    });
 
-    // Shows processing message
+    const { getByText, queryByTestId } = render(<OAuthStep {...baseProps} />);
+
     expect(getByText('Processing authentication...')).toBeTruthy();
-
-    // Hides main and back buttons
     expect(queryByTestId('button-Continue to Sign In')).toBeNull();
     expect(queryByTestId('button-Back')).toBeNull();
   });
@@ -119,30 +144,41 @@ describe('OAuthStep', () => {
   });
 
   it('disables primary button when loading', () => {
-    const { getByTestId } = render(
-      <OAuthStep
-        {...baseProps}
-        isLoading={true}
-      />
-    );
+    useAuthStoreMock.mockImplementation((selector: (s: any) => any) => {
+      const s = { selectedTenant: null, isLoading: true };
+      return selector ? selector(s) : s;
+    });
+
+    const { getByTestId } = render(<OAuthStep {...baseProps} />);
 
     const button = getByTestId('button-Continue to Sign In');
     expect(button.props['data-disabled']).toBe(true);
   });
 
   it('disables primary button when not ready', () => {
-    const { getByTestId } = render(
-      <OAuthStep
-        {...baseProps}
-        isReady={false}
-      />
-    );
+    useOAuthFlowMock.mockReturnValue({
+      startLoginFlow: mockStartLoginFlow,
+      isReady: false,
+      isProcessing: false,
+    });
+
+    const { getByTestId } = render(<OAuthStep {...baseProps} />);
 
     const button = getByTestId('button-Continue to Sign In');
     expect(button.props['data-disabled']).toBe(true);
   });
 
   it('enables primary button when ready and not loading', () => {
+    useAuthStoreMock.mockImplementation((selector: (s: any) => any) => {
+      const s = { selectedTenant: null, isLoading: false };
+      return selector ? selector(s) : s;
+    });
+    useOAuthFlowMock.mockReturnValue({
+      startLoginFlow: mockStartLoginFlow,
+      isReady: true,
+      isProcessing: false,
+    });
+
     const { getByTestId } = render(<OAuthStep {...baseProps} />);
 
     const button = getByTestId('button-Continue to Sign In');
@@ -150,12 +186,12 @@ describe('OAuthStep', () => {
   });
 
   it('disables back button when loading', () => {
-    const { getByTestId } = render(
-      <OAuthStep
-        {...baseProps}
-        isLoading={true}
-      />
-    );
+    useAuthStoreMock.mockImplementation((selector: (s: any) => any) => {
+      const s = { selectedTenant: null, isLoading: true };
+      return selector ? selector(s) : s;
+    });
+
+    const { getByTestId } = render(<OAuthStep {...baseProps} />);
 
     const backButton = getByTestId('button-Back');
     expect(backButton.props['data-disabled']).toBe(true);
@@ -168,29 +204,19 @@ describe('OAuthStep', () => {
     expect(backButton.props['data-disabled']).toBe(false);
   });
 
-  it('calls onSubmit when primary button is pressed', () => {
-    const onSubmit = jest.fn();
-    const { getByTestId } = render(
-      <OAuthStep
-        {...baseProps}
-        onSubmit={onSubmit}
-      />
-    );
+  it('calls startLoginFlow when primary button is pressed', () => {
+    const { getByTestId } = render(<OAuthStep {...baseProps} />);
 
     const button = getByTestId('button-Continue to Sign In');
-    // Simulate press by calling onPress prop directly
     button.props.onPress?.();
 
-    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(mockStartLoginFlow).toHaveBeenCalledTimes(1);
   });
 
   it('calls onBack when back button is pressed', () => {
     const onBack = jest.fn();
     const { getByTestId } = render(
-      <OAuthStep
-        {...baseProps}
-        onBack={onBack}
-      />
+      <OAuthStep {...baseProps} onBack={onBack} />
     );
 
     const backButton = getByTestId('button-Back');
@@ -199,20 +225,18 @@ describe('OAuthStep', () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
-  it('does not call onSubmit when primary button is disabled', () => {
-    const onSubmit = jest.fn();
-    const { getByTestId } = render(
-      <OAuthStep
-        {...baseProps}
-        onSubmit={onSubmit}
-        isLoading={true}
-      />
-    );
+  it('does not call startLoginFlow when primary button is disabled', () => {
+    useAuthStoreMock.mockImplementation((selector: (s: any) => any) => {
+      const s = { selectedTenant: null, isLoading: true };
+      return selector ? selector(s) : s;
+    });
+
+    const { getByTestId } = render(<OAuthStep {...baseProps} />);
 
     const button = getByTestId('button-Continue to Sign In');
     expect(button.props['data-disabled']).toBe(true);
     button.props.onPress?.();
-    expect(onSubmit).not.toHaveBeenCalled();
+    expect(mockStartLoginFlow).not.toHaveBeenCalled();
   });
 });
 

@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 
 import { FocusAwareStatusBar, Text, ThemeToggle, View } from '@/components';
-import { useOAuthFlow } from '@/lib/hooks/use-oauth-flow';
 import { useAuthStore } from '@/stores/auth';
 import { type Theme, useTheme } from '@/theme';
 
@@ -42,18 +41,6 @@ export default function Login() {
     setUsername,
     router,
   });
-
-  const { startLoginFlow, isReady, isProcessing } = useOAuthFlow({
-    realm: authState.selectedTenant?.name || '',
-    username: username,
-    onSuccess: handlers.handleOAuthSuccess,
-    onError: handlers.handleOAuthError,
-  });
-
-
-  if (authState.token?.accessToken) {
-    return null;
-  }
 
   return (
     <ImageBackground
@@ -99,18 +86,15 @@ export default function Login() {
                 username={username}
                 setUsername={setUsername}
                 onSubmit={handlers.handleUsernameSubmit}
-                isLoading={authState.isCheckingUsername}
+                isLoading={authState.isCheckingUsername || authState.isLoading}
                 error={authState.usernameError}
               />
             ) : (
               <OAuthStep
                 username={username}
-                onSubmit={startLoginFlow}
                 onBack={handlers.handleBackToUsername}
-                isLoading={authState.isLoading}
-                isReady={isReady}
-                isProcessing={isProcessing}
-                selectedTenant={authState.selectedTenant}
+                onSuccess={handlers.handleOAuthSuccess}
+                onError={handlers.handleOAuthError}
               />
             )}
           </View>

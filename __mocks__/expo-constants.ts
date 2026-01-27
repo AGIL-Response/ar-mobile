@@ -36,7 +36,9 @@ export default {
     version: '1.0.0',
     extra: {
       apiUrl: 'https://api.example.com',
-      env: {}, // Add env property for env tests
+      env: {
+        API_HOST: 'https://dev.agilres.net',
+      }, // Add env property for env tests
     },
   },
   
