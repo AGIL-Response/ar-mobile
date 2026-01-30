@@ -13,6 +13,7 @@ describe('api-client', () => {
   beforeAll(() => {
     jest.spyOn(console, 'log').mockImplementation();
     jest.spyOn(console, 'error').mockImplementation();
+    jest.spyOn(console, 'warn').mockImplementation();
   });
 
   beforeEach(() => {
@@ -273,6 +274,9 @@ describe('api-client', () => {
       jest.mock('./auth', () => ({
         authApi: mockAuthApi,
       }));
+      jest.spyOn(console, 'log').mockImplementation();
+      jest.spyOn(console, 'error').mockImplementation();
+      jest.spyOn(console, 'warn').mockImplementation();
     });
 
     afterEach(() => {

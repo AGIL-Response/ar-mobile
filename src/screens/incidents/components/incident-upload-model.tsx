@@ -73,3 +73,5 @@ export const IncidentUploadModel = React.forwardRef<
 
   return null;
 });
+
+IncidentUploadModel.displayName = 'IncidentUploadModel';

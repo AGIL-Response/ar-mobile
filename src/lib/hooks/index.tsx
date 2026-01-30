@@ -4,6 +4,7 @@ export { useObservable } from './use-observable';
 export { useFirebaseNotification } from './use-firebase-notification';
 export { useNotifee, handleAppOpenEvent } from './use-notifee';
 export { useSafeAreaInsets } from './use-safe-area-insets';
+export { useOAuthFlow } from './use-oauth-flow';
 export type {
   NotificationPermissionStatus,
   NotificationState,

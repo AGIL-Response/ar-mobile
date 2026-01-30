@@ -1,9 +1,12 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import Constants from 'expo-constants';
 import { requestQueue } from './request-queue';
+
+const apiHost = Constants.expoConfig?.extra?.env?.API_HOST;
 
 // Create axios instance with default config
 export const apiClient = axios.create({
-  baseURL: 'https://dev.agilres.net/api/be',
+  baseURL: `${apiHost}/api/be`,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
@@ -12,7 +15,7 @@ export const apiClient = axios.create({
 });
 
 export const mediaApiClient = axios.create({
-  baseURL: 'https://dev.agilres.net/api/media',
+  baseURL: `${apiHost}/api/media`,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
@@ -21,7 +24,7 @@ export const mediaApiClient = axios.create({
 });
 
 export const chatApiClient = axios.create({
-  baseURL: 'https://dev.agilres.net/api/chat',
+  baseURL: `${apiHost}/api/chat`,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',

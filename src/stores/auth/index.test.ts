@@ -25,6 +25,7 @@ describe('AuthStore', () => {
       },
     });
     jest.spyOn(console, 'warn').mockImplementation();
+    jest.spyOn(console, 'error').mockImplementation();
   });
 
   describe('Initial State', () => {

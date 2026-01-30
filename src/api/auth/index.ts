@@ -1,5 +1,6 @@
 // eslint-disable-next-line import/no-cycle
 import { apiClient, handleApiError } from '../api-client';
+import { KEYCLOAK_CONFIG } from '../../constants/keycloak';
 import type {
   LoginRequest,
   LoginResponse,
@@ -58,10 +59,10 @@ export const authApi = {
     realm: string
   ): Promise<any> => {
     try {
-      const tokenEndpoint = `https://dev-auth.agilres.net/realms/${realm}/protocol/openid-connect/token`;
+      const { tokenEndpoint } = KEYCLOAK_CONFIG.getDiscovery(realm);
 
       const tokenRequestBody = new URLSearchParams({
-        client_id: 'ar_app',
+        client_id: KEYCLOAK_CONFIG.clientId,
         scope: 'openid profile email',
         grant_type: 'password',
         username: username,
@@ -107,10 +108,10 @@ export const authApi = {
     realm: string
   ): Promise<any> => {
     try {
-      const tokenEndpoint = `https://dev-auth.agilres.net/realms/${realm}/protocol/openid-connect/token`;
+      const { tokenEndpoint } = KEYCLOAK_CONFIG.getDiscovery(realm);
 
       const tokenRequestBody = new URLSearchParams({
-        client_id: 'ar_app',
+        client_id: KEYCLOAK_CONFIG.clientId,
         grant_type: 'refresh_token',
         refresh_token: refreshToken,
       });

@@ -1,14 +1,12 @@
 import type { RelativePathString, Router } from 'expo-router';
-import { Alert } from 'react-native';
+import type * as AuthSession from 'expo-auth-session';
 
 import { showError } from '@/components/utils';
 
 interface UseLoginHandlersProps {
   authState: any;
   username: string;
-  password: string;
   setStep: (step: 'username' | 'password') => void;
-  setPassword: (password: string) => void;
   setUsername: (username: string) => void;
   router: Router;
 }
@@ -16,9 +14,7 @@ interface UseLoginHandlersProps {
 export const useLoginHandlers = ({
   authState,
   username,
-  password,
   setStep,
-  setPassword,
   setUsername,
   router,
 }: UseLoginHandlersProps) => {
@@ -28,41 +24,48 @@ export const useLoginHandlers = ({
       const realm = await authState.actions.checkUsername(username);
       if (realm) {
         console.log('Username check completed for realm:', realm);
+        // Move to OAuth step after username is validated
+        setStep('password');
       }
     } catch (error: any) {
       console.error('Username check error:', error);
     }
   };
 
-  const handlePasswordSubmit = async () => {
-    if (!password.trim()) {
-      Alert.alert('Error', 'Please enter your password');
-      return;
-    }
-
-    console.log('Login screen: Starting login process for username:', username);
+  const handleOAuthSuccess = async (
+    tokenResponse: AuthSession.TokenResponse
+  ) => {
+    console.log('OAuth flow completed, processing tokens...');
     try {
-      await authState.actions.loginWithPassword(username, password);
-      router.navigate('/' as RelativePathString);
+      await authState.actions.loginWithOAuth(tokenResponse);
+      console.log('OAuth login successful, navigating to home...');
+      router.navigate('/(app)/(tabs)' as RelativePathString);
     } catch (error: any) {
       const errorMessage =
-        error?.message ||
-        'Login failed. Please check your credentials and try again.';
+        error?.message || 'Login failed. Please try again.';
       showError(errorMessage);
-      console.error('Login error:', error);
+      console.error('OAuth login error:', error);
     }
+  };
+
+  const handleOAuthError = (error: Error) => {
+    const errorMessage =
+      error?.message || 'Authentication failed. Please try again.';
+    showError(errorMessage);
+    console.error('OAuth error:', error);
   };
 
   const handleBackToUsername = () => {
     setStep('username');
-    setPassword('');
+    setUsername('');
     authState.actions.clearUsernameError();
     authState.actions.setSelectedTenant(null);
   };
 
   return {
     handleUsernameSubmit,
-    handlePasswordSubmit,
+    handleOAuthSuccess,
+    handleOAuthError,
     handleBackToUsername,
   };
 };

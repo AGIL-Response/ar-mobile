@@ -1,5 +1,6 @@
 import images from '@assets/images';
 import { useRouter } from 'expo-router';
+import type { RelativePathString } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   Image,
@@ -14,7 +15,7 @@ import { FocusAwareStatusBar, Text, ThemeToggle, View } from '@/components';
 import { useAuthStore } from '@/stores/auth';
 import { type Theme, useTheme } from '@/theme';
 
-import { PasswordStep } from './components/password-step';
+import { OAuthStep } from './components/oauth-step';
 import { UsernameStep } from './components/username-step';
 import { useLoginHandlers } from './hooks/use-login-handlers';
 
@@ -24,22 +25,19 @@ export default function Login() {
   const theme = useTheme();
   const styles = createStyles(theme);
 
-  const [username, setUsername] = useState(__DEV__ ? 'org6r1' : '');
-  const [password, setPassword] = useState(__DEV__ ? '12345678' : '');
+  const [username, setUsername] = useState(__DEV__ ? 'org7r1' : '');
   const [step, setStep] = useState<'username' | 'password'>('username');
 
   useEffect(() => {
-    if (username && authState.selectedTenant) {
-      setStep('password');
+    if (authState.token?.accessToken) {
+      router.replace('/(app)/(tabs)' as RelativePathString);
     }
-  }, [username, authState.selectedTenant]);
+  }, [authState.token?.accessToken, router]);
 
   const handlers = useLoginHandlers({
     authState,
     username,
-    password,
     setStep,
-    setPassword,
     setUsername,
     router,
   });
@@ -88,18 +86,15 @@ export default function Login() {
                 username={username}
                 setUsername={setUsername}
                 onSubmit={handlers.handleUsernameSubmit}
-                isLoading={authState.isCheckingUsername}
+                isLoading={authState.isCheckingUsername || authState.isLoading}
                 error={authState.usernameError}
               />
             ) : (
-              <PasswordStep
+              <OAuthStep
                 username={username}
-                password={password}
-                setPassword={setPassword}
-                onSubmit={handlers.handlePasswordSubmit}
                 onBack={handlers.handleBackToUsername}
-                isLoading={authState.isLoading}
-                selectedTenant={authState.selectedTenant}
+                onSuccess={handlers.handleOAuthSuccess}
+                onError={handlers.handleOAuthError}
               />
             )}
           </View>

@@ -27,8 +27,9 @@ import { Pressable } from 'react-native-gesture-handler';
 import type { IncidentCoordinate, UserCoordinate } from '@/screens/map/types';
 import { useAuthStore } from '@/stores/auth';
 import { useLocationStore } from '@/stores/location';
+import Constants from 'expo-constants';
 
-Mapbox.setAccessToken('sk.eyJ1IjoibGFpem4iLCJhIjoiY21lamxqZzh4MDQ0bjJrcXZ0dWRiZHAzNyJ9.NU6sHZrIkDuDpHCEManSJQ');
+Mapbox.setAccessToken(Constants.expoConfig?.extra?.env?.MAPBOX_DOWNLOADS_TOKEN);
 
 function MapView() {
   const theme = useTheme();
@@ -77,6 +78,27 @@ function MapView() {
       }))
       .filter((item) => Boolean(item.coordinates));
   }, [users]);
+
+  // Device location marker for current user
+  const deviceLocationCoordinates = useMemo<[number, number] | null>(() => {
+    if (!locationCoordinates || !currentUser?.avatarId) {
+      return null;
+    }
+    // Use device GPS location from location store
+    return [
+      locationCoordinates.longitude,
+      locationCoordinates.latitude,
+    ];
+  }, [locationCoordinates, currentUser?.avatarId]);
+
+  // Get current user's status from users store if available
+  const currentUserStatus = useMemo(() => {
+    if (!currentUser?.id) {
+      return 'unknown';
+    }
+    const userInStore = users.find((user) => user.id === currentUser.id);
+    return userInStore?.status || 'unknown';
+  }, [currentUser?.id, users]);
 
   useEffect(() => {
     fetchIncidents({});
@@ -228,6 +250,23 @@ function MapView() {
           }}
         >
           <Camera ref={cameraRef} zoomLevel={0} />
+
+          {/* Current user's device location marker */}
+          {deviceLocationCoordinates && currentUser?.avatarId && (
+            <MarkerView
+              key="current-user-device-location-marker"
+              coordinate={deviceLocationCoordinates}
+              allowOverlapWithPuck={false}
+              allowOverlap
+            >
+              <Avatar
+                fileId={currentUser.avatarId}
+                status={currentUserStatus}
+                size="small"
+                isMapAvatar={true}
+              />
+            </MarkerView>
+          )}
 
           {coordinates.map((coordinate) => (
             <MarkerView

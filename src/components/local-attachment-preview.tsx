@@ -10,6 +10,7 @@ import { Image, TouchableOpacity } from 'react-native';
 import { Icon, iconNames, View } from '@/components';
 import { useMediaViewerStore } from '@/stores/media-viewer';
 import { useTheme } from '@/theme';
+import { isVideo as isVideoMedia } from '@/utils/media';
 import type { MediaItem } from './media-viewer-modal';
 import { useVideoThumbnail } from './use-video-thumbnail';
 
@@ -27,14 +28,6 @@ interface LocalAttachmentPreviewProps {
   onRemove?: () => void;
 }
 
-/**
- * Check if a mime type is a video
- */
-const isVideo = (mimeType: string | null | undefined): boolean => {
-  if (!mimeType) return false;
-  return mimeType.toLowerCase().includes('video');
-};
-
 export function LocalAttachmentPreview({
   attachment,
   size = 100,
@@ -44,7 +37,7 @@ export function LocalAttachmentPreview({
 }: LocalAttachmentPreviewProps) {
   const theme = useTheme();
   const { actions } = useMediaViewerStore();
-  const isVideoFile = isVideo(attachment.mimeType);
+  const isVideoFile = isVideoMedia(undefined, attachment.mimeType);
 
   // Use video thumbnail hook
   const { thumbnailUri, isGenerating: isGeneratingThumbnail } =
