@@ -28,6 +28,7 @@ import type { IncidentCoordinate, UserCoordinate } from '@/screens/map/types';
 import { useAuthStore } from '@/stores/auth';
 import { useLocationStore } from '@/stores/location';
 import Constants from 'expo-constants';
+import { MapStyleSelector, getMapboxStyleURL } from './components/map-style-selector';
 
 Mapbox.setAccessToken(Constants.expoConfig?.extra?.env?.MAPBOX_DOWNLOADS_TOKEN);
 
@@ -42,6 +43,7 @@ function MapView() {
   const isLoading = incidentsLoading || usersLoading;
   const mapFocusIncidentId = useMapStore((state) => state.mapFocusIncidentId);
   const mapFocusUserId = useMapStore((state) => state.mapFocusUserId);
+  const mapStyle = useMapStore((state) => state.mapStyle);
   const setMapFocusIncident = useMapStore((state) => state.actions.setMapFocusIncident);
   const setMapFocusUserId = useMapStore((state) => state.actions.setMapFocusUserId);
   const setFlatViewFocusUserId = useMapStore((state) => state.actions.setFlatViewFocusUserId);
@@ -244,7 +246,7 @@ function MapView() {
       <View style={{ flex: 1, width: '100%' }}>
         <MapboxMapView
           style={styles.map}
-          styleURL={theme.isDark ? Mapbox.StyleURL.Dark : Mapbox.StyleURL.Light}
+          styleURL={getMapboxStyleURL(mapStyle)}
           onDidFinishLoadingMap={() => {
             setIsMapReady(true);
           }}
@@ -312,6 +314,7 @@ function MapView() {
             </MarkerView>
           ))}
         </MapboxMapView>
+        <MapStyleSelector />
         <TouchableOpacity
           style={styles.currentLocationButton}
           onPress={handleNavigateToCurrentLocation}
