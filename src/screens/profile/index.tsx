@@ -24,22 +24,12 @@ import { useTheme } from '@/theme';
 export default function ProfileScreen() {
   const theme = useTheme();
   const user = useAuthStore((state) => state.user);
-  const selectedTenant = useAuthStore((state) => state.selectedTenant);
   const logout = useAuthStore((state) => state.actions.logout);
+  const isLoggingOut = useAuthStore((state) => state.isLoggingOut);
   const router = useRouter();
 
   const [isLogoutModalVisible, setIsLogoutModalVisible] =
     React.useState(false);
-  // Get user role/title
-  const getUserRole = () => {
-    if (user?.roles && user.roles.length > 0) {
-      const role = user.roles[0];
-      const teamName =
-        selectedTenant?.displayName || selectedTenant?.name || 'Team';
-      return `${role}, ${teamName}`;
-    }
-    return selectedTenant?.displayName || selectedTenant?.name || 'Team Member';
-  };
 
   const handleProfileDetailsPress = () => {
     router.navigate('/(app)/profile/detail' as any);
@@ -50,13 +40,13 @@ export default function ProfileScreen() {
   };
 
   const handleAccountSettingsPress = () => {
+    if (isLoggingOut) return;
     setIsLogoutModalVisible(true);
   };
 
   const handleConfirmLogout = () => {
+    if (isLoggingOut) return;
     logout();
-    setIsLogoutModalVisible(false);
-    router.back();
   };
 
   const settingsItems = [
@@ -160,10 +150,10 @@ export default function ProfileScreen() {
                     alignItems: 'center',
                     paddingVertical: 12,
                     paddingHorizontal: 16,
-                    opacity: 1,
+                    opacity: item.id === 'logout' && isLoggingOut ? 0.6 : 1,
                   }}
                   onPress={item.onPress ? item.onPress : undefined}
-                  disabled={!item.onPress}
+                  disabled={!item.onPress || (item.id === 'logout' && isLoggingOut)}
                 >
                   {/* Icon */}
                   <View
@@ -190,7 +180,9 @@ export default function ProfileScreen() {
                         color: theme.colors.text.tertiary,
                       }}
                     >
-                      {item.title}
+                      {item.id === 'logout' && isLoggingOut
+                        ? 'Logging out...'
+                        : item.title}
                     </Text>
                   </View>
 
@@ -224,7 +216,7 @@ export default function ProfileScreen() {
 
       <CenteredModal
         visible={isLogoutModalVisible}
-        onClose={() => setIsLogoutModalVisible(false)}
+        onClose={() => (isLoggingOut ? undefined : setIsLogoutModalVisible(false))}
         title="Log out"
         subText="Do you want to log out?"
       >
@@ -243,14 +235,16 @@ export default function ProfileScreen() {
             onPress={() => setIsLogoutModalVisible(false)}
             colorVariant="disabled"
             style={{ minWidth: 80 }}
+            disabled={isLoggingOut}
           />
           <Button
-            title="Yes"
+            title={isLoggingOut ? 'Logging out…' : 'Yes'}
             variant="solid"
             size="medium"
             onPress={handleConfirmLogout}
             colorVariant="secondary"
             style={{ minWidth: 80 }}
+            disabled={isLoggingOut}
           />
         </View>
       </CenteredModal>

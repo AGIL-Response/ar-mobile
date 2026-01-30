@@ -1,4 +1,5 @@
 import { io, type Socket } from 'socket.io-client';
+import Constants from 'expo-constants';
 
 export interface LocationCoordinates {
   longitude: number;
@@ -39,7 +40,7 @@ export interface SocketLocationUpdateEvent {
  * @returns Socket.IO client instance
  */
 export const initMapSocket = (accessToken: string): Socket => {
-  const baseUrl = 'https://dev.agilres.net';
+  const baseUrl = Constants.expoConfig?.extra?.env?.API_HOST;
 
   return io(baseUrl, {
     path: '/api/be/ws',

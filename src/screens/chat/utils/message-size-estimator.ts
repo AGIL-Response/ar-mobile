@@ -4,7 +4,7 @@
  * Single Responsibility: Calculate estimated heights for different message types
  */
 
-import type { ChatMessage } from '@/services/chat';
+import type { ChatAttachment, ChatMessage } from '@/services/chat';
 import { getMediaType } from '@/utils/media';
 
 // Base heights for different message components
@@ -47,7 +47,7 @@ function estimateTextHeight(text: string, maxWidth: number = 250): number {
 /**
  * Estimate attachment height based on attachment type
  */
-function estimateAttachmentHeight(attachment: ChatMessage['attachments'][0]): number {
+function estimateAttachmentHeight(attachment: ChatAttachment): number {
   if (!attachment) return 0;
   
   const mediaType = getMediaType(attachment.filename, attachment.mimeType);
@@ -158,7 +158,8 @@ export function getEstimatedItemSize(message: ChatMessage): number {
   const hasText = message.content && message.content.length > 0;
   
   if (hasAttachments) {
-    const firstAttachment = message.attachments[0];
+    const firstAttachment = message.attachments?.[0];
+    if (!firstAttachment) return 0;
     const mediaType = getMediaType(firstAttachment.filename, firstAttachment.mimeType);
     
     if (mediaType === 'image' || mediaType === 'video') {

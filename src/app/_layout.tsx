@@ -13,6 +13,8 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import { DeviceInfoMonitor } from '@/components/device-info-monitor';
 import { CustomAlertProvider } from '@/components/custom-alert-provider';
+import { MissingEnvScreen } from '@/components/missing-env-screen';
+import { validateEnvVars } from '@/constants/env';
 import { useAppFonts } from '@/lib/fonts';
 import { useThemeConfig } from '@/lib/use-theme-config';
 import { useFirebaseNotification, useNotifee } from '@/lib/hooks';
@@ -33,12 +35,17 @@ SplashScreen.setOptions({
 
 export default function RootLayout() {
   const fontsLoaded = useAppFonts();
+  const [envValidation] = React.useState(() => validateEnvVars(false));
 
   React.useEffect(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
+
+  if (!envValidation.valid) {
+    return <MissingEnvScreen missing={envValidation.missing} />;
+  }
 
   if (!fontsLoaded) {
     return null;

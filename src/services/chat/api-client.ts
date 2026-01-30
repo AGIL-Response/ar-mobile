@@ -13,7 +13,7 @@ import type {
 // Chat service is a separate service, use its own base URL
 // The chat service uses ROUTE_PREFIX=api/chat by default
 // Configure CHAT_API_URL in your environment (e.g., https://dev.agilres.net or https://dev-api.agilres.net/chat)
-const CHAT_API_BASE_URL = Constants.expoConfig?.extra?.CHAT_API_URL || 'https://dev.agilres.net';
+const CHAT_API_BASE_URL = Constants.expoConfig?.extra?.env?.API_HOST;
 // The chat service uses route prefix 'api/chat' (configured via ROUTE_PREFIX env var)
 const CHAT_ROUTE_PREFIX = '/api/chat';
 

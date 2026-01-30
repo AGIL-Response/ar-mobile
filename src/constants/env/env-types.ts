@@ -7,9 +7,14 @@
  */
 
 export interface EnvVars {
+  API_HOST?: string;
   APP_NAME?: string;
   APP_VARIANT?: string;
-  BASE_URL?: string;
+  GOOGLE_SERVICES_JSON?: string;
+  GOOGLE_SERVICES_PLIST?: string;
+  KEYCLOAK_CLIENT_ID?: string;
+  KEYCLOAK_HOST?: string;
+  MAPBOX_DOWNLOADS_TOKEN?: string;
   PACKAGE_NAME?: string;
   [key: string]: string | undefined;
 }

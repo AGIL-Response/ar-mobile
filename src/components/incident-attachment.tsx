@@ -10,6 +10,7 @@ import { Alert, Image, TouchableOpacity } from 'react-native';
 import { Icon, iconNames, Text, View } from '@/components';
 import { useMediaViewerStore } from '@/stores/media-viewer';
 import { useTheme } from '@/theme';
+import { isVideo as isVideoMedia } from '@/utils/media';
 
 import type { MediaItem } from './media-viewer-modal';
 import { useVideoThumbnail } from './use-video-thumbnail';
@@ -35,14 +36,6 @@ interface IncidentAttachmentBaseProps extends IncidentAttachmentProps {
   onLoad?: (fileId: string, mediaItem: MediaItem) => void;
 }
 
-/**
- * Check if a mime type is a video
- */
-const isVideo = (mimeType: string | null | undefined): boolean => {
-  if (!mimeType) return false;
-  return mimeType.startsWith('video/');
-};
-
 const IncidentAttachmentBase = ({
   fileId,
   size = 100,
@@ -57,7 +50,7 @@ const IncidentAttachmentBase = ({
 }: IncidentAttachmentBaseProps) => {
   const theme = useTheme();
   const { actions } = useMediaViewerStore();
-  const isVideoFile = isVideo(mimeType);
+  const isVideoFile = isVideoMedia(undefined, mimeType || '');
 
   // Extract video URI safely
   const videoUri =

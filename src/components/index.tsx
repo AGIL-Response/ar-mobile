@@ -29,6 +29,7 @@ export * from './attachments-gallery';
 export * from './local-attachment-preview';
 export * from './local-attachments-gallery';
 export * from './media-viewer-modal';
+export * from './missing-env-screen';
 export * from './use-video-thumbnail';
 export * from './floating-action-button';
 export * from './withFileSource';

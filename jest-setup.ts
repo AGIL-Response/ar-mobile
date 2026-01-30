@@ -175,12 +175,40 @@ jest.mock('@/stores/location', () => {
     isSocketConnected: false,
     isMonitoring: false,
     monitoringInterval: null,
+    locationUpdateIntervalMs: 10000,
+    lastSentCoordinates: null,
+    lastSentAttributes: null,
+    actions: {
+      requestLocationPermission: jest.fn().mockResolvedValue(true),
+      checkLocationPermission: jest.fn().mockResolvedValue(true),
+      getCurrentLocation: jest.fn().mockResolvedValue(undefined),
+      startLocationMonitoring: jest.fn().mockResolvedValue(undefined),
+      stopLocationMonitoring: jest.fn(),
+      setLocationUpdateIntervalMs: jest.fn(),
+      connectToWebSocket: jest.fn(),
+      disconnectFromWebSocket: jest.fn(),
+      sendLocationUpdate: jest.fn(),
+      clearError: jest.fn(),
+      reset: jest.fn(),
+    },
   };
+
+  const useLocationStoreMock: any = jest.fn((selector?: any) => {
+    if (typeof selector === 'function') {
+      return selector(defaultLocationStoreState);
+    }
+    return defaultLocationStoreState;
+  });
+
+  // Add Zustand store methods
+  useLocationStoreMock.getState = jest.fn(() => defaultLocationStoreState);
+  useLocationStoreMock.setState = jest.fn();
+  useLocationStoreMock.subscribe = jest.fn(() => jest.fn());
+
   return {
     __esModule: true,
-    useLocationStore: jest.fn(() => defaultLocationStoreState),
-    default: jest.fn(() => defaultLocationStoreState),
-    getState: jest.fn(() => defaultLocationStoreState),
+    useLocationStore: useLocationStoreMock,
+    default: useLocationStoreMock,
   };
 });
 
@@ -515,6 +543,9 @@ jest.mock('@/lib/fonts', () => ({
     robotoMedium: 'Roboto_500Medium',
     interBold: 'Inter_700Bold',
     sFProText: 'SF Pro Text',
+    goldmanRegular: 'Goldman_400Regular',
+    goldmanBold: 'Goldman_700Bold',
+    kdamThmorProRegular: 'KdamThmorPro_400Regular',
   },
 }));
 
@@ -590,6 +621,14 @@ jest.mock('@/lib/hooks', () => ({
     left: 0,
     bottomInset: 0,
   })),
+  useOAuthFlow: jest.fn((props: any) => ({
+    startLoginFlow: jest.fn(),
+    startChangePasswordFlow: jest.fn(),
+    isReady: true,
+    isProcessing: false,
+    username: props?.username,
+    redirectUri: 'agilresponse://redirect',
+  })),
 }));
 
 jest.mock('@/lib/storage', () => ({
@@ -599,3 +638,36 @@ jest.mock('@/lib/storage', () => ({
     remove: jest.fn(),
   },
 }));
+
+jest.mock('@/constants/keycloak', () => ({
+  __esModule: true,
+  KEYCLOAK_CONFIG: {
+    clientId: 'test-client',
+    scopes: ['openid', 'profile'],
+    getDiscovery: jest.fn((realm: string) => ({
+      authorizationEndpoint: `https://keycloak.test/${realm}/auth`,
+      tokenEndpoint: `https://keycloak.test/${realm}/token`,
+      revocationEndpoint: `https://keycloak.test/realms/${realm}/protocol/openid-connect/revoke`,
+    })),
+  },
+}));
+
+jest.mock('@/services/chat', () => {
+  const mockChatService = {
+    disconnect: jest.fn(),
+  };
+  return {
+    __esModule: true,
+    chatService: mockChatService,
+  };
+});
+
+jest.mock('@/services/chat/db-service', () => {
+  const mockChatDbService = {
+    clearAll: jest.fn(),
+  }
+  return {
+    __esModule: true,
+    chatDbService: mockChatDbService,
+  };
+});

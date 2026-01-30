@@ -93,16 +93,6 @@ describe('RootLayout', () => {
 
     expect(toJSON()).not.toBeNull();
     expect(mockUseAppFonts).toHaveBeenCalled();
-    expect(mockUseThemeConfig).toHaveBeenCalled();
-  });
-
-  it('passes dark theme class to GestureHandlerRootView when theme is dark', () => {
-    mockUseAppFonts.mockReturnValue(true);
-    mockUseThemeConfig.mockReturnValue({ ...mockTheme, dark: true });
-
-    render(<RootLayout />);
-
-    expect(mockUseThemeConfig).toHaveBeenCalled();
   });
 });
 

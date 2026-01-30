@@ -204,7 +204,7 @@ describe('authApi', () => {
       const result = await authApi.loginWithKeycloak(username, password, realm);
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://dev-auth.agilres.net/realms/test-realm/protocol/openid-connect/token',
+        'https://keycloak.test/test-realm/token',
         expect.objectContaining({
           method: 'POST',
           headers: {
@@ -404,7 +404,7 @@ describe('authApi', () => {
       const result = await authApi.refreshToken(refreshToken, realm);
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://dev-auth.agilres.net/realms/test-realm/protocol/openid-connect/token',
+        'https://keycloak.test/test-realm/token',
         expect.objectContaining({
           method: 'POST',
           headers: {
