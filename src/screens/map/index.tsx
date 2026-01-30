@@ -29,6 +29,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useLocationStore } from '@/stores/location';
 import Constants from 'expo-constants';
 import { MapStyleSelector, getMapboxStyleURL } from './components/map-style-selector';
+import { CurrentUserMarker } from './components/current-user-marker';
 
 Mapbox.setAccessToken(Constants.expoConfig?.extra?.env?.MAPBOX_DOWNLOADS_TOKEN);
 
@@ -53,6 +54,9 @@ function MapView() {
   const cameraRef = useRef<Camera>(null);
   const currentUser = useAuthStore((state) => state.user);
   const locationCoordinates = useLocationStore((state) => state.coordinates);
+  // Track last zoomed coordinate to prevent duplicate zooms
+  const lastZoomedCoordinateRef = useRef<[number, number] | null>(null);
+  const hasInitialZoomedRef = useRef(false);
   const coordinates = useMemo<IncidentCoordinate[]>(() => {
     return incidents
       ?.filter((incident) => incident.location?.coordinates) // only with coords
@@ -129,6 +133,7 @@ function MapView() {
           number,
         ];
         if (userCoordinates) {
+          lastZoomedCoordinateRef.current = userCoordinates;
           cameraRef.current.setCamera({
             centerCoordinate: userCoordinates,
             zoomLevel: 20,
@@ -145,6 +150,7 @@ function MapView() {
         locationCoordinates.longitude,
         locationCoordinates.latitude,
       ];
+      lastZoomedCoordinateRef.current = coordinates;
       cameraRef.current.setCamera({
         centerCoordinate: coordinates,
         zoomLevel: 20,
@@ -162,50 +168,72 @@ function MapView() {
       if (!cameraRef.current) {
         return;
       }
-      if (!cameraRef.current) {
-        return;
-      }
 
+      // Helper function to check if coordinates are the same (within small tolerance)
+      const areCoordinatesEqual = (
+        coord1: [number, number],
+        coord2: [number, number]
+      ): boolean => {
+        const tolerance = 0.0001; // ~11 meters
+        return (
+          Math.abs(coord1[0] - coord2[0]) < tolerance &&
+          Math.abs(coord1[1] - coord2[1]) < tolerance
+        );
+      };
+
+      // Helper function to perform zoom
+      const performZoom = (targetCoordinate: [number, number]) => {
+        // Check if we're zooming to the same coordinate
+        if (
+          lastZoomedCoordinateRef.current &&
+          areCoordinatesEqual(
+            lastZoomedCoordinateRef.current,
+            targetCoordinate
+          )
+        ) {
+          return;
+        }
+
+        lastZoomedCoordinateRef.current = targetCoordinate;
+        cameraRef.current?.setCamera({
+          centerCoordinate: targetCoordinate,
+          zoomLevel: 20,
+          animationDuration: 500,
+        });
+      };
+
+      // Priority 1: Focus on specific incident
       if (mapFocusIncidentId) {
         const target = coordinates.find(
           (coordinate) => coordinate.id === mapFocusIncidentId
         );
 
         if (target && cameraRef.current) {
-          cameraRef.current.setCamera({
-            centerCoordinate: target.coordinates,
-            zoomLevel: 20,
-            animationDuration: 500,
-          });
+          performZoom(target.coordinates);
         }
         return;
       }
 
+      // Priority 2: Focus on specific user
       if (mapFocusUserId) {
         const target = usersCoordinates.find(
           (coordinate) => coordinate.id === mapFocusUserId
         );
 
         if (target && cameraRef.current) {
-          cameraRef.current.setCamera({
-            centerCoordinate: target.coordinates,
-            zoomLevel: 20,
-            animationDuration: 500,
-          });
+          performZoom(target.coordinates);
         }
         return;
       }
 
+      // Priority 3: Default zoom (only on initial load)
       const hasData = coordinates.length > 0 || usersCoordinates.length > 0;
-      if (hasData) {
+      if (hasData && !hasInitialZoomedRef.current) {
         const defaultCoordinate =
           coordinates[0]?.coordinates || usersCoordinates[0]?.coordinates;
         if (defaultCoordinate && cameraRef.current) {
-          cameraRef.current.setCamera({
-            centerCoordinate: defaultCoordinate,
-            zoomLevel: 20,
-            animationDuration: 500,
-          });
+          performZoom(defaultCoordinate);
+          hasInitialZoomedRef.current = true;
         }
       }
     }, 100);
@@ -261,11 +289,10 @@ function MapView() {
               allowOverlapWithPuck={false}
               allowOverlap
             >
-              <Avatar
+              <CurrentUserMarker
                 fileId={currentUser.avatarId}
                 status={currentUserStatus}
                 size="small"
-                isMapAvatar={true}
               />
             </MarkerView>
           )}
