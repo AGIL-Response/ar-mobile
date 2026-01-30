@@ -130,6 +130,7 @@ export const createAuthState = (
     updateGeoEntityLocation: jest.fn(),
     setSelectedTeam: jest.fn(),
     updateUser: jest.fn(),
+    loginWithOAuth: jest.fn(),
   },
   selectedTeam: null,
   selectedTenant: {

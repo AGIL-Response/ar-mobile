@@ -1,6 +1,7 @@
 import * as FileSystemLegacy from 'expo-file-system/legacy';
 
 import { storage } from '@/lib/storage';
+import { getExtensionFromMimeType, isVideo } from '@/utils/media';
 
 import { handleApiError, mediaApiClient } from '../api-client';
 
@@ -55,13 +56,7 @@ export const blobToFileUri = async (
   mimeType?: string
 ): Promise<string> => {
   try {
-    const extension = mimeType?.includes('video/mp4')
-      ? 'mp4'
-      : mimeType?.includes('video/quicktime')
-        ? 'mov'
-        : mimeType?.includes('video/webm')
-          ? 'webm'
-          : 'mp4'; // default to mp4
+    const extension = mimeType ? getExtensionFromMimeType(mimeType) || 'mp4' : 'mp4';
 
     // Create temporary file path
     const fileName = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}.${extension}`;
@@ -100,9 +95,9 @@ export const blobToUri = async (
   blob: Blob,
   mimeType?: string | null
 ): Promise<string> => {
-  const isVideo = mimeType?.startsWith('video/') ?? false;
+  const isVideoFile = isVideo(undefined, mimeType || '');
 
-  if (isVideo) {
+  if (isVideoFile) {
     return blobToFileUri(blob, mimeType || undefined);
   } else {
     return blobToDataUri(blob);

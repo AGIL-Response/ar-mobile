@@ -23,6 +23,7 @@ import { runOnJS } from 'react-native-reanimated';
 
 import { Text } from '@/components';
 import { useTheme } from '@/theme';
+import { isImage as isImageMedia, isVideo as isVideoMedia } from '@/utils/media';
 
 import { Icon, iconNames } from './icon';
 
@@ -55,8 +56,8 @@ export function MediaViewerModal({
     }
   }, [visible, initialIndex]);
   const currentItem = mediaItems[currentIndex];
-  const isVideo = currentItem?.mimeType?.startsWith('video/') ?? false;
-  const isImage = currentItem?.mimeType?.startsWith('image/') ?? false;
+  const isVideo = isVideoMedia(undefined, currentItem?.mimeType);
+  const isImage = isImageMedia(undefined, currentItem?.mimeType);
 
   const videoUri = isVideo && currentItem?.uri ? currentItem.uri : '';
   const player = useVideoPlayer(videoUri, (player) => {

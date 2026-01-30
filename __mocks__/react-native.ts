@@ -71,6 +71,7 @@ module.exports = {
     alert: jest.fn(),
     prompt: jest.fn(),
   },
+  useColorScheme: jest.fn(),
   Linking: {
     openURL: jest.fn(),
     canOpenURL: jest.fn().mockResolvedValue(true),

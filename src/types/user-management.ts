@@ -81,11 +81,11 @@ export interface TeamMemberResponse {
   fullName: string;
   avatarId?: string;
   description?: string;
-  roles: Array<{
+  roles: {
     id: string;
     name: string;
     displayName: string;
-  }>;
+  }[];
   location?: {
     type: string;
     coordinates: number[];
@@ -94,4 +94,57 @@ export interface TeamMemberResponse {
 
 export interface ApiResponse<T> {
   data: T;
+}
+
+// Team types
+export interface TeamResponse {
+  tenantId: string;
+  id: string;
+  name: string;
+  description: string;
+  settings: {
+    isLocationTracked: boolean;
+  };
+  createdAt: string;
+  updatedAt: string | null;
+  deletedAt: string | null;
+  createdBy: string;
+  updatedBy: string | null;
+  deletedBy: string | null;
+  location: {
+    type: string;
+    coordinates: number[];
+  };
+}
+
+export interface ITeam {
+  tenantId: string;
+  id: string;
+  name: string;
+  description: string;
+  settings: {
+    isLocationTracked: boolean;
+  };
+  createdAt: string;
+  updatedAt: string | null;
+  deletedAt: string | null;
+  createdBy: string;
+  updatedBy: string | null;
+  deletedBy: string | null;
+  location: {
+    type: string;
+    coordinates: number[];
+  };
+}
+
+export interface TeamsQueryParams {
+  sort?: string[];           // Sort by field
+  id?: string[];             // Filter by team ID
+  userId?: string[];         // Filter by user ID who is a member
+  isLocationTracked?: boolean; // Filter by team location tracking
+  offset?: number;           // Pagination offset
+  limit?: number;            // Pagination limit
+  search?: string;           // Search term
+  notIds?: string[];         // Exclude team IDs
+  count?: boolean;           // Include count
 }

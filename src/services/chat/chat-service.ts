@@ -6,7 +6,7 @@ import Constants from 'expo-constants';
 import { of } from 'rxjs';
 import { transformConversationToRoom } from './utils';
 
-const CHAT_SOCKET_URL = Constants.expoConfig?.extra?.CHAT_SOCKET_URL || 'https://dev.agilres.net/chat';
+const CHAT_SOCKET_URL = Constants.expoConfig?.extra?.env?.API_HOST + '/chat';
 
 export class ChatService {
   private socketService: ChatSocketService;

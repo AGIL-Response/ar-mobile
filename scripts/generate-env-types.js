@@ -9,7 +9,8 @@ const path = require('path');
 const projectRoot = path.resolve(__dirname, '..');
 const envDevPath = path.join(projectRoot, '.env.dev');
 const envProPath = path.join(projectRoot, '.env.pro');
-const outputPath = path.join(projectRoot, 'constants', 'env-types.ts');
+const outputPath = path.join(projectRoot, 'src', 'constants', 'env', 'env-types.ts');
+const indexPath = path.join(projectRoot, 'src', 'constants', 'env', 'index.ts');
 
 function parseEnvFile(filePath) {
   const envVars = new Set();
@@ -59,8 +60,40 @@ ${sortedVars.map(key => `  ${key}?: string;`).join('\n')}
 }
 `;
 
+// Ensure the output directory exists
+const outputDir = path.dirname(outputPath);
+if (!fs.existsSync(outputDir)) {
+  fs.mkdirSync(outputDir, { recursive: true });
+}
+
 // Write the generated file
 fs.writeFileSync(outputPath, interfaceContent, 'utf8');
+
+// Update REQUIRED_ENV_VARS in index.ts
+if (fs.existsSync(indexPath)) {
+  let indexContent = fs.readFileSync(indexPath, 'utf8');
+  
+  // Generate the REQUIRED_ENV_VARS array content
+  const requiredVarsArray = sortedVars.map(key => `  '${key}'`).join(',\n');
+  
+  // Replace the REQUIRED_ENV_VARS array using regex
+  // Match: export const REQUIRED_ENV_VARS: string[] = [ ... ];
+  const arrayRegex = /(export const REQUIRED_ENV_VARS: string\[\] = \[)([\s\S]*?)(\];)/;
+  
+  if (arrayRegex.test(indexContent)) {
+    indexContent = indexContent.replace(
+      arrayRegex,
+      `$1\n${requiredVarsArray}\n$3`
+    );
+    
+    fs.writeFileSync(indexPath, indexContent, 'utf8');
+    console.log(`✅ Updated REQUIRED_ENV_VARS in index.ts`);
+  } else {
+    console.warn(`⚠️  Could not find REQUIRED_ENV_VARS array in index.ts`);
+  }
+} else {
+  console.warn(`⚠️  index.ts not found at ${indexPath}`);
+}
 
 console.log(`✅ Generated env types with ${sortedVars.length} variables:`);
 sortedVars.forEach(key => console.log(`   - ${key}`));
