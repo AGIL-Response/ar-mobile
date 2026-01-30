@@ -11,7 +11,6 @@ import { useTheme } from '@/theme';
 import { getMediaType } from '@/utils/media';
 import type { ChatAttachment } from '@/services/chat';
 import { AudioAttachment } from './audio-attachment';
-import { clampRGBA } from 'react-native-reanimated/lib/typescript/Colors';
 
 export interface MessageAttachmentProps {
   attachments: ChatAttachment[];
@@ -33,84 +32,9 @@ const availableWidth = (screenWidth - 32) * 0.75 - 16 - 4 - 40 - 20;
 const MAX_ATTACHMENT_WIDTH = Math.min(screenWidth * 0.48, Math.max(200, availableWidth));
 const IMAGE_ASPECT_RATIO = 0.75;
 
-/**
- * Get valid URI from attachment (prioritizes thumbnail, then URL)
- * Note: For videos, only thumbnails can be used as image sources, not the video file itself
- * Similar to audio-attachment.tsx which uses attachment.url directly
- */
-function getValidUri(attachment: ChatAttachment, isVideo: boolean = false, version: number = 1): string | null {
-  const trimmedThumbnail = attachment.thumbnail?.trim();
-  const trimmedUrl = attachment.url?.trim();
 
-  let uri: string | null = null;
-
-  // Always prioritize thumbnail if available
-  if (trimmedThumbnail && trimmedThumbnail.length > 0) {
-    uri = trimmedThumbnail;
-  }
-  // For videos, don't use the video file URL as an image source
-  else if (isVideo) {
-    if (trimmedUrl && (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://'))) {
-      uri = trimmedUrl;
-    }
-  }
-  // For images/files, use URL if available
-  else if (trimmedUrl && trimmedUrl.length > 0) {
-    uri = trimmedUrl;
-  }
-
-  // Append cache buster for remote URLs to fix "LOADING" cache issue
-  if (uri && (uri.startsWith('http://') || uri.startsWith('https://'))) {
-    const separator = uri.includes('?') ? '&' : '?';
-    return `${uri}${separator}v=${version}`;
-  }
-
-  return uri;
-}
-
-/**
- * Image attachment renderer with auto-refresh for loading placeholders
- * Backend serves a "LOADING" placeholder image while processing thumbnails
- * We force re-renders by updating the version parameter to check if actual image is ready
- */
 function ImageAttachment({ attachment, theme }: { attachment: ChatAttachment; theme: any }) {
-  // Track version for cache-busting
-  const [version, setVersion] = React.useState(() => {
-    // Initial version based on upload time
-    if (!attachment.uploadedAt) return Date.now();
-    const uploadTime = new Date(attachment.uploadedAt).getTime();
-    const timeSinceUpload = Date.now() - uploadTime;
-    // If uploaded recently (< 10 mins), use current timestamp
-    return timeSinceUpload < 10 * 60 * 1000 ? Date.now() : 1;
-  });
-
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [refreshCount, setRefreshCount] = React.useState(0);
-  const MAX_REFRESHES = 10; // 10 attempts
-  const REFRESH_INTERVAL = 500; // 500ms
-
-  // Auto-refresh mechanism to detect when LOADING placeholder is replaced
-  React.useEffect(() => {
-    // Only auto-refresh for recent attachments
-    if (!attachment.uploadedAt) return;
-
-    const uploadTime = new Date(attachment.uploadedAt).getTime();
-    const timeSinceUpload = Date.now() - uploadTime;
-
-    // Only refresh if uploaded within last 10 minutes and still loading
-    if (timeSinceUpload > 10 * 60 * 1000) return;
-    if (refreshCount >= MAX_REFRESHES) return;
-
-    const timer = setTimeout(() => {
-      console.log(`🔄 [ImageAttachment] Auto-refresh attempt ${refreshCount + 1}/${MAX_REFRESHES} for ${attachment.filename}`);
-      setVersion(Date.now());
-      setRefreshCount(prev => prev + 1);
-    }, REFRESH_INTERVAL);
-
-    return () => clearTimeout(timer);
-  }, [attachment.uploadedAt, attachment.filename, refreshCount]);
-
-  const imageUri = getValidUri(attachment, false, version);
+  const imageUri = attachment.thumbnail;
 
   return (
     <View style={[styles.mediaContainer, { backgroundColor: theme.colors.background.secondary }]}>
@@ -121,18 +45,9 @@ function ImageAttachment({ attachment, theme }: { attachment: ChatAttachment; th
           contentFit="cover"
           transition={200}
           cachePolicy="none"
-          onLoadStart={() => setIsLoading(true)}
-          onLoad={() => {
-            setIsLoading(false);
-            // Stop refreshing once image loads successfully
-            if (refreshCount < MAX_REFRESHES) {
-              console.log(`✅ [ImageAttachment] Image loaded successfully after ${refreshCount} refreshes`);
-              setRefreshCount(MAX_REFRESHES); // Stop further refreshes
-            }
-          }}
-          onError={(error) => {
-            console.warn(`❌ [ImageAttachment] Image load error:`, error);
-            setIsLoading(false);
+
+          onLoad={(event) => {
+            console.log('Image loaded', event);
           }}
         />
       ) : (
@@ -146,12 +61,8 @@ function ImageAttachment({ attachment, theme }: { attachment: ChatAttachment; th
   );
 }
 
-/**
- * Video attachment renderer
- */
 function VideoAttachment({ attachment, theme }: { attachment: ChatAttachment; theme: any }) {
-  // For videos, only use actual thumbnail URLs (not video file paths)
-  const thumbnailUri = getValidUri(attachment, true);
+  const thumbnailUri = attachment.thumbnail;
 
   return (
     <View style={[styles.mediaContainer, {
@@ -211,8 +122,6 @@ export function MessageAttachment({
   if (!attachments || attachments.length === 0) {
     return null;
   }
-
-
 
   return (
     <View style={styles.container}>

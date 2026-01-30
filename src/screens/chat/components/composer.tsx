@@ -8,7 +8,6 @@ import React, { useCallback, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useTheme, type Theme } from '@/theme';
 import type { SendMessageData, ChatMessage } from '@/services/chat';
-import { AttachmentPreview } from './attachment-preview';
 import { ComposerReplyBar } from './composer-reply-bar';
 import { ComposerActionButtons } from './composer-action-buttons';
 import { ComposerRecordingUI } from './composer-recording-ui';
@@ -18,6 +17,7 @@ import { useComposerSend } from '../hooks/use-composer-send';
 import { useComposerTyping } from '../hooks/use-composer-typing';
 import { useAudioRecording } from '../hooks/use-audio-recording';
 import { useMediaSelection } from '../hooks/use-media-selection';
+import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export interface ComposerProps {
   onSend: (data: Omit<SendMessageData, 'roomId'> & { localMessage?: ChatMessage }) => Promise<void>;
@@ -37,7 +37,8 @@ export function Composer({
   roomId,
 }: ComposerProps) {
   const theme = useTheme();
-  const styles = createStyles(theme);
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(theme, insets);
 
   // State management
   const { message, attachments, setMessage, addAttachment, clearAll, hasContent } =
@@ -203,19 +204,17 @@ export function Composer({
   );
 }
 
-const createStyles = (theme: Theme) =>
+const createStyles = (theme: Theme, insets: EdgeInsets) =>
   StyleSheet.create({
     container: {
       backgroundColor: theme.colors.background.primary,
       borderTopWidth: 1,
-      borderTopColor: theme.colors.surface.border,
-      paddingBottom: theme.spacing.gap.md,
     },
     inputArea: {
       flexDirection: 'row',
       alignItems: 'flex-end',
       paddingHorizontal: theme.spacing.gap.md,
-      paddingTop: theme.spacing.gap.md,
+      paddingVertical: theme.spacing.gap.md,
       gap: theme.spacing.gap.sm,
     },
   });
