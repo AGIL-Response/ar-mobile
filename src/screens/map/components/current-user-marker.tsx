@@ -13,15 +13,15 @@ import Animated, {
   withSequence,
   Easing,
 } from 'react-native-reanimated';
+import { MarkerView } from '@rnmapbox/maps';
 import { Avatar } from '@/components';
 import { useTheme, type Theme } from '@/theme';
 import { View } from '@/components';
+import { useAuthStore } from '@/stores/auth';
+import { useLocationStore } from '@/stores/location';
+import { useUsersStore } from '@/stores/users';
 
 interface CurrentUserMarkerProps {
-  /** File ID for the avatar image */
-  fileId: string;
-  /** User status (active, idle, inactive, unknown) */
-  status?: string;
   /** Size of the avatar */
   size?: 'xs' | 'small' | 'medium' | 'large' | 'xl';
 }
@@ -32,14 +32,40 @@ interface CurrentUserMarkerProps {
  * - Distinct blue radar-style ring
  * - Pulsing animation for visibility
  * - Blue border to differentiate from other responders
+ * - Automatically handles location and user data
  */
-export function CurrentUserMarker({
-  fileId,
-  status = 'unknown',
-  size = 'small',
-}: CurrentUserMarkerProps) {
+export function CurrentUserMarker({ size = 'small' }: CurrentUserMarkerProps) {
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const currentUser = useAuthStore((state) => state.user);
+  const locationCoordinates = useLocationStore((state) => state.coordinates);
+  const users = useUsersStore((state) => state.users);
+
+  // Device location marker for current user
+  const deviceLocationCoordinates = useMemo<[number, number] | null>(() => {
+    if (!locationCoordinates || !currentUser?.avatarId) {
+      return null;
+    }
+    // Use device GPS location from location store
+    return [
+      locationCoordinates.longitude,
+      locationCoordinates.latitude,
+    ];
+  }, [locationCoordinates, currentUser?.avatarId]);
+
+  // Get current user's status from users store if available
+  const currentUserStatus = useMemo(() => {
+    if (!currentUser?.id) {
+      return 'unknown';
+    }
+    const userInStore = users.find((user) => user.id === currentUser.id);
+    return userInStore?.status || 'unknown';
+  }, [currentUser?.id, users]);
+
+  // Don't render if we don't have coordinates or avatar
+  if (!deviceLocationCoordinates || !currentUser?.avatarId) {
+    return null;
+  }
 
   // Animation values for pulsing effect
   const pulseScale = useSharedValue(1);
@@ -163,73 +189,80 @@ export function CurrentUserMarker({
   const markerDimensions = getMarkerDimensions(size);
 
   return (
-    <View style={[styles.container, { width: markerDimensions.containerSize, height: markerDimensions.containerSize }]}>
-      {/* Outer radar ring 1 - blue, expanding and fading */}
-      <Animated.View
-        style={[
-          styles.radarRing,
-          {
-            width: markerDimensions.radarSize,
-            height: markerDimensions.radarSize,
-            borderRadius: markerDimensions.radarSize / 2,
-            borderWidth: markerDimensions.radarBorderWidth,
-          },
-          radarRingStyle,
-        ]}
-      />
-
-      {/* Outer radar ring 2 - blue, expanding and fading with delay */}
-      <Animated.View
-        style={[
-          styles.radarRing,
-          {
-            width: markerDimensions.radarSize,
-            height: markerDimensions.radarSize,
-            borderRadius: markerDimensions.radarSize / 2,
-            borderWidth: markerDimensions.radarBorderWidth,
-          },
-          radarRingStyle2,
-        ]}
-      />
-
-      {/* Pulsing ring - blue, pulsing effect */}
-      <Animated.View
-        style={[
-          styles.pulseRing,
-          {
-            width: markerDimensions.pulseSize,
-            height: markerDimensions.pulseSize,
-            borderRadius: markerDimensions.pulseSize / 2,
-            borderWidth: markerDimensions.pulseBorderWidth,
-          },
-          pulseRingStyle,
-        ]}
-      />
-
-      {/* Static blue border ring */}
-      <View
-        style={[
-          styles.staticRing,
-          {
-            width: markerDimensions.staticSize,
-            height: markerDimensions.staticSize,
-            borderRadius: markerDimensions.staticSize / 2,
-            borderWidth: markerDimensions.staticBorderWidth,
-          },
-        ]}
-      />
-
-      {/* Avatar with blue border indicator */}
-      <View style={styles.avatarContainer}>
-        <Avatar
-          fileId={fileId}
-          status={status}
-          size={size}
-          isMapAvatar={false}
-          style={styles.avatarBorder}
+    <MarkerView
+      key="current-user-device-location-marker"
+      coordinate={deviceLocationCoordinates}
+      allowOverlapWithPuck={false}
+      allowOverlap
+    >
+      <View style={[styles.container, { width: markerDimensions.containerSize, height: markerDimensions.containerSize }]}>
+        {/* Outer radar ring 1 - blue, expanding and fading */}
+        <Animated.View
+          style={[
+            styles.radarRing,
+            {
+              width: markerDimensions.radarSize,
+              height: markerDimensions.radarSize,
+              borderRadius: markerDimensions.radarSize / 2,
+              borderWidth: markerDimensions.radarBorderWidth,
+            },
+            radarRingStyle,
+          ]}
         />
+
+        {/* Outer radar ring 2 - blue, expanding and fading with delay */}
+        <Animated.View
+          style={[
+            styles.radarRing,
+            {
+              width: markerDimensions.radarSize,
+              height: markerDimensions.radarSize,
+              borderRadius: markerDimensions.radarSize / 2,
+              borderWidth: markerDimensions.radarBorderWidth,
+            },
+            radarRingStyle2,
+          ]}
+        />
+
+        {/* Pulsing ring - blue, pulsing effect */}
+        <Animated.View
+          style={[
+            styles.pulseRing,
+            {
+              width: markerDimensions.pulseSize,
+              height: markerDimensions.pulseSize,
+              borderRadius: markerDimensions.pulseSize / 2,
+              borderWidth: markerDimensions.pulseBorderWidth,
+            },
+            pulseRingStyle,
+          ]}
+        />
+
+        {/* Static blue border ring */}
+        <View
+          style={[
+            styles.staticRing,
+            {
+              width: markerDimensions.staticSize,
+              height: markerDimensions.staticSize,
+              borderRadius: markerDimensions.staticSize / 2,
+              borderWidth: markerDimensions.staticBorderWidth,
+            },
+          ]}
+        />
+
+        {/* Avatar with blue border indicator */}
+        <View style={styles.avatarContainer}>
+          <Avatar
+            fileId={currentUser.avatarId}
+            status={currentUserStatus}
+            size={size}
+            isMapAvatar={false}
+            style={styles.avatarBorder}
+          />
+        </View>
       </View>
-    </View>
+    </MarkerView>
   );
 }
 

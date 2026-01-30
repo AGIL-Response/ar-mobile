@@ -85,27 +85,6 @@ function MapView() {
       .filter((item) => Boolean(item.coordinates));
   }, [users]);
 
-  // Device location marker for current user
-  const deviceLocationCoordinates = useMemo<[number, number] | null>(() => {
-    if (!locationCoordinates || !currentUser?.avatarId) {
-      return null;
-    }
-    // Use device GPS location from location store
-    return [
-      locationCoordinates.longitude,
-      locationCoordinates.latitude,
-    ];
-  }, [locationCoordinates, currentUser?.avatarId]);
-
-  // Get current user's status from users store if available
-  const currentUserStatus = useMemo(() => {
-    if (!currentUser?.id) {
-      return 'unknown';
-    }
-    const userInStore = users.find((user) => user.id === currentUser.id);
-    return userInStore?.status || 'unknown';
-  }, [currentUser?.id, users]);
-
   useEffect(() => {
     fetchIncidents({});
   }, [fetchIncidents]);
@@ -282,20 +261,7 @@ function MapView() {
           <Camera ref={cameraRef} zoomLevel={0} />
 
           {/* Current user's device location marker */}
-          {deviceLocationCoordinates && currentUser?.avatarId && (
-            <MarkerView
-              key="current-user-device-location-marker"
-              coordinate={deviceLocationCoordinates}
-              allowOverlapWithPuck={false}
-              allowOverlap
-            >
-              <CurrentUserMarker
-                fileId={currentUser.avatarId}
-                status={currentUserStatus}
-                size="small"
-              />
-            </MarkerView>
-          )}
+          <CurrentUserMarker size="small" />
 
           {coordinates.map((coordinate) => (
             <MarkerView
