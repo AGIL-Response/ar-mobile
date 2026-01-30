@@ -14,12 +14,14 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { MarkerView } from '@rnmapbox/maps';
+import { Svg, Path, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { Avatar } from '@/components';
 import { useTheme, type Theme } from '@/theme';
 import { View } from '@/components';
 import { useAuthStore } from '@/stores/auth';
 import { useLocationStore } from '@/stores/location';
 import { useUsersStore } from '@/stores/users';
+import { useDeviceHeading } from '@/lib/hooks/use-device-heading';
 
 interface CurrentUserMarkerProps {
   /** Size of the avatar */
@@ -32,6 +34,7 @@ interface CurrentUserMarkerProps {
  * - Distinct blue radar-style ring
  * - Pulsing animation for visibility
  * - Blue border to differentiate from other responders
+ * - Directional radar cone based on device heading
  * - Automatically handles location and user data
  */
 export function CurrentUserMarker({ size = 'small' }: CurrentUserMarkerProps) {
@@ -40,6 +43,7 @@ export function CurrentUserMarker({ size = 'small' }: CurrentUserMarkerProps) {
   const currentUser = useAuthStore((state) => state.user);
   const locationCoordinates = useLocationStore((state) => state.coordinates);
   const users = useUsersStore((state) => state.users);
+  const { heading } = useDeviceHeading();
 
   // Device location marker for current user
   const deviceLocationCoordinates = useMemo<[number, number] | null>(() => {
@@ -62,12 +66,7 @@ export function CurrentUserMarker({ size = 'small' }: CurrentUserMarkerProps) {
     return userInStore?.status || 'unknown';
   }, [currentUser?.id, users]);
 
-  // Don't render if we don't have coordinates or avatar
-  if (!deviceLocationCoordinates || !currentUser?.avatarId) {
-    return null;
-  }
-
-  // Animation values for pulsing effect
+  // Animation values for pulsing effect (must be called before early return)
   const pulseScale = useSharedValue(1);
   const pulseOpacity = useSharedValue(0.6);
   const radarScale = useSharedValue(1);
@@ -185,8 +184,38 @@ export function CurrentUserMarker({ size = 'small' }: CurrentUserMarkerProps) {
     opacity: radarOpacity2.value,
   }));
 
+  // Get device heading for directional radar cone
+  const deviceHeading = useMemo(() => {
+    if (!heading) {
+      return null;
+    }
+    // Use true heading if available, otherwise use magnetic heading
+    return heading.trueHeading ?? heading.magneticHeading;
+  }, [heading]);
+
+  // Animated style for directional radar cone rotation
+  const radarConeRotation = useSharedValue(deviceHeading ?? 0);
+  
+  useEffect(() => {
+    if (deviceHeading !== null) {
+      radarConeRotation.value = withTiming(deviceHeading, {
+        duration: 200,
+        easing: Easing.out(Easing.ease),
+      });
+    }
+  }, [deviceHeading, radarConeRotation]);
+
+  const radarConeStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${radarConeRotation.value}deg` }],
+  }));
+
   // Get dimensions based on avatar size
   const markerDimensions = getMarkerDimensions(size);
+
+  // Don't render if we don't have coordinates or avatar (after all hooks)
+  if (!deviceLocationCoordinates || !currentUser?.avatarId) {
+    return null;
+  }
 
   return (
     <MarkerView
@@ -196,21 +225,21 @@ export function CurrentUserMarker({ size = 'small' }: CurrentUserMarkerProps) {
       allowOverlap
     >
       <View style={[styles.container, { width: markerDimensions.containerSize, height: markerDimensions.containerSize }]}>
-        {/* Outer radar ring 1 - blue, expanding and fading */}
-        <Animated.View
-          style={[
-            styles.radarRing,
-            {
-              width: markerDimensions.radarSize,
-              height: markerDimensions.radarSize,
-              borderRadius: markerDimensions.radarSize / 2,
-              borderWidth: markerDimensions.radarBorderWidth,
-            },
-            radarRingStyle,
-          ]}
-        />
+        {/*/!* Outer radar ring 1 - blue, expanding and fading *!/*/}
+        {/*<Animated.View*/}
+        {/*  style={[*/}
+        {/*    styles.radarRing,*/}
+        {/*    {*/}
+        {/*      width: markerDimensions.radarSize,*/}
+        {/*      height: markerDimensions.radarSize,*/}
+        {/*      borderRadius: markerDimensions.radarSize / 2,*/}
+        {/*      borderWidth: markerDimensions.radarBorderWidth,*/}
+        {/*    },*/}
+        {/*    radarRingStyle,*/}
+        {/*  ]}*/}
+        {/*/>*/}
 
-        {/* Outer radar ring 2 - blue, expanding and fading with delay */}
+        {/*/!* Outer radar ring 2 - blue, expanding and fading with delay *!/*/}
         <Animated.View
           style={[
             styles.radarRing,
@@ -224,19 +253,19 @@ export function CurrentUserMarker({ size = 'small' }: CurrentUserMarkerProps) {
           ]}
         />
 
-        {/* Pulsing ring - blue, pulsing effect */}
-        <Animated.View
-          style={[
-            styles.pulseRing,
-            {
-              width: markerDimensions.pulseSize,
-              height: markerDimensions.pulseSize,
-              borderRadius: markerDimensions.pulseSize / 2,
-              borderWidth: markerDimensions.pulseBorderWidth,
-            },
-            pulseRingStyle,
-          ]}
-        />
+        {/*/!* Pulsing ring - blue, pulsing effect *!/*/}
+        {/*<Animated.View*/}
+        {/*  style={[*/}
+        {/*    styles.pulseRing,*/}
+        {/*    {*/}
+        {/*      width: markerDimensions.pulseSize,*/}
+        {/*      height: markerDimensions.pulseSize,*/}
+        {/*      borderRadius: markerDimensions.pulseSize / 2,*/}
+        {/*      borderWidth: markerDimensions.pulseBorderWidth,*/}
+        {/*    },*/}
+        {/*    pulseRingStyle,*/}
+        {/*  ]}*/}
+        {/*/>*/}
 
         {/* Static blue border ring */}
         <View
@@ -261,9 +290,86 @@ export function CurrentUserMarker({ size = 'small' }: CurrentUserMarkerProps) {
             style={styles.avatarBorder}
           />
         </View>
+
+        {/* Directional radar cone - shows device facing direction */}
+        {deviceHeading !== null && (
+          <Animated.View
+            style={[
+              styles.radarConeContainer,
+              {
+                width: markerDimensions.containerSize * 1.5,
+                height: markerDimensions.containerSize * 1.5,
+                marginTop: -(markerDimensions.containerSize * 1.5) / 2,
+                marginLeft: -(markerDimensions.containerSize * 1.5) / 2,
+              },
+              radarConeStyle,
+            ]}
+            pointerEvents="none"
+          >
+            <Svg
+              width={markerDimensions.containerSize * 1.5}
+              height={markerDimensions.containerSize * 1.5}
+              viewBox={`0 0 ${markerDimensions.containerSize * 1.5} ${markerDimensions.containerSize * 1.5}`}
+            >
+              <Defs>
+                <RadialGradient
+                  id="radarConeGradient"
+                  cx="50%"
+                  cy="50%"
+                  r="50%"
+                >
+                  <Stop offset="0%" stopColor={theme.colors.semantic.blue} stopOpacity="1" />
+                  <Stop offset="100%" stopColor={theme.colors.semantic.blue} stopOpacity="0" />
+                </RadialGradient>
+              </Defs>
+              <Path
+                d={createRadarConePath(
+                  (markerDimensions.containerSize * 1.5) / 2,
+                  (markerDimensions.containerSize * 1.5) / 2,
+                  markerDimensions.containerSize * 0.5,
+                  50 // cone angle in degrees
+                )}
+                fill="url(#radarConeGradient)"
+              />
+            </Svg>
+          </Animated.View>
+        )}
       </View>
     </MarkerView>
   );
+}
+
+/**
+ * Create SVG path for radar cone shape
+ * @param centerX - X coordinate of center
+ * @param centerY - Y coordinate of center
+ * @param radius - Radius of the cone
+ * @param angleDegrees - Angle of the cone in degrees
+ */
+function createRadarConePath(
+  centerX: number,
+  centerY: number,
+  radius: number,
+  angleDegrees: number
+): string {
+  const halfAngle = angleDegrees / 2;
+  const startAngle = -halfAngle;
+  const endAngle = halfAngle;
+
+  // Convert angles to radians
+  const startRad = (startAngle * Math.PI) / 180;
+  const endRad = (endAngle * Math.PI) / 180;
+
+  // Calculate start and end points
+  const startX = centerX + radius * Math.sin(startRad);
+  const startY = centerY - radius * Math.cos(startRad);
+  const endX = centerX + radius * Math.sin(endRad);
+  const endY = centerY - radius * Math.cos(endRad);
+
+  // Create arc path (large arc flag = 0 for angles < 180)
+  const largeArcFlag = angleDegrees > 180 ? 1 : 0;
+
+  return `M ${centerX} ${centerY} L ${startX} ${startY} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${endX} ${endY} Z`;
 }
 
 /**
@@ -351,5 +457,13 @@ const createStyles = (theme: Theme) =>
     avatarBorder: {
       borderWidth: 3,
       borderColor: theme.colors.semantic.blue,
+    },
+    radarConeContainer: {
+      position: 'absolute',
+      top: '50%',
+      left: '50%',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 5,
     },
   });
