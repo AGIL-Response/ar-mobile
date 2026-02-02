@@ -14,9 +14,10 @@ import React, {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
-import { AppBar, Avatar, Background, Center, Icon, Text, View, iconNames } from '@/components';
+import { StyleSheet, Switch, TouchableOpacity } from 'react-native';
+import { AppBar, Avatar, Background, Center, Icon, Text, View, iconNames, CenteredModal, Select } from '@/components';
 import { useSafeAreaInsets } from '@/lib/hooks';
 import { getCoordinate } from '@/screens/incidents/utils';
 import { useIncidentsStore } from '@/stores/incidents';
@@ -28,10 +29,26 @@ import type { IncidentCoordinate, UserCoordinate } from '@/screens/map/types';
 import { useAuthStore } from '@/stores/auth';
 import { useLocationStore } from '@/stores/location';
 import Constants from 'expo-constants';
-import { MapStyleSelector, getMapboxStyleURL } from './components/map-style-selector';
+import { getMapboxStyleURL } from './components/map-style-selector';
 import { CurrentUserMarker } from './components/current-user-marker';
+import { getItem, setItem } from '@/lib/storage';
 
 Mapbox.setAccessToken(Constants.expoConfig?.extra?.env?.MAPBOX_DOWNLOADS_TOKEN);
+
+const MAP_SETTINGS_STORAGE_KEY = 'map-settings';
+
+const MAP_STYLES: { value: string; label: string }[] = [
+  { value: 'streets', label: 'Streets' },
+  { value: 'outdoors', label: 'Outdoors' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+  { value: 'satellite', label: 'Satellite' },
+  { value: 'satellite-streets', label: 'Sat Streets' },
+];
+
+interface MapSettings {
+  showIncidentMarkers: boolean;
+}
 
 function MapView() {
   const theme = useTheme();
@@ -45,6 +62,7 @@ function MapView() {
   const mapFocusIncidentId = useMapStore((state) => state.mapFocusIncidentId);
   const mapFocusUserId = useMapStore((state) => state.mapFocusUserId);
   const mapStyle = useMapStore((state) => state.mapStyle);
+  const setMapStyle = useMapStore((state) => state.actions.setMapStyle);
   const setMapFocusIncident = useMapStore((state) => state.actions.setMapFocusIncident);
   const setMapFocusUserId = useMapStore((state) => state.actions.setMapFocusUserId);
   const setFlatViewFocusUserId = useMapStore((state) => state.actions.setFlatViewFocusUserId);
@@ -57,6 +75,16 @@ function MapView() {
   // Track last zoomed coordinate to prevent duplicate zooms
   const lastZoomedCoordinateRef = useRef<[number, number] | null>(null);
   const hasInitialZoomedRef = useRef(false);
+  
+  // Settings modal state
+  const [isSettingsModalVisible, setIsSettingsModalVisible] = useState(false);
+  
+  // Load map settings from storage
+  const [mapSettings, setMapSettings] = useState<MapSettings>(() => {
+    const savedSettings = getItem<MapSettings>(MAP_SETTINGS_STORAGE_KEY);
+    return savedSettings || { showIncidentMarkers: true };
+  });
+  
   const coordinates = useMemo<IncidentCoordinate[]>(() => {
     return incidents
       ?.filter((incident) => incident.location?.coordinates) // only with coords
@@ -232,6 +260,13 @@ function MapView() {
     };
   }, [setMapFocusIncident, setMapFocusUserId]);
 
+  // Save settings to storage when changed
+  const handleToggleIncidentMarkers = useCallback((checked: boolean) => {
+    const newSettings = { ...mapSettings, showIncidentMarkers: checked };
+    setMapSettings(newSettings);
+    setItem(MAP_SETTINGS_STORAGE_KEY, newSettings);
+  }, [mapSettings]);
+
 
   if (isLoading) {
     return (
@@ -263,7 +298,7 @@ function MapView() {
           {/* Current user's device location marker */}
           <CurrentUserMarker size="small" />
 
-          {coordinates.map((coordinate) => (
+          {mapSettings.showIncidentMarkers && coordinates.map((coordinate) => (
             <MarkerView
               key={`incident-marker-${coordinate.id}`}
               coordinate={coordinate.coordinates}
@@ -307,7 +342,17 @@ function MapView() {
             </MarkerView>
           ))}
         </MapboxMapView>
-        <MapStyleSelector />
+        <TouchableOpacity
+          style={styles.settingsButton}
+          onPress={() => setIsSettingsModalVisible(true)}
+          activeOpacity={0.7}
+        >
+          <Icon
+            name={iconNames.settings}
+            size={24}
+            color={theme.colors.text.icon}
+          />
+        </TouchableOpacity>
         <TouchableOpacity
           style={styles.currentLocationButton}
           onPress={handleNavigateToCurrentLocation}
@@ -320,6 +365,38 @@ function MapView() {
           />
         </TouchableOpacity>
       </View>
+      
+      <CenteredModal
+        visible={isSettingsModalVisible}
+        onClose={() => setIsSettingsModalVisible(false)}
+        title="Map Settings"
+      >
+        <View style={styles.settingsContent}>
+          <View style={styles.settingRow}>
+            <Text variant="body" style={styles.settingLabel}>
+              Show Incident Markers
+            </Text>
+            <Switch
+              value={mapSettings.showIncidentMarkers}
+              onValueChange={handleToggleIncidentMarkers}
+              trackColor={{
+                false: theme.colors.semantic.black,
+                true: theme.colors.background.qua,
+              }}
+              thumbColor={theme.colors.text.primary}
+            />
+          </View>
+          <View style={styles.mapStyleContainer}>
+            <Select
+              label="Map Style"
+              options={MAP_STYLES}
+              value={mapStyle}
+              onValueChange={(value) => setMapStyle(value as typeof mapStyle)}
+              placeholder="Select map style"
+            />
+          </View>
+        </View>
+      </CenteredModal>
     </View>
   );
 }
@@ -385,6 +462,27 @@ const createStyles = (theme: Theme, bottomInset: number) => {
       alignItems: 'center',
       justifyContent: 'center',
     },
+    settingsButton: {
+      position: 'absolute',
+      bottom: 80 + bottomInset, // Above location button (48px height + 12px gap)
+      right: 20,
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: theme.colors.background.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+      elevation: 5,
+      borderWidth: 1,
+      borderColor: theme.colors.surface.border,
+    },
     currentLocationButton: {
       position: 'absolute',
       bottom: 20 + bottomInset,
@@ -405,6 +503,22 @@ const createStyles = (theme: Theme, bottomInset: number) => {
       elevation: 5,
       borderWidth: 1,
       borderColor: theme.colors.surface.border,
+    },
+    settingsContent: {
+      width: '100%',
+    },
+    settingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      width: '100%',
+    },
+    settingLabel: {
+      flex: 1,
+      color: theme.colors.text.primary,
+    },
+    mapStyleContainer: {
+      marginTop: 16,
     },
   });
 };
