@@ -1,19 +1,38 @@
 import {
   persist,
   PersistOptions,
+  createJSONStorage,
 } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { create } from 'zustand';
 import type { LocationCoordinates } from '@/lib/socket';
+import { storage } from '@/lib/storage';
 
 interface ICreateZustand {
   persist?: PersistOptions<any>;
 }
 
+// Create MMKV storage adapter for Zustand persist
+const mmkvStorage = {
+  getItem: (name: string): string | null => {
+    const value = storage.getString(name);
+    return value ?? null;
+  },
+  setItem: (name: string, value: string): void => {
+    storage.set(name, value);
+  },
+  removeItem: (name: string): void => {
+    storage.remove(name);
+  },
+};
+
 const createStore = <T>(store: any, options?: ICreateZustand) => {
   let _store: any = immer(store);
   if (options?.persist) {
-    _store = persist(_store, options.persist);
+    _store = persist(_store, {
+      ...options.persist,
+      storage: createJSONStorage(() => mmkvStorage),
+    });
   }
   return create<T>(_store);
 };
