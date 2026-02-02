@@ -5,11 +5,12 @@
  */
 
 import React, { useEffect, useMemo, useRef } from 'react';
-import { KeyboardAvoidingView, Platform, FlatList, type FlatList as FlatListType } from 'react-native';
+import { Platform, FlatList, type FlatList as FlatListType, StyleSheet } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Background, View, AppBar } from '@/components';
-import { useTheme } from '@/theme';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Theme, useTheme } from '@/theme';
+import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Composer, MediaViewer, MessageListHeader, EmptyState } from './components';
 import { useRoomData } from './hooks/use-room-data';
 import { useMessages } from './hooks/use-messages';
@@ -26,6 +27,9 @@ export default function ChatRoomScreen() {
   const theme = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  const styles = createStyles(theme, insets);
+
   const params = useLocalSearchParams<{ roomId: string | string[] }>();
 
   // Normalize roomId - ensure it's a valid non-empty string
@@ -198,112 +202,71 @@ export default function ChatRoomScreen() {
     : 0;
 
   return (
-    <Background>
-      <AppBar
-        title={roomName}
-        showBackButton={true}
-        onBackPress={() => router.back()}
-        safeArea={true}
-        titleAlign="left"
-        style={{ borderBottomWidth: 0 }}
-      />
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={keyboardVerticalOffset}
-      >
-        <View style={{ flex: 1 }}>
-          <View style={{ flex: 1 }} pointerEvents={showLoadingOverlay ? 'none' : 'auto'}>
-            <FlatList
-              ref={listRef}
-              key={`list-${roomId}`}
-              data={reversedMessages}
-              keyExtractor={keyExtractor}
-              renderItem={renderItem}
-              // Force re-render when messages array reference changes
-              extraData={messages.length}
-              contentContainerStyle={contentContainerStyle}
-              inverted={true}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="none"
-              // Performance optimizations for variable-sized items
-              removeClippedSubviews={true}
-              maxToRenderPerBatch={10}
-              windowSize={10}
-              initialNumToRender={15}
-              updateCellsBatchingPeriod={50}
-              // Pagination: use onScroll to detect when scrolling near top (where older messages are)
-              // With inverted={true} and reversed array [newest, ..., oldest]:
-              // - Bottom (newest): offsetY is low
-              // - Top (oldest): offsetY is high
-              // We want to load more when user scrolls up towards the top
-              onScroll={(event) => {
-                const offsetY = event.nativeEvent.contentOffset.y;
+    <View style={styles.container}>
+      <Background>
+        <AppBar
+          title={roomName}
+          showBackButton={true}
+          onBackPress={() => router.back()}
+          safeArea={true}
+          titleAlign="left"
+          style={{ borderBottomWidth: 0 }}
+        />
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={keyboardVerticalOffset}
+        >
+          <View style={{ flex: 1 }}>
+            <View style={{ flex: 1 }} pointerEvents={showLoadingOverlay ? 'none' : 'auto'}>
+              <FlatList
+                ref={listRef}
+                key={`list-${roomId}`}
+                data={reversedMessages}
+                keyExtractor={keyExtractor}
+                renderItem={renderItem}
+                // Force re-render when messages array reference changes
+                extraData={messages.length}
+                contentContainerStyle={contentContainerStyle}
+                inverted={true}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="none"
+                // Performance optimizations for variable-sized items
+                removeClippedSubviews={true}
+                maxToRenderPerBatch={10}
+                windowSize={10}
+                initialNumToRender={15}
+                updateCellsBatchingPeriod={50}
+                onScroll={(event) => {
+                  const offsetY = event.nativeEvent.contentOffset.y;
 
-                // Track if user is at bottom (for auto-scroll behavior)
-                // With inverted={true}, at bottom means offsetY is low (near 0)
-                // Consider "at bottom" if within 100px of bottom
-                isAtBottomRef.current = offsetY < 100;
+                  isAtBottomRef.current = offsetY < 100;
 
-                // Calculate distance from bottom (where newest messages are)
-                // With inverted={true} and reversed array [newest, ..., oldest]:
-                // - Bottom (newest): offsetY is low (near 0)
-                // - Top (oldest): offsetY is high
-                // We want to load more when user scrolls up (offsetY increases)
-                const threshold = 500; // Trigger when scrolled 500px from bottom (towards top)
+                  const threshold = 500;
 
-                // Only trigger if:
-                // 1. We've scrolled up significantly (away from bottom where newest messages are)
-                // 2. Initial scroll is complete
-                // 3. Not already loading
-                // 4. Haven't triggered recently
-                if (
-                  offsetY > threshold &&
-                  hasScrolledToEndRef.current &&
-                  !isLoadingMore &&
-                  !loadMoreTriggeredRef.current
-                ) {
-                  loadMoreTriggeredRef.current = true;
-                  handleLoadMore();
-                  // Reset trigger flag after a delay to prevent rapid firing
-                  setTimeout(() => {
-                    loadMoreTriggeredRef.current = false;
-                  }, 2000);
+                  if (
+                    offsetY > threshold &&
+                    hasScrolledToEndRef.current &&
+                    !isLoadingMore &&
+                    !loadMoreTriggeredRef.current
+                  ) {
+                    loadMoreTriggeredRef.current = true;
+                    handleLoadMore();
+                    setTimeout(() => {
+                      loadMoreTriggeredRef.current = false;
+                    }, 2000);
+                  }
+                }}
+                scrollEventThrottle={200}
+                ListFooterComponent={<MessageListHeader isLoadingMore={isLoadingMore} />}
+                ListEmptyComponent={
+                  <View style={{ flex: 1, height: 600, }}>
+                    <EmptyState isLoading={isInitialLoading || (messages.length === 0 && isLoading)} />
+                  </View>
                 }
-              }}
-              scrollEventThrottle={200}
-              // Note: getItemLayout cannot be used with dynamic/variable heights
-              // ListFooterComponent appears at top with inverted={true} (where older messages are loaded)
-              ListFooterComponent={<MessageListHeader isLoadingMore={isLoadingMore} />}
-              ListEmptyComponent={
-                // Counter the inversion for empty state
-                // Wrap in View with transform to flip it back to normal (inverted FlatList flips everything)
-                <View style={{ flex: 1, height: 600, }}>
-                  <EmptyState isLoading={isInitialLoading || (messages.length === 0 && isLoading)} />
-                </View>
-              }
-            />
-          </View>
-
-          {showLoadingOverlay && (
-            <View
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: theme.colors.background.primary,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-              pointerEvents="auto"
-            >
-              <EmptyState isLoading={true} />
+              />
             </View>
-          )}
 
-          <View style={{ paddingBottom: insets.bottom }}>
             <Composer
               onSend={handleSend}
               onTyping={handleTyping}
@@ -312,16 +275,34 @@ export default function ChatRoomScreen() {
               roomId={roomId}
             />
           </View>
-        </View>
-      </KeyboardAvoidingView>
 
-      {/* Media Viewer */}
-      <MediaViewer
-        visible={mediaViewerVisible}
-        attachments={selectedAttachments}
-        initialIndex={selectedAttachmentIndex}
-        onClose={handleCloseMediaViewer}
-      />
-    </Background>
+        </KeyboardAvoidingView>
+
+        {/* Media Viewer */}
+        <MediaViewer
+          visible={mediaViewerVisible}
+          attachments={selectedAttachments}
+          initialIndex={selectedAttachmentIndex}
+          onClose={handleCloseMediaViewer}
+        />
+      </Background>
+    </View>
   );
 }
+const createStyles = (theme: Theme, insets: EdgeInsets) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background.primary,
+    paddingBottom: insets.bottom
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});

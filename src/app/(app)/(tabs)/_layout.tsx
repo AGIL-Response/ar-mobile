@@ -35,7 +35,7 @@ export default function TabLayout() {
   const router = useRouter();
   const { bottomInset } = useSafeAreaInsets();
 
-  const tabBarHeight = 85;
+  const tabBarHeight = 60;
   const totalHeight = tabBarHeight + bottomInset;
 
   return (
@@ -46,7 +46,7 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: theme.colors.background.tertiary, // Dark background from Figma
           borderTopWidth: 0,
-          paddingTop: 20,
+          paddingTop: theme.spacing.padding.lg,
           paddingBottom: bottomInset,
           height: totalHeight,
         },

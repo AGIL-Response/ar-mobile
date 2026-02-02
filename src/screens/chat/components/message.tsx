@@ -37,14 +37,6 @@ function MessageComponent({
   const messageStatus = message.status || 'sent';
 
   const hasAttachments = message.attachments && message.attachments.length > 0;
-  
-  // #region agent log
-  if (hasAttachments) {
-    fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'message.tsx:40', message: 'Message - hasAttachments TRUE', data: { messageId: message.id, attachmentCount: message.attachments?.length || 0, attachments: message.attachments?.map(a => ({ id: a.id, filename: a.filename, hasUrl: !!a.url, urlLength: a.url?.length || 0 })) || [] }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'D' }) }).catch(() => { });
-  } else if (message.attachments) {
-    fetch('http://127.0.0.1:7242/ingest/fe8ebf07-0ebe-4741-a941-900aecb34d86', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'message.tsx:43', message: 'Message - hasAttachments FALSE but attachments exist', data: { messageId: message.id, attachmentCount: message.attachments.length, attachments: message.attachments.map(a => ({ id: a.id, filename: a.filename, hasUrl: !!a.url, urlLength: a.url?.length || 0 })) }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'D' }) }).catch(() => { });
-  }
-  // #endregion
 
   // Handle retry for failed messages
   const handleRetry = async () => {
