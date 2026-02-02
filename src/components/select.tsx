@@ -217,7 +217,7 @@ const createModalStyles = createStyleCreator<SelectProps>((theme, _props) => {
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
   };
 });
 

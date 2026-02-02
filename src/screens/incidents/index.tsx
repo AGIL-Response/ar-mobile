@@ -14,6 +14,7 @@ import { useIncidentsStore } from '@/stores/incidents';
 import { useUsersStore } from '@/stores/users';
 import { useTheme } from '@/theme';
 import type { Incident } from '@/api/incidents/types';
+import { IncidentType, IncidentStatus } from '@/api/incidents/types';
 import { AppHeader } from "@/screens/home/components/app-header";
 
 export default function IncidentsScreen() {
@@ -47,8 +48,8 @@ export default function IncidentsScreen() {
     try {
       // Refresh incidents data
       await fetchIncidents({
-        type: 'fire',
-        status: 'reported',
+        type: IncidentType.FIRE,
+        status: IncidentStatus.REPORTED,
       });
 
       // Refresh team members if we have a selected team

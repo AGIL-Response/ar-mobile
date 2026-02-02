@@ -1,8 +1,63 @@
 import type { BaseApiResponse } from '@/types/api';
 
-export type IncidentType = 'fire' | 'sos' | 'intrusion' | 'hazardous_material' | 'natural_disaster' | 'technical_failure' | 'other';
-export type IncidentStatus = 'reported' | 'acknowledged' | 'in_progress' | 'resolved' | 'closed';
+export enum IncidentType {
+	FIRE = 'fire',
+	SOS = 'sos',
+	INTRUSION = 'intrusion',
+	HAZARDOUS_MATERIAL = 'hazardous_material',
+	NATURAL_DISASTER = 'natural_disaster',
+	TECHNICAL_FAILURE = 'technical_failure',
+	OTHER = 'other',
+}
+
+export enum IncidentStatus {
+	REPORTED = 'reported',
+	ACKNOWLEDGED = 'acknowledged',
+	IN_PROGRESS = 'in_progress',
+	RESOLVED = 'resolved',
+	CLOSED = 'closed',
+}
+
+// Type aliases for backward compatibility (union of enum values)
+export type IncidentTypeValue = 
+	| IncidentType.FIRE
+	| IncidentType.SOS
+	| IncidentType.INTRUSION
+	| IncidentType.HAZARDOUS_MATERIAL
+	| IncidentType.NATURAL_DISASTER
+	| IncidentType.TECHNICAL_FAILURE
+	| IncidentType.OTHER;
+
+export type IncidentStatusValue =
+	| IncidentStatus.REPORTED
+	| IncidentStatus.ACKNOWLEDGED
+	| IncidentStatus.IN_PROGRESS
+	| IncidentStatus.RESOLVED
+	| IncidentStatus.CLOSED;
+
 export type IncidentSeverity = 'high' | 'medium' | 'low';
+
+// Incident type options
+export const typeIncidentOptions = [
+	{ value: 'all', label: 'All Types' },
+	{ value: IncidentType.FIRE, label: 'Fire' },
+	{ value: IncidentType.SOS, label: 'SOS' },
+	{ value: IncidentType.INTRUSION, label: 'Intrusion' },
+	{ value: IncidentType.HAZARDOUS_MATERIAL, label: 'Hazardous Material' },
+	{ value: IncidentType.NATURAL_DISASTER, label: 'Natural Disaster' },
+	{ value: IncidentType.TECHNICAL_FAILURE, label: 'Technical Failure' },
+	{ value: IncidentType.OTHER, label: 'Other' },
+];
+
+// Incident status options
+export const statusIncidentOptions = [
+	{ value: 'all', label: 'All Status' },
+	{ value: IncidentStatus.REPORTED, label: 'Reported' },
+	{ value: IncidentStatus.ACKNOWLEDGED, label: 'Acknowledged' },
+	{ value: IncidentStatus.IN_PROGRESS, label: 'In Progress' },
+	{ value: IncidentStatus.RESOLVED, label: 'Resolved' },
+	{ value: IncidentStatus.CLOSED, label: 'Closed' },
+];
 
 export interface IncidentAssignee {
   id: string;
@@ -28,8 +83,8 @@ export interface Incident {
   id: string;
   name: string;
   description: string;
-  type: IncidentType;
-  status: IncidentStatus;
+  type: IncidentTypeValue;
+  status: IncidentStatusValue;
   createdByType: string;
   createdAt: string;
   updatedAt: string;
@@ -58,8 +113,8 @@ export interface Incident {
 export interface IncidentsQueryParams {
   offset?: number;
   limit?: number;
-  status?: IncidentStatus;
-  type?: IncidentType;
+  status?: IncidentStatusValue;
+  type?: IncidentTypeValue;
   severity?: IncidentSeverity;
   search?: string;
   sort?: string;
@@ -72,7 +127,7 @@ export type IncidentResponse = BaseApiResponse<Incident>;
 export interface CreateIncidentRequest {
   name: string;
   description: string;
-  type: IncidentType;
+  type: IncidentTypeValue;
   location?: {
     coordinates: number[]; // [longitude, latitude, altitude]
   };

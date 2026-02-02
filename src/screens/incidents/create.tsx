@@ -9,6 +9,7 @@ import { Alert, ScrollView } from 'react-native';
 
 import { filesApi } from '@/api';
 import type { CreateIncidentRequest } from '@/api/incidents/types';
+import { typeIncidentOptions } from '@/api/incidents/types';
 import {
   AppBar,
   Background,
@@ -36,14 +37,6 @@ interface CreateIncidentForm {
   type: string;
   attachments: LocalAttachment[];
 }
-
-const incidentTypes = [
-  { label: 'Emergency', value: 'emergency' },
-  { label: 'Fire', value: 'fire' },
-  { label: 'Medical', value: 'medical' },
-  { label: 'Security', value: 'security' },
-  { label: 'Traffic', value: 'traffic' },
-];
 
 export const getMimeTypeFromUri = (uri: string) => {
   if (!uri) return 'image/jpeg';
@@ -329,7 +322,7 @@ export default function CreateIncidentScreen() {
             placeholder="Select"
             value={form.type}
             onValueChange={(value) => handleInputChange('type', String(value))}
-            options={incidentTypes}
+            options={typeIncidentOptions.filter(opt => opt.value !== 'all')}
             size="small"
           />
         </View>
