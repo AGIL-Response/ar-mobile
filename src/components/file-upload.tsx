@@ -1,5 +1,6 @@
 import * as DocumentPicker from 'expo-document-picker';
-import * as ImagePicker from 'expo-image-picker';
+import * as ExpoImagePicker from 'expo-image-picker';
+import ImagePicker from 'react-native-image-crop-picker';
 import React, { forwardRef, useState } from 'react';
 import { Alert, Pressable, type View as RNView } from 'react-native';
 
@@ -399,12 +400,53 @@ export const FileUpload = forwardRef<RNView, FileUploadProps>(
         let result;
 
         if (uploadType === 'image') {
-          // Use ImagePicker for images
-          result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsMultipleSelection: multiple,
-            quality: 0.8,
-          });
+          // Use react-native-image-crop-picker for single selection (with cropping)
+          // Use expo-image-picker for multiple selection (no native cropping support)
+          if (multiple) {
+            // Multiple selection - use expo-image-picker
+            result = await ExpoImagePicker.launchImageLibraryAsync({
+              mediaTypes: ExpoImagePicker.MediaTypeOptions.Images,
+              allowsMultipleSelection: true,
+              quality: 0.8,
+            });
+          } else {
+            // Single selection - use react-native-image-crop-picker with cropping
+            try {
+              const cropResult = await ImagePicker.openPicker({
+                width: 1920,
+                height: 1920,
+                cropping: true,
+                compressImageQuality: 0.8,
+                includeBase64: false,
+                mediaType: 'photo',
+              });
+
+              // Convert to expo-image-picker format for consistency
+              result = {
+                canceled: false,
+                assets: [
+                  {
+                    uri: cropResult.path,
+                    width: cropResult.width,
+                    height: cropResult.height,
+                    mimeType: cropResult.mime || 'image/jpeg',
+                    fileName: cropResult.filename || `image_${Date.now()}.jpg`,
+                    fileSize: cropResult.size || 0,
+                  },
+                ],
+              };
+            } catch (error: any) {
+              // User cancelled
+              if (
+                error?.message === 'User cancelled image selection' ||
+                error?.message === 'User cancelled image picker'
+              ) {
+                result = { canceled: true };
+              } else {
+                throw error;
+              }
+            }
+          }
         } else {
           // Use DocumentPicker for documents or any files
           result = await DocumentPicker.getDocumentAsync({

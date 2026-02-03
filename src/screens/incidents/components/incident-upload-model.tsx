@@ -1,10 +1,5 @@
 import React from 'react';
-
-import {
-  launchCameraAsync,
-  launchImageLibraryAsync,
-  MediaTypeOptions,
-} from 'expo-image-picker';
+import ImagePicker from 'react-native-image-crop-picker';
 
 import {
   useCameraPermission,
@@ -29,40 +24,70 @@ export const IncidentUploadModel = React.forwardRef<
   const verifyGalleryPermission = useMediaLibraryPermission();
 
   const handleTakePhoto = async () => {
-    const hasPermission = await verifyCameraPermission();
-    if (!hasPermission) {
-      return;
-    }
-    const result = await launchCameraAsync({
-      mediaTypes: MediaTypeOptions.All, // Allow both images and videos
-      allowsEditing: true, // Allow free-form cropping (no fixed aspect ratio)
-      quality: 1,
-      videoQuality: 1,
-    });
+    try {
+      const hasPermission = await verifyCameraPermission();
+      if (!hasPermission) {
+        return;
+      }
 
-    if (!result.canceled && result.assets[0]) {
-      const asset = result.assets[0];
-      const mimeType = asset.mimeType || getMimeTypeFromUri(asset.uri);
-      onAttachmentPicked(asset.uri, mimeType);
+      // Open camera with cropping enabled for images
+      // Videos will be returned without cropping (library handles this automatically)
+      const result = await ImagePicker.openCamera({
+        width: 1920,
+        height: 1920,
+        cropping: true, // Enabled for images, ignored for videos
+        compressImageQuality: 0.9,
+        includeBase64: false,
+        mediaType: 'any', // Allow both images and videos
+      });
+
+      // Result will have path for both images and videos
+      if (result.path) {
+        const mimeType = result.mime || getMimeTypeFromUri(result.path);
+        onAttachmentPicked(result.path, mimeType);
+      }
+    } catch (error: any) {
+      // User cancelled or error occurred
+      if (
+        error?.message !== 'User cancelled image selection' &&
+        error?.message !== 'User cancelled camera'
+      ) {
+        console.error('Error taking photo:', error);
+      }
     }
   };
 
   const handleChooseFromGallery = async () => {
-    const hasPermission = await verifyGalleryPermission();
-    if (!hasPermission) {
-      return;
-    }
-    const result = await launchImageLibraryAsync({
-      mediaTypes: MediaTypeOptions.All, // Allow both images and videos
-      allowsEditing: true, // Allow free-form cropping (no fixed aspect ratio)
-      quality: 1,
-      videoQuality: 1,
-    });
+    try {
+      const hasPermission = await verifyGalleryPermission();
+      if (!hasPermission) {
+        return;
+      }
 
-    if (!result.canceled && result.assets[0]) {
-      const asset = result.assets[0];
-      const mimeType = asset.mimeType || getMimeTypeFromUri(asset.uri);
-      onAttachmentPicked(asset.uri, mimeType);
+      // Open picker with cropping enabled for images
+      // Videos will be returned without cropping (library handles this automatically)
+      const result = await ImagePicker.openPicker({
+        width: 1920,
+        height: 1920,
+        cropping: true, // Enabled for images, ignored for videos
+        compressImageQuality: 0.9,
+        includeBase64: false,
+        mediaType: 'any', // Allow both images and videos
+      });
+
+      // Result will have path for both images and videos
+      if (result.path) {
+        const mimeType = result.mime || getMimeTypeFromUri(result.path);
+        onAttachmentPicked(result.path, mimeType);
+      }
+    } catch (error: any) {
+      // User cancelled or error occurred
+      if (
+        error?.message !== 'User cancelled image selection' &&
+        error?.message !== 'User cancelled image picker'
+      ) {
+        console.error('Error choosing from gallery:', error);
+      }
     }
   };
 

@@ -6,7 +6,7 @@
 import { useCameraPermission, useMediaLibraryPermission } from '@/lib/media-permissions';
 import type { MediaFile } from '@/utils/media';
 import { ensureFileExtension, validateMediaFile } from '@/utils/media';
-import * as ImagePicker from 'expo-image-picker';
+import ImagePicker from 'react-native-image-crop-picker';
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
 
@@ -44,25 +44,26 @@ export function useMediaSelection(): UseMediaSelectionReturn {
                 return null;
             }
 
-            const result = await ImagePicker.launchCameraAsync({
-                mediaTypes: ['images', 'videos'] as any,
-                allowsEditing: true, // Enable editing to force HEIC conversion to JPG on iOS
-                quality: 0.8,
-                videoQuality: 1,
+            const result = await ImagePicker.openCamera({
+                width: 1920,
+                height: 1920,
+                cropping: true, // Enabled for images, ignored for videos
+                compressImageQuality: 0.8,
+                includeBase64: false,
+                mediaType: 'any', // Allow both images and videos
             });
 
-            if (!result.canceled && result.assets && result.assets[0]) {
-                const asset = result.assets[0];
-                const rawMimeType = asset.mimeType || (asset.type === 'video' ? 'video/mp4' : 'image/jpeg');
-                const mimeType = normalizeImageMimeType(rawMimeType, asset.fileName || undefined);
-                const baseName = asset.fileName || `camera_${Date.now()}`;
+            if (result.path) {
+                const rawMimeType = result.mime || (result.path.endsWith('.mp4') ? 'video/mp4' : 'image/jpeg');
+                const mimeType = normalizeImageMimeType(rawMimeType, result.filename || undefined);
+                const baseName = result.filename || `camera_${Date.now()}`;
                 const fileName = ensureFileExtension(baseName, mimeType);
 
                 const newAttachment: MediaFile = {
-                    uri: asset.uri,
+                    uri: result.path,
                     name: fileName,
-                    type: asset.type || 'image',
-                    size: asset.fileSize || 0,
+                    type: rawMimeType.startsWith('video/') ? 'video' : 'image',
+                    size: result.size || 0,
                     mimeType,
                 };
 
@@ -75,18 +76,24 @@ export function useMediaSelection(): UseMediaSelectionReturn {
                 }
             }
             return null;
-        } catch (error) {
-            console.error('Error taking photo:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Failed to take photo';
+        } catch (error: any) {
+            // User cancelled or error occurred
+            if (
+                error?.message !== 'User cancelled image selection' &&
+                error?.message !== 'User cancelled camera'
+            ) {
+                console.error('Error taking photo:', error);
+                const errorMessage = error instanceof Error ? error.message : 'Failed to take photo';
 
-            if (errorMessage.includes('simulator') || errorMessage.includes('not available')) {
-                Alert.alert(
-                    'Camera Not Available',
-                    'Camera is not available on this device or simulator. Please use a physical device or select from gallery instead.',
-                    [{ text: 'OK' }]
-                );
-            } else {
-                Alert.alert('Error', errorMessage);
+                if (errorMessage.includes('simulator') || errorMessage.includes('not available')) {
+                    Alert.alert(
+                        'Camera Not Available',
+                        'Camera is not available on this device or simulator. Please use a physical device or select from gallery instead.',
+                        [{ text: 'OK' }]
+                    );
+                } else {
+                    Alert.alert('Error', errorMessage);
+                }
             }
             return null;
         }
@@ -100,26 +107,26 @@ export function useMediaSelection(): UseMediaSelectionReturn {
                 return null;
             }
 
-            const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ['images', 'videos'] as any,
-                allowsMultipleSelection: false,
-                allowsEditing: true, // Enable editing to force HEIC conversion to JPG on iOS
-                quality: 0.8,
-                selectionLimit: 1,
+            const result = await ImagePicker.openPicker({
+                width: 1920,
+                height: 1920,
+                cropping: true, // Enabled for images, ignored for videos
+                compressImageQuality: 0.8,
+                includeBase64: false,
+                mediaType: 'any', // Allow both images and videos
             });
 
-            if (!result.canceled && result.assets && result.assets[0]) {
-                const asset = result.assets[0];
-                const rawMimeType = asset.mimeType || (asset.type === 'video' ? 'video/mp4' : 'image/jpeg');
-                const mimeType = normalizeImageMimeType(rawMimeType, asset.fileName || undefined);
-                const baseName = asset.fileName || `media_${Date.now()}`;
+            if (result.path) {
+                const rawMimeType = result.mime || (result.path.endsWith('.mp4') ? 'video/mp4' : 'image/jpeg');
+                const mimeType = normalizeImageMimeType(rawMimeType, result.filename || undefined);
+                const baseName = result.filename || `media_${Date.now()}`;
                 const fileName = ensureFileExtension(baseName, mimeType);
 
                 const newAttachment: MediaFile = {
-                    uri: asset.uri,
+                    uri: result.path,
                     name: fileName,
-                    type: asset.type || 'image',
-                    size: asset.fileSize || 0,
+                    type: rawMimeType.startsWith('video/') ? 'video' : 'image',
+                    size: result.size || 0,
                     mimeType,
                 };
 
@@ -132,9 +139,15 @@ export function useMediaSelection(): UseMediaSelectionReturn {
                 }
             }
             return null;
-        } catch (error) {
-            console.error('Error picking image:', error);
-            Alert.alert('Error', 'Failed to pick media');
+        } catch (error: any) {
+            // User cancelled or error occurred
+            if (
+                error?.message !== 'User cancelled image selection' &&
+                error?.message !== 'User cancelled image picker'
+            ) {
+                console.error('Error picking image:', error);
+                Alert.alert('Error', 'Failed to pick media');
+            }
             return null;
         }
     }, [verifyMediaLibraryPermission]);

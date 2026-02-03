@@ -5,7 +5,6 @@ import { reactNativeRender as render, waitFor } from '@/lib/test-utils';
 import type { IncidentUploadModelRef } from './incident-upload-model';
 import { IncidentUploadModel } from './incident-upload-model';
 
-
 jest.mock('@/lib/media-permissions', () => ({
   useCameraPermission: jest.fn(),
   useMediaLibraryPermission: jest.fn(),
@@ -20,7 +19,15 @@ jest.mock('../create', () => ({
   }),
 }));
 
-const { launchCameraAsync, launchImageLibraryAsync } = require('expo-image-picker');
+jest.mock('react-native-image-crop-picker', () => ({
+  __esModule: true,
+  default: {
+    openCamera: jest.fn(),
+    openPicker: jest.fn(),
+  },
+}));
+
+const ImagePicker = require('react-native-image-crop-picker').default;
 const { useCameraPermission, useMediaLibraryPermission } = require('@/lib/media-permissions');
 const { getMimeTypeFromUri } = require('../create');
 
@@ -39,14 +46,20 @@ describe('IncidentUploadModel', () => {
     (useMediaLibraryPermission as jest.Mock).mockReturnValue(mockVerifyGalleryPermission);
 
     // Default camera and gallery mocks
-    (launchCameraAsync as jest.Mock).mockResolvedValue({
-      canceled: false,
-      assets: [{ uri: 'file://camera.jpg', mimeType: 'image/jpeg' }],
+    (ImagePicker.openCamera as jest.Mock).mockResolvedValue({
+      path: 'file://camera.jpg',
+      mime: 'image/jpeg',
+      width: 1920,
+      height: 1920,
+      size: 1000000,
     });
 
-    (launchImageLibraryAsync as jest.Mock).mockResolvedValue({
-      canceled: false,
-      assets: [{ uri: 'file://gallery.jpg', mimeType: 'image/jpeg' }],
+    (ImagePicker.openPicker as jest.Mock).mockResolvedValue({
+      path: 'file://gallery.jpg',
+      mime: 'image/jpeg',
+      width: 1920,
+      height: 1920,
+      size: 1000000,
     });
   });
 
@@ -85,11 +98,13 @@ describe('IncidentUploadModel', () => {
       await ref.current?.takePhoto();
 
       expect(mockVerifyCameraPermission).toHaveBeenCalled();
-      expect(launchCameraAsync).toHaveBeenCalledWith({
-        mediaTypes: 'All',
-        allowsEditing: true,
-        quality: 1,
-        videoQuality: 1,
+      expect(ImagePicker.openCamera).toHaveBeenCalledWith({
+        width: 1920,
+        height: 1920,
+        cropping: true,
+        compressImageQuality: 0.9,
+        includeBase64: false,
+        mediaType: 'any',
       });
     });
 
@@ -116,12 +131,14 @@ describe('IncidentUploadModel', () => {
 
       await ref.current?.takePhoto();
 
-      expect(launchCameraAsync).not.toHaveBeenCalled();
+      expect(ImagePicker.openCamera).not.toHaveBeenCalled();
       expect(onAttachmentPicked).not.toHaveBeenCalled();
     });
 
     it('does not call callback when camera is cancelled', async () => {
-      (launchCameraAsync as jest.Mock).mockResolvedValue({ canceled: true });
+      const cancelError = new Error('User cancelled camera');
+      cancelError.message = 'User cancelled camera';
+      (ImagePicker.openCamera as jest.Mock).mockRejectedValue(cancelError);
 
       const onAttachmentPicked = jest.fn();
       const ref = React.createRef<IncidentUploadModelRef>();
@@ -130,14 +147,17 @@ describe('IncidentUploadModel', () => {
 
       await ref.current?.takePhoto();
 
-      expect(launchCameraAsync).toHaveBeenCalled();
+      expect(ImagePicker.openCamera).toHaveBeenCalled();
       expect(onAttachmentPicked).not.toHaveBeenCalled();
     });
 
     it('uses getMimeTypeFromUri when mimeType not provided', async () => {
-      (launchCameraAsync as jest.Mock).mockResolvedValue({
-        canceled: false,
-        assets: [{ uri: 'file://photo.png', mimeType: undefined }],
+      (ImagePicker.openCamera as jest.Mock).mockResolvedValue({
+        path: 'file://photo.png',
+        mime: undefined,
+        width: 1920,
+        height: 1920,
+        size: 1000000,
       });
 
       const onAttachmentPicked = jest.fn();
@@ -154,9 +174,12 @@ describe('IncidentUploadModel', () => {
     });
 
     it('handles video capture', async () => {
-      (launchCameraAsync as jest.Mock).mockResolvedValue({
-        canceled: false,
-        assets: [{ uri: 'file://video.mp4', mimeType: 'video/mp4' }],
+      (ImagePicker.openCamera as jest.Mock).mockResolvedValue({
+        path: 'file://video.mp4',
+        mime: 'video/mp4',
+        width: 1920,
+        height: 1920,
+        size: 5000000,
       });
 
       const onAttachmentPicked = jest.fn();
@@ -182,11 +205,13 @@ describe('IncidentUploadModel', () => {
       await ref.current?.uploadPhoto();
 
       expect(mockVerifyGalleryPermission).toHaveBeenCalled();
-      expect(launchImageLibraryAsync).toHaveBeenCalledWith({
-        mediaTypes: 'All',
-        allowsEditing: true,
-        quality: 1,
-        videoQuality: 1,
+      expect(ImagePicker.openPicker).toHaveBeenCalledWith({
+        width: 1920,
+        height: 1920,
+        cropping: true,
+        compressImageQuality: 0.9,
+        includeBase64: false,
+        mediaType: 'any',
       });
     });
 
@@ -213,12 +238,14 @@ describe('IncidentUploadModel', () => {
 
       await ref.current?.uploadPhoto();
 
-      expect(launchImageLibraryAsync).not.toHaveBeenCalled();
+      expect(ImagePicker.openPicker).not.toHaveBeenCalled();
       expect(onAttachmentPicked).not.toHaveBeenCalled();
     });
 
     it('does not call callback when gallery is cancelled', async () => {
-      (launchImageLibraryAsync as jest.Mock).mockResolvedValue({ canceled: true });
+      const cancelError = new Error('User cancelled image picker');
+      cancelError.message = 'User cancelled image picker';
+      (ImagePicker.openPicker as jest.Mock).mockRejectedValue(cancelError);
 
       const onAttachmentPicked = jest.fn();
       const ref = React.createRef<IncidentUploadModelRef>();
@@ -227,14 +254,17 @@ describe('IncidentUploadModel', () => {
 
       await ref.current?.uploadPhoto();
 
-      expect(launchImageLibraryAsync).toHaveBeenCalled();
+      expect(ImagePicker.openPicker).toHaveBeenCalled();
       expect(onAttachmentPicked).not.toHaveBeenCalled();
     });
 
     it('uses getMimeTypeFromUri when mimeType not provided', async () => {
-      (launchImageLibraryAsync as jest.Mock).mockResolvedValue({
-        canceled: false,
-        assets: [{ uri: 'file://image.jpeg', mimeType: undefined }],
+      (ImagePicker.openPicker as jest.Mock).mockResolvedValue({
+        path: 'file://image.jpeg',
+        mime: undefined,
+        width: 1920,
+        height: 1920,
+        size: 1000000,
       });
 
       const onAttachmentPicked = jest.fn();
@@ -251,9 +281,12 @@ describe('IncidentUploadModel', () => {
     });
 
     it('handles video selection from gallery', async () => {
-      (launchImageLibraryAsync as jest.Mock).mockResolvedValue({
-        canceled: false,
-        assets: [{ uri: 'file://movie.mp4', mimeType: 'video/mp4' }],
+      (ImagePicker.openPicker as jest.Mock).mockResolvedValue({
+        path: 'file://movie.mp4',
+        mime: 'video/mp4',
+        width: 1920,
+        height: 1920,
+        size: 5000000,
       });
 
       const onAttachmentPicked = jest.fn();
@@ -270,10 +303,12 @@ describe('IncidentUploadModel', () => {
   });
 
   describe('Edge Cases', () => {
-    it('handles missing assets array', async () => {
-      (launchCameraAsync as jest.Mock).mockResolvedValue({
-        canceled: false,
-        assets: [],
+    it('handles missing path in result', async () => {
+      (ImagePicker.openCamera as jest.Mock).mockResolvedValue({
+        mime: 'image/jpeg',
+        width: 1920,
+        height: 1920,
+        size: 1000000,
       });
 
       const onAttachmentPicked = jest.fn();
@@ -286,11 +321,9 @@ describe('IncidentUploadModel', () => {
       expect(onAttachmentPicked).not.toHaveBeenCalled();
     });
 
-    it('handles null/undefined in assets array', async () => {
-      (launchImageLibraryAsync as jest.Mock).mockResolvedValue({
-        canceled: false,
-        assets: [null],
-      });
+    it('handles error when picking image', async () => {
+      const error = new Error('Picker error');
+      (ImagePicker.openPicker as jest.Mock).mockRejectedValue(error);
 
       const onAttachmentPicked = jest.fn();
       const ref = React.createRef<IncidentUploadModelRef>();
@@ -299,6 +332,7 @@ describe('IncidentUploadModel', () => {
 
       await ref.current?.uploadPhoto();
 
+      expect(ImagePicker.openPicker).toHaveBeenCalled();
       expect(onAttachmentPicked).not.toHaveBeenCalled();
     });
 
@@ -312,7 +346,7 @@ describe('IncidentUploadModel', () => {
       await ref.current?.takePhoto();
 
       expect(mockVerifyCameraPermission).toHaveBeenCalledTimes(2);
-      expect(launchCameraAsync).toHaveBeenCalledTimes(2);
+      expect(ImagePicker.openCamera).toHaveBeenCalledTimes(2);
     });
 
     it('handles multiple calls to uploadPhoto', async () => {
@@ -325,7 +359,7 @@ describe('IncidentUploadModel', () => {
       await ref.current?.uploadPhoto();
 
       expect(mockVerifyGalleryPermission).toHaveBeenCalledTimes(2);
-      expect(launchImageLibraryAsync).toHaveBeenCalledTimes(2);
+      expect(ImagePicker.openPicker).toHaveBeenCalledTimes(2);
     });
 
     it('handles ref being null', () => {
