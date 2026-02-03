@@ -84,6 +84,10 @@ export default function ProfileDetailScreen() {
       label: 'Username',
       value: user?.username || 'N/A',
     },
+    {
+      label: 'Description',
+      value: user?.description || 'N/A',
+    },
   ];
 
   return (

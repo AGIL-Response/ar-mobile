@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import DateTimePicker, {
   type AndroidNativeProps,
 } from '@react-native-community/datetimepicker';
-import * as ImagePicker from 'expo-image-picker';
+import ImagePicker from 'react-native-image-crop-picker';
 import { router } from 'expo-router';
 import { Alert, Platform, ScrollView, TouchableOpacity } from 'react-native';
 import { useMediaLibraryPermission } from '@/lib/media-permissions';
@@ -22,6 +22,7 @@ import {
   Input,
   Select,
   Text,
+  TextArea,
   View,
 } from '@/components';
 import { useSafeAreaInsets } from '@/lib/hooks';
@@ -80,18 +81,27 @@ export default function EditProfileScreen() {
         return;
       }
 
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
+      const result = await ImagePicker.openPicker({
+        width: 400,
+        height: 400,
+        cropping: true,
+        cropperCircleOverlay: true, // Circular crop for avatar
+        compressImageQuality: 0.8,
+        includeBase64: false,
+        mediaType: 'photo', // Only images for avatar
       });
 
-      if (!result.canceled && result.assets[0]) {
-        setAvatarUri(result.assets[0].uri);
+      if (result.path) {
+        setAvatarUri(result.path);
       }
-    } catch {
-      Alert.alert('Error', 'Failed to pick image');
+    } catch (error: any) {
+      // User cancelled or error occurred
+      if (
+        error?.message !== 'User cancelled image selection' &&
+        error?.message !== 'User cancelled image picker'
+      ) {
+        Alert.alert('Error', 'Failed to pick image');
+      }
     }
   };
 
@@ -256,82 +266,82 @@ export default function EditProfileScreen() {
             />
           </View>
 
-          <View style={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
-            <View style={{ flex: 1, gap: 8 }}>
-              <Text
-                variant="bodySmall"
-                style={{
-                  color: theme.colors.text.disabled,
-                }}
-              >
-                Gender
-              </Text>
-              <Select
-                size="small"
-                placeholder="Select gender"
-                options={genderOptions}
-                value={formData.gender}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, gender: value as string })
-                }
-              />
-            </View>
-            <View style={{ flex: 1, gap: 8 }}>
-              <Text
-                variant="bodySmall"
-                style={{
-                  color: theme.colors.text.disabled,
-                }}
-              >
-                Birthdate
-              </Text>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={openBirthdatePicker}
-              >
-                <Input
-                  size="small"
-                  placeholder="Select birthdate"
-                  value={
-                    formData.birthdate
-                      ? formatDate(new Date(formData.birthdate))
-                      : ''
-                  }
-                  editable={false}
-                  pointerEvents="none"
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
+          {/*<View style={{ display: 'flex', flexDirection: 'row', gap: 4 }}>*/}
+          {/*  <View style={{ flex: 1, gap: 8 }}>*/}
+          {/*    <Text*/}
+          {/*      variant="bodySmall"*/}
+          {/*      style={{*/}
+          {/*        color: theme.colors.text.disabled,*/}
+          {/*      }}*/}
+          {/*    >*/}
+          {/*      Gender*/}
+          {/*    </Text>*/}
+          {/*    <Select*/}
+          {/*      size="small"*/}
+          {/*      placeholder="Select gender"*/}
+          {/*      options={genderOptions}*/}
+          {/*      value={formData.gender}*/}
+          {/*      onValueChange={(value) =>*/}
+          {/*        setFormData({ ...formData, gender: value as string })*/}
+          {/*      }*/}
+          {/*    />*/}
+          {/*  </View>*/}
+          {/*  <View style={{ flex: 1, gap: 8 }}>*/}
+          {/*    <Text*/}
+          {/*      variant="bodySmall"*/}
+          {/*      style={{*/}
+          {/*        color: theme.colors.text.disabled,*/}
+          {/*      }}*/}
+          {/*    >*/}
+          {/*      Birthdate*/}
+          {/*    </Text>*/}
+          {/*    <TouchableOpacity*/}
+          {/*      activeOpacity={0.8}*/}
+          {/*      onPress={openBirthdatePicker}*/}
+          {/*    >*/}
+          {/*      <Input*/}
+          {/*        size="small"*/}
+          {/*        placeholder="Select birthdate"*/}
+          {/*        value={*/}
+          {/*          formData.birthdate*/}
+          {/*            ? formatDate(new Date(formData.birthdate))*/}
+          {/*            : ''*/}
+          {/*        }*/}
+          {/*        editable={false}*/}
+          {/*        pointerEvents="none"*/}
+          {/*      />*/}
+          {/*    </TouchableOpacity>*/}
+          {/*  </View>*/}
+          {/*</View>*/}
 
-          <View style={{ gap: 4 }}>
-            <Text
-              variant="bodySmall"
-              style={{
-                color: theme.colors.text.disabled,
-              }}
-            >
-              Phone Number
-              <Text
-                variant="bodySmall"
-                style={{ color: theme.colors.semantic.error }}
-              >
-                *
-              </Text>
-            </Text>
+          {/*<View style={{ gap: 4 }}>*/}
+          {/*  <Text*/}
+          {/*    variant="bodySmall"*/}
+          {/*    style={{*/}
+          {/*      color: theme.colors.text.disabled,*/}
+          {/*    }}*/}
+          {/*  >*/}
+          {/*    Phone Number*/}
+          {/*    <Text*/}
+          {/*      variant="bodySmall"*/}
+          {/*      style={{ color: theme.colors.semantic.error }}*/}
+          {/*    >*/}
+          {/*      **/}
+          {/*    </Text>*/}
+          {/*  </Text>*/}
 
-            <Input
-              size="small"
-              placeholder="+1 (123)456-7890"
-              value={formData.phoneNumber}
-              onChangeText={(text) =>
-                setFormData({ ...formData, phoneNumber: text })
-              }
-              error={errors.phoneNumber}
-              required
-              keyboardType="phone-pad"
-            />
-          </View>
+          {/*  <Input*/}
+          {/*    size="small"*/}
+          {/*    placeholder="+1 (123)456-7890"*/}
+          {/*    value={formData.phoneNumber}*/}
+          {/*    onChangeText={(text) =>*/}
+          {/*      setFormData({ ...formData, phoneNumber: text })*/}
+          {/*    }*/}
+          {/*    error={errors.phoneNumber}*/}
+          {/*    required*/}
+          {/*    keyboardType="phone-pad"*/}
+          {/*  />*/}
+          {/*</View>*/}
 
           <View style={{ gap: 4 }}>
             <Text
@@ -378,6 +388,28 @@ export default function EditProfileScreen() {
                 setFormData({ ...formData, username: text })
               }
               autoCapitalize="none"
+            />
+          </View>
+
+          <View style={{ gap: 4 }}>
+            <Text
+              variant="bodySmall"
+              style={{
+                color: theme.colors.text.disabled,
+              }}
+            >
+              Description
+            </Text>
+            <TextArea
+              size="small"
+              placeholder="Enter your description"
+              value={formData.description}
+              onChangeText={(text) =>
+                setFormData({ ...formData, description: text })
+              }
+              rows={4}
+              autoGrow
+              maxHeight={120}
             />
           </View>
         </View>

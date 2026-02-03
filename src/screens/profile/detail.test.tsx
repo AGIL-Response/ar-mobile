@@ -117,11 +117,36 @@ describe('ProfileDetailScreen', () => {
       expect(screen.getByText('johndoe')).toBeTruthy();
     });
 
-    it('displays all three profile fields', () => {
+    it('displays Description field with label', () => {
+      render(<ProfileDetailScreen />);
+      expect(screen.getByText('Description')).toBeTruthy();
+    });
+
+    it('displays Description value', () => {
+      mockAuthStore.useAuthStore.mockImplementation((selector?: any) => {
+        const state = {
+          user: {
+            id: 'user-123',
+            email: 'test@example.com',
+            fullName: 'John Doe',
+            username: 'johndoe',
+            description: 'Test description',
+            avatarId: 'avatar-123',
+          },
+        };
+        return selector ? selector(state) : state;
+      });
+
+      render(<ProfileDetailScreen />);
+      expect(screen.getByText('Test description')).toBeTruthy();
+    });
+
+    it('displays all four profile fields', () => {
       render(<ProfileDetailScreen />);
       expect(screen.getByText('Full Name')).toBeTruthy();
       expect(screen.getByText('Email')).toBeTruthy();
       expect(screen.getByText('Username')).toBeTruthy();
+      expect(screen.getByText('Description')).toBeTruthy();
     });
   });
 
@@ -184,6 +209,26 @@ describe('ProfileDetailScreen', () => {
       expect(naElements.length).toBeGreaterThanOrEqual(1);
     });
 
+    it('shows N/A for missing description', () => {
+      mockAuthStore.useAuthStore.mockImplementation((selector?: any) => {
+        const state = {
+          user: {
+            id: 'user-123',
+            email: 'test@example.com',
+            fullName: 'John Doe',
+            username: 'johndoe',
+            description: undefined,
+            avatarId: 'avatar-123',
+          },
+        };
+        return selector ? selector(state) : state;
+      });
+
+      render(<ProfileDetailScreen />);
+      const naElements = screen.getAllByText('N/A');
+      expect(naElements.length).toBeGreaterThanOrEqual(1);
+    });
+
     it('shows N/A for all fields when user is null', () => {
       mockAuthStore.useAuthStore.mockImplementation((selector?: any) => {
         const state = {
@@ -194,8 +239,8 @@ describe('ProfileDetailScreen', () => {
 
       render(<ProfileDetailScreen />);
       const naElements = screen.getAllByText('N/A');
-      // N/A appears in Avatar fallback and 3 ProfileField values
-      expect(naElements.length).toBeGreaterThanOrEqual(3);
+      // N/A appears in Avatar fallback and 4 ProfileField values
+      expect(naElements.length).toBeGreaterThanOrEqual(4);
     });
 
     it('shows N/A for empty string full name', () => {
@@ -332,6 +377,7 @@ describe('ProfileDetailScreen', () => {
       expect(screen.getByText('Full Name')).toBeTruthy();
       expect(screen.getByText('Email')).toBeTruthy();
       expect(screen.getByText('Username')).toBeTruthy();
+      expect(screen.getByText('Description')).toBeTruthy();
     });
 
     it('renders value text correctly', () => {
@@ -451,7 +497,7 @@ describe('ProfileDetailScreen', () => {
 
       render(<ProfileDetailScreen />);
       const naElements = screen.getAllByText('N/A');
-      expect(naElements.length).toBeGreaterThanOrEqual(3);
+      expect(naElements.length).toBeGreaterThanOrEqual(4);
     });
 
     it('handles user with all fields empty', () => {
@@ -462,6 +508,7 @@ describe('ProfileDetailScreen', () => {
             email: '',
             fullName: '',
             username: '',
+            description: '',
             avatarId: '',
           },
         };
@@ -470,19 +517,20 @@ describe('ProfileDetailScreen', () => {
 
       render(<ProfileDetailScreen />);
       const naElements = screen.getAllByText('N/A');
-      expect(naElements.length).toBeGreaterThanOrEqual(3);
+      expect(naElements.length).toBeGreaterThanOrEqual(4);
     });
   });
 
   describe('Profile Fields Array', () => {
-    it('contains exactly three fields', () => {
+    it('contains exactly four fields', () => {
       const profileFields = [
         { label: 'Full Name', value: 'John Doe' },
         { label: 'Email', value: 'test@example.com' },
         { label: 'Username', value: 'johndoe' },
+        { label: 'Description', value: 'Test description' },
       ];
 
-      expect(profileFields).toHaveLength(3);
+      expect(profileFields).toHaveLength(4);
     });
 
     it('has correct field labels', () => {
@@ -490,24 +538,42 @@ describe('ProfileDetailScreen', () => {
         { label: 'Full Name', value: 'John Doe' },
         { label: 'Email', value: 'test@example.com' },
         { label: 'Username', value: 'johndoe' },
+        { label: 'Description', value: 'Test description' },
       ];
 
       expect(profileFields[0].label).toBe('Full Name');
       expect(profileFields[1].label).toBe('Email');
       expect(profileFields[2].label).toBe('Username');
+      expect(profileFields[3].label).toBe('Description');
     });
 
     it('maps fields correctly from user data', () => {
+      mockAuthStore.useAuthStore.mockImplementation((selector?: any) => {
+        const state = {
+          user: {
+            id: 'user-123',
+            email: 'test@example.com',
+            fullName: 'John Doe',
+            username: 'johndoe',
+            description: 'Test description',
+            avatarId: 'avatar-123',
+          },
+        };
+        return selector ? selector(state) : state;
+      });
+
       render(<ProfileDetailScreen />);
       
       // All fields should be rendered
       expect(screen.getByText('Full Name')).toBeTruthy();
       expect(screen.getByText('Email')).toBeTruthy();
       expect(screen.getByText('Username')).toBeTruthy();
+      expect(screen.getByText('Description')).toBeTruthy();
       const johnDoe = screen.getAllByText('John Doe');
       expect(johnDoe.length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText('test@example.com')).toBeTruthy();
       expect(screen.getByText('johndoe')).toBeTruthy();
+      expect(screen.getByText('Test description')).toBeTruthy();
     });
   });
 
@@ -563,6 +629,7 @@ describe('ProfileDetailScreen', () => {
       expect(screen.getByText('Full Name')).toBeTruthy();
       expect(screen.getByText('Email')).toBeTruthy();
       expect(screen.getByText('Username')).toBeTruthy();
+      expect(screen.getByText('Description')).toBeTruthy();
     });
 
     it('renders accessible text values', () => {
@@ -624,7 +691,7 @@ describe('ProfileDetailScreen', () => {
       render(<ProfileDetailScreen />);
       const johnDoe = screen.getAllByText('John Doe');
       expect(johnDoe.length).toBeGreaterThanOrEqual(1);
-      expect(screen.getAllByText('N/A').length).toBeGreaterThanOrEqual(2);
+      expect(screen.getAllByText('N/A').length).toBeGreaterThanOrEqual(3);
     });
 
     it('handles whitespace in user data', () => {

@@ -3,7 +3,6 @@ import { fireEvent, waitFor } from '@testing-library/react-native';
 
 import { reactNativeRender as render, screen } from '@/lib/test-utils';
 import EditProfileScreen from './create';
-import * as ImagePicker from 'expo-image-picker';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 const RN = require('react-native');
@@ -22,11 +21,11 @@ jest.mock('expo-router', () => ({
 }));
 
 // Mock Image Picker
-const mockLaunchImageLibrary = jest.fn();
-jest.mock('expo-image-picker', () => ({
-  launchImageLibraryAsync: mockLaunchImageLibrary,
-  MediaTypeOptions: {
-    Images: 'Images',
+const mockOpenPicker = jest.fn();
+jest.mock('react-native-image-crop-picker', () => ({
+  __esModule: true,
+  default: {
+    openPicker: mockOpenPicker,
   },
 }));
 
@@ -88,7 +87,7 @@ describe('EditProfileScreen', () => {
     jest.clearAllMocks();
     mockRouterBack.mockClear();
     mockAlert.mockClear();
-    mockLaunchImageLibrary.mockClear();
+    mockOpenPicker.mockClear();
     mockVerifyMediaPermission.mockClear();
     mockUpdateUser.mockClear();
 
@@ -148,6 +147,7 @@ describe('EditProfileScreen', () => {
       expect(screen.getByPlaceholderText('Enter your full name')).toBeTruthy();
       expect(screen.getByPlaceholderText('Enter your email')).toBeTruthy();
       expect(screen.getByPlaceholderText('Enter username')).toBeTruthy();
+      expect(screen.getByPlaceholderText('Enter your description')).toBeTruthy();
       expect(screen.getByPlaceholderText('+1 (123)456-7890')).toBeTruthy();
     });
 
@@ -191,6 +191,12 @@ describe('EditProfileScreen', () => {
       expect(usernameInput.props.value).toBe('johndoe');
     });
 
+    it('initializes form with user description', () => {
+      render(<EditProfileScreen />);
+      const descriptionInput = screen.getByPlaceholderText('Enter your description');
+      expect(descriptionInput.props.value).toBe('Test user');
+    });
+
     it('handles missing user data gracefully', () => {
       mockAuthStore.useAuthStore.mockImplementation((selector?: any) => {
         const state = {
@@ -205,6 +211,8 @@ describe('EditProfileScreen', () => {
       render(<EditProfileScreen />);
       const fullNameInput = screen.getByPlaceholderText('Enter your full name');
       expect(fullNameInput.props.value).toBe('');
+      const descriptionInput = screen.getByPlaceholderText('Enter your description');
+      expect(descriptionInput.props.value).toBe('');
     });
   });
 
@@ -234,6 +242,15 @@ describe('EditProfileScreen', () => {
       fireEvent.changeText(usernameInput, 'janesmith');
 
       expect(usernameInput.props.value).toBe('janesmith');
+    });
+
+    it('updates description field on text change', () => {
+      render(<EditProfileScreen />);
+      const descriptionInput = screen.getByPlaceholderText('Enter your description');
+
+      fireEvent.changeText(descriptionInput, 'Updated description');
+
+      expect(descriptionInput.props.value).toBe('Updated description');
     });
 
     it('updates phone number field on text change', () => {
@@ -363,9 +380,12 @@ describe('EditProfileScreen', () => {
 
   describe('Avatar Management - Change Avatar', () => {
     it('opens image picker when camera button pressed', async () => {
-      mockLaunchImageLibrary.mockResolvedValue({
-        canceled: false,
-        assets: [{ uri: 'file://image.jpg' }],
+      mockOpenPicker.mockResolvedValue({
+        path: 'file://image.jpg',
+        mime: 'image/jpeg',
+        width: 400,
+        height: 400,
+        size: 1000000,
       });
 
       const { UNSAFE_root } = render(<EditProfileScreen />);
@@ -381,9 +401,12 @@ describe('EditProfileScreen', () => {
     });
 
     it('requests media permission before opening picker', async () => {
-      mockLaunchImageLibrary.mockResolvedValue({
-        canceled: false,
-        assets: [{ uri: 'file://image.jpg' }],
+      mockOpenPicker.mockResolvedValue({
+        path: 'file://image.jpg',
+        mime: 'image/jpeg',
+        width: 400,
+        height: 400,
+        size: 1000000,
       });
 
       const { UNSAFE_root } = render(<EditProfileScreen />);
@@ -417,35 +440,32 @@ describe('EditProfileScreen', () => {
     it('validates image picker configuration', () => {
       // Test that image picker would be called with correct options
       const expectedOptions = {
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
+        width: 400,
+        height: 400,
+        cropping: true,
+        cropperCircleOverlay: true,
+        compressImageQuality: 0.8,
+        includeBase64: false,
+        mediaType: 'photo',
       };
 
-      expect(expectedOptions.mediaTypes).toBe('Images');
-      expect(expectedOptions.allowsEditing).toBe(true);
-      expect(expectedOptions.aspect).toEqual([1, 1]);
-      expect(expectedOptions.quality).toBe(0.8);
+      expect(expectedOptions.width).toBe(400);
+      expect(expectedOptions.height).toBe(400);
+      expect(expectedOptions.cropping).toBe(true);
+      expect(expectedOptions.cropperCircleOverlay).toBe(true);
+      expect(expectedOptions.compressImageQuality).toBe(0.8);
     });
 
-    it('handles image picker result with canceled flag', () => {
-      const canceledResult = {
-        canceled: true,
-      };
+    it('handles image picker cancellation', () => {
+      // react-native-image-crop-picker throws an error when cancelled
+      const cancelError = new Error('User cancelled image picker');
+      cancelError.message = 'User cancelled image picker';
 
-      const successResult = {
-        canceled: false,
-        assets: [{ uri: 'file://image.jpg' }],
-      };
-
-      expect(canceledResult.canceled).toBe(true);
-      expect(successResult.canceled).toBe(false);
-      expect(successResult.assets).toBeDefined();
+      expect(cancelError.message).toBe('User cancelled image picker');
     });
 
     it('shows error alert when image picker fails', async () => {
-      mockLaunchImageLibrary.mockRejectedValue(new Error('Picker error'));
+      mockOpenPicker.mockRejectedValue(new Error('Picker error'));
 
       const { UNSAFE_root } = render(<EditProfileScreen />);
       const touchables = UNSAFE_root.findAllByType(RN.TouchableOpacity);
@@ -554,9 +574,11 @@ describe('EditProfileScreen', () => {
 
       const fullNameInput = screen.getByPlaceholderText('Enter your full name');
       const emailInput = screen.getByPlaceholderText('Enter your email');
+      const descriptionInput = screen.getByPlaceholderText('Enter your description');
 
       fireEvent.changeText(fullNameInput, 'Updated Name');
       fireEvent.changeText(emailInput, 'updated@example.com');
+      fireEvent.changeText(descriptionInput, 'Updated description');
 
       const saveButton = screen.getByTestId('save-button');
       fireEvent.press(saveButton);
@@ -567,6 +589,7 @@ describe('EditProfileScreen', () => {
           expect.objectContaining({
             fullName: 'Updated Name',
             email: 'updated@example.com',
+            description: 'Updated description',
           })
         );
       });
@@ -720,6 +743,7 @@ describe('EditProfileScreen', () => {
       expect(screen.getByText('Gender')).toBeTruthy();
       expect(screen.getByText('Birthdate')).toBeTruthy();
       expect(screen.getByText('Username')).toBeTruthy();
+      expect(screen.getByText('Description')).toBeTruthy();
     });
   });
 
