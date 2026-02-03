@@ -112,8 +112,9 @@ const createSelectTriggerStyles = createStyleCreator<SelectProps>(
         borderColor: colors.surface.border,
       },
       filled: {
-        backgroundColor: colors.surface.card,
-        borderWidth: 0,
+        backgroundColor: colors.background.primary,
+        borderWidth: 2,
+        borderColor: colors.surface.muted,
       },
     };
 
@@ -149,7 +150,7 @@ const createSelectTriggerStyles = createStyleCreator<SelectProps>(
 
 const createSelectTextStyles = createStyleCreator<SelectProps>(
   (theme, props) => {
-    const { size = 'medium', disabled = false } = props;
+    const { size = 'medium', disabled = false, variant = 'default' } = props;
     const { colors, typography } = theme;
 
     // Size-based typography
@@ -165,8 +166,13 @@ const createSelectTextStyles = createStyleCreator<SelectProps>(
       large: 56, // Match container height
     };
 
+    // For filled variant, use primary text color to match dark background
+    const textColor = variant === 'filled' 
+      ? (disabled ? colors.text.muted : colors.text.primary)
+      : (disabled ? colors.text.muted : colors.text.secondary);
+
     return {
-      color: disabled ? colors.text.muted : colors.text.secondary,
+      color: textColor,
       ...typographyVariants[size],
       lineHeight: sizeLineHeights[size],
       textAlignVertical: 'center', // Android-specific
@@ -176,7 +182,7 @@ const createSelectTextStyles = createStyleCreator<SelectProps>(
 
 const createPlaceholderStyles = createStyleCreator<SelectProps>(
   (theme, props) => {
-    const { size = 'medium' } = props;
+    const { size = 'medium', variant = 'default' } = props;
     const { colors, typography } = theme;
 
     const typographyVariants = {
@@ -191,8 +197,13 @@ const createPlaceholderStyles = createStyleCreator<SelectProps>(
       large: 56, // Match container height
     };
 
+    // For filled variant, use muted text color to match dark background
+    const placeholderColor = variant === 'filled' 
+      ? colors.text.muted 
+      : colors.text.placeholder;
+
     return {
-      color: colors.text.placeholder,
+      color: placeholderColor,
       ...typographyVariants[size],
       lineHeight: sizeLineHeights[size],
       textAlignVertical: 'center', // Android-specific
@@ -201,11 +212,9 @@ const createPlaceholderStyles = createStyleCreator<SelectProps>(
 );
 
 const createModalStyles = createStyleCreator<SelectProps>((theme, _props) => {
-  const { colors } = theme;
-
   return {
     flex: 1,
-    backgroundColor: colors.utility.overlay,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
@@ -214,21 +223,23 @@ const createModalStyles = createStyleCreator<SelectProps>((theme, _props) => {
 
 const createDropdownStyles = createStyleCreator<SelectProps>(
   (theme, _props) => {
-    const { colors, borderRadius } = theme;
+    const { colors } = theme;
 
     return {
-      backgroundColor: colors.surface.card,
-      borderRadius: borderRadius.lg,
+      backgroundColor: colors.background.primary,
+      borderRadius: 4,
       maxHeight: 300,
       width: '100%',
+      borderWidth: 2,
+      borderColor: colors.surface.muted,
       shadowColor: colors.semantic.black,
       shadowOffset: {
         width: 0,
-        height: 2,
+        height: 4,
       },
-      shadowOpacity: 0.25,
+      shadowOpacity: 0.3,
       shadowRadius: 8,
-      elevation: 5,
+      elevation: 8,
     };
   }
 );
@@ -251,7 +262,7 @@ const createOptionStyles = createStyleCreator<{
 
   return {
     paddingHorizontal: spacing.padding.lg,
-    paddingVertical: spacing.padding.md,
+    paddingVertical: spacing.padding.lg,
     borderBottomWidth: 1,
     borderBottomColor: colors.surface.divider,
     backgroundColor: selected ? colors.primary : 'transparent',
@@ -395,10 +406,12 @@ export const Select = forwardRef<RNView, SelectProps>(
     const textStyles = useThemedStyles(createSelectTextStyles, {
       size,
       disabled,
+      variant,
     });
 
     const placeholderStyles = useThemedStyles(createPlaceholderStyles, {
       size,
+      variant,
     });
 
     const modalStyles = useThemedStyles(createModalStyles, {});
@@ -470,7 +483,7 @@ export const Select = forwardRef<RNView, SelectProps>(
           <Icon
             name={iconNames.caret_down}
             size={16}
-            stroke={theme.colors.text.muted}
+            color={theme.colors.text.primary}
             style={{
               marginLeft: 8,
               opacity: disabled ? 0.5 : 1,

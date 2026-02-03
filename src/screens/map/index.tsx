@@ -393,6 +393,7 @@ function MapView() {
               value={mapStyle}
               onValueChange={(value) => setMapStyle(value as typeof mapStyle)}
               placeholder="Select map style"
+              color={theme.colors.text.primary}
             />
           </View>
         </View>
