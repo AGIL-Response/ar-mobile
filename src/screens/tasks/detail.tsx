@@ -433,7 +433,7 @@ export default function TaskDetailScreen() {
                   fontFamily: theme.fonts.goldmanRegular,
                 }}
               >
-                Recommended Checklist
+                Checklist
               </Text>
             </View>
 
