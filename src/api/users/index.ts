@@ -80,7 +80,7 @@ export async function getUsersByTenant(
  */
 export async function getTeamMembers(teamId: string): Promise<User[]> {
   try {
-    const url = `/teams/${teamId}/users?sort={}&count=false`;
+    const url = `/teams/${teamId}/users?count=false`;
     const response = await apiClient.get<ApiResponse<TeamMemberResponse[]>>(url);
     
     // Transform team member response to User[] format

@@ -165,7 +165,7 @@ export const authApi = {
   getUserTeams: async (userId: string): Promise<any> => {
     try {
       const response = await apiClient.get(
-        `/teams?userId=${encodeURIComponent(userId)}&isLocationTracked=true&sort={}&count=false`
+        `/teams?userId=${encodeURIComponent(userId)}&isLocationTracked=true&count=false`
       );
       return response.data;
     } catch (error) {
